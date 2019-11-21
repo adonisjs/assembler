@@ -2,6 +2,13 @@
   "name": "@adonisjs/assembler",
   "version": "0.0.0",
   "description": "Core commands to compiler and build AdonisJs project",
+  "main": "build/index.js",
+  "files": [
+    "build/src",
+    "build/ace-manifest.json",
+    "build/index.d.ts",
+    "build/index.js"
+  ],
   "scripts": {
     "mrm": "mrm --preset=@adonisjs/mrm-preset",
     "pretest": "npm run lint",
@@ -9,7 +16,7 @@
     "lint": "tslint --project tsconfig.json",
     "clean": "del build",
     "compile": "npm run lint && npm run clean && tsc",
-    "build": "npm run compile",
+    "build": "npm run compile && node build/index.js",
     "commit": "git-cz",
     "release": "np",
     "version": "npm run build"
@@ -31,7 +38,9 @@
   },
   "homepage": "https://github.com/adonisjs/assembler#readme",
   "devDependencies": {
+    "@adonisjs/ace": "^6.5.0",
     "@adonisjs/mrm-preset": "^2.1.0",
+    "@poppinss/dev-utils": "^1.0.1",
     "@types/node": "^12.12.8",
     "commitizen": "^4.0.3",
     "cz-conventional-changelog": "^3.0.2",
@@ -54,12 +63,6 @@
       ".ts"
     ]
   },
-  "main": "build/index.js",
-  "files": [
-    "build/src",
-    "build/index.d.ts",
-    "build/index.js"
-  ],
   "husky": {
     "hooks": {
       "pre-commit": "doctoc README.md --title='## Table of contents' && git add README.md",
@@ -74,5 +77,21 @@
   "np": {
     "contents": ".",
     "anyBranch": false
+  },
+  "dependencies": {
+    "@adonisjs/application": "^1.2.1",
+    "@adonisjs/fold": "^6.2.3",
+    "@adonisjs/ioc-transformer": "^1.0.0",
+    "@poppinss/chokidar-ts": "^2.0.0",
+    "@poppinss/fancy-logs": "^1.3.0",
+    "@poppinss/utils": "^2.1.0",
+    "chokidar": "^3.3.0",
+    "copyfiles": "^2.1.1",
+    "cpy": "^7.3.0",
+    "emittery": "^0.5.1",
+    "execa": "^3.3.0",
+    "fs-extra": "^8.1.0",
+    "mem": "^6.0.0",
+    "picomatch": "^2.1.1"
   }
 }

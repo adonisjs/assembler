@@ -27,6 +27,17 @@ Everyone is welcome to contribute. Please go through the following guides, befor
 2. [Code of conduct](https://adonisjs.com/code-of-conduct)
 
 
+```
+build                        ( build and over )
+build --production           ( build for prod )
+build --watch                ( build and watch source for changes )
+serve                        ( serve http server )
+serve --watch                ( build, watch and serve )
+serve --watch-output         ( build, watch and serve )
+manifest:generate            ( generate manifest file )
+run:instructions             ( run instructions )
+```
+
 ## Authors & License
 [Harminder virk](https://github.com/Harminder virk) and [contributors](https://github.com/git@github.com/adonisjs/graphs/contributors).
 

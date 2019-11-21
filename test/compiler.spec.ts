@@ -53,11 +53,11 @@ test.group('Compiler', (group) => {
 
     assert.deepEqual(hasFiles, [true, true, true, true])
     assert.deepEqual(logger.logs, [
-      'underline(blue(info)) Cleaning up build directory dim(yellow(build))',
-      'underline(blue(info)) Copy .adonisrc.json dim(yellow(build))',
-      'underline(blue(info)) Copy public/**/*.(js|css) dim(yellow(build))',
-      'underline(magenta(pending)) Compiling typescript source files',
-      'underline(green(success)) Built successfully',
+      'underline(blue(info)) cleaning up build directory dim(yellow(build))',
+      'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+      'underline(blue(info)) copy public/**/*.(js|css) dim(yellow(build))',
+      'underline(magenta(pending)) compiling typescript source files',
+      'underline(green(success)) built successfully',
     ])
 
     assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
@@ -95,11 +95,11 @@ test.group('Compiler', (group) => {
 
     assert.deepEqual(hasFiles, [true, true, true, true])
     assert.deepEqual(logger.logs, [
-      'underline(blue(info)) Cleaning up build directory dim(yellow(build))',
-      'underline(blue(info)) Copy .adonisrc.json dim(yellow(build))',
-      'underline(blue(info)) Copy public/**/*.(js|css) dim(yellow(build))',
-      'underline(magenta(pending)) Compiling typescript source files',
-      'underline(green(success)) Built successfully',
+      'underline(blue(info)) cleaning up build directory dim(yellow(build))',
+      'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+      'underline(blue(info)) copy public/**/*.(js|css) dim(yellow(build))',
+      'underline(magenta(pending)) compiling typescript source files',
+      'underline(green(success)) built successfully',
     ])
   }).timeout(0)
 
@@ -136,11 +136,11 @@ test.group('Compiler', (group) => {
 
     assert.deepEqual(hasFiles, [true, true, true, true])
     assert.deepEqual(logger.logs, [
-      'underline(blue(info)) Cleaning up build directory dim(yellow(build))',
-      'underline(blue(info)) Copy .adonisrc.json dim(yellow(build))',
-      'underline(blue(info)) Copy public/**/*.(js|css) dim(yellow(build))',
-      'underline(magenta(pending)) Compiling typescript source files',
-      'underline(green(success)) Built successfully',
+      'underline(blue(info)) cleaning up build directory dim(yellow(build))',
+      'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+      'underline(blue(info)) copy public/**/*.(js|css) dim(yellow(build))',
+      'underline(magenta(pending)) compiling typescript source files',
+      'underline(green(success)) built successfully',
     ])
   }).timeout(0)
 
@@ -176,11 +176,11 @@ test.group('Compiler', (group) => {
 
     assert.deepEqual(hasFiles, [true, true, true, true])
     assert.deepEqual(logger.logs, [
-      'underline(blue(info)) Cleaning up build directory dim(yellow(build/dist))',
-      'underline(blue(info)) Copy .adonisrc.json dim(yellow(build/dist))',
-      'underline(blue(info)) Copy public/**/*.(js|css) dim(yellow(build/dist))',
-      'underline(magenta(pending)) Compiling typescript source files',
-      'underline(green(success)) Built successfully',
+      'underline(blue(info)) cleaning up build directory dim(yellow(build/dist))',
+      'underline(blue(info)) copy .adonisrc.json dim(yellow(build/dist))',
+      'underline(blue(info)) copy public/**/*.(js|css) dim(yellow(build/dist))',
+      'underline(magenta(pending)) compiling typescript source files',
+      'underline(green(success)) built successfully',
     ])
   }).timeout(0)
 
@@ -217,11 +217,11 @@ test.group('Compiler', (group) => {
     assert.deepEqual(hasFiles, [true, true, true, true])
 
     assert.deepEqual(logger.logs, [
-      'underline(blue(info)) Cleaning up build directory dim(yellow(build/dist))',
-      'underline(blue(info)) Copy .adonisrc.json dim(yellow(build/dist))',
-      'underline(blue(info)) Copy public/**/*.(js|css) dim(yellow(build/dist))',
-      'underline(magenta(pending)) Compiling typescript source files',
-      'underline(red(error)) Typescript compiler errors',
+      'underline(blue(info)) cleaning up build directory dim(yellow(build/dist))',
+      'underline(blue(info)) copy .adonisrc.json dim(yellow(build/dist))',
+      'underline(blue(info)) copy public/**/*.(js|css) dim(yellow(build/dist))',
+      'underline(magenta(pending)) compiling typescript source files',
+      'underline(red(error)) typescript compiler errors',
     ])
   }).timeout(0)
 
@@ -259,12 +259,12 @@ test.group('Compiler', (group) => {
     assert.deepEqual(hasFiles, [true, false, true, true])
 
     assert.deepEqual(logger.logs, [
-      'underline(blue(info)) Cleaning up build directory dim(yellow(build/dist))',
-      'underline(blue(info)) Copy .adonisrc.json dim(yellow(build/dist))',
-      'underline(blue(info)) Copy public/**/*.(js|css) dim(yellow(build/dist))',
-      'underline(magenta(pending)) Compiling typescript source files',
-      'underline(blue(info)) Ts emit skipped',
-      'underline(red(error)) Typescript compiler errors',
+      'underline(blue(info)) cleaning up build directory dim(yellow(build/dist))',
+      'underline(blue(info)) copy .adonisrc.json dim(yellow(build/dist))',
+      'underline(blue(info)) copy public/**/*.(js|css) dim(yellow(build/dist))',
+      'underline(magenta(pending)) compiling typescript source files',
+      'underline(blue(info)) TS emit skipped',
+      'underline(red(error)) typescript compiler errors',
     ])
   }).timeout(0)
 
@@ -312,12 +312,12 @@ test.group('Compiler', (group) => {
 
     assert.deepEqual(hasFiles, [true, true, true, true])
     assert.deepEqual(logger.logs, [
-      'underline(blue(info)) Cleaning up build directory dim(yellow(build))',
-      'underline(blue(info)) Copy .adonisrc.json dim(yellow(build))',
-      'underline(blue(info)) Copy public/**/*.(js|css),package.json,package-lock.json dim(yellow(build))',
-      'underline(magenta(pending)) Compiling typescript source files',
-      'underline(green(success)) Built successfully',
-      'underline(blue(info)) Installing production dependencies dim(yellow(npm))',
+      'underline(blue(info)) cleaning up build directory dim(yellow(build))',
+      'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+      'underline(blue(info)) copy public/**/*.(js|css),package.json,package-lock.json dim(yellow(build))',
+      'underline(magenta(pending)) compiling typescript source files',
+      'underline(green(success)) built successfully',
+      'underline(blue(info)) installing production dependencies dim(yellow(npm))',
     ])
 
     const hasPackageLock = await fs.fsExtra.pathExists(join(fs.basePath, 'build', 'package-lock.json'))

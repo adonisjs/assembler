@@ -83,4 +83,39 @@ test.group('RcFile', (group) => {
     assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)'])
     assert.deepEqual(rcFile.getRestartServerFilesGlob(), ['public/**/*.(css|js)'])
   })
+
+  test('get metadata for files', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({
+      metaFiles: [
+        '.adonisrc.json',
+        { pattern: '.env', reloadServer: false },
+        'public/**/*.(css|js)',
+      ],
+    }))
+
+    const rcFile = new RcFile(fs.basePath)
+    assert.deepEqual(rcFile.getMetaData('.adonisrc.json'), {
+      reload: true,
+      rcFile: true,
+      metaFile: true,
+    })
+
+    assert.deepEqual(rcFile.getMetaData('public/style.css'), {
+      reload: true,
+      rcFile: false,
+      metaFile: true,
+    })
+
+    assert.deepEqual(rcFile.getMetaData('.env'), {
+      reload: false,
+      rcFile: false,
+      metaFile: true,
+    })
+
+    assert.deepEqual(rcFile.getMetaData('foo/bar.js'), {
+      reload: false,
+      rcFile: false,
+      metaFile: false,
+    })
+  })
 })

@@ -26,7 +26,7 @@ test.group('RcFile', (group) => {
     }))
 
     const rcFile = new RcFile(fs.basePath)
-    assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)'])
+    assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
   })
 
   test('get an array of meta file patterns that has reload server set to true', async (assert) => {
@@ -38,7 +38,7 @@ test.group('RcFile', (group) => {
     }))
 
     const rcFile = new RcFile(fs.basePath)
-    assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)'])
+    assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
     assert.deepEqual(rcFile.getRestartServerFilesGlob(), ['public/**/*.(css|js)'])
   })
 
@@ -80,7 +80,21 @@ test.group('RcFile', (group) => {
     }))
 
     const rcFile = new RcFile(fs.basePath)
-    assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)'])
+    assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
+    assert.deepEqual(rcFile.getRestartServerFilesGlob(), ['public/**/*.(css|js)'])
+  })
+
+  test('filter ace file from files globs array', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({
+      metaFiles: [
+        'ace',
+        { pattern: '.env', reloadServer: false },
+        'public/**/*.(css|js)',
+      ],
+    }))
+
+    const rcFile = new RcFile(fs.basePath)
+    assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
     assert.deepEqual(rcFile.getRestartServerFilesGlob(), ['public/**/*.(css|js)'])
   })
 

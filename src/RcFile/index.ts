@@ -12,7 +12,7 @@ import { Ioc } from '@adonisjs/fold'
 import { resolveFrom } from '@poppinss/utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
-import { RCFILE_NAME } from '../../config/paths'
+import { RCFILE_NAME, ACE_FILE_NAME } from '../../config/paths'
 
 /**
  * Exposes the API to pull meta files from the `.adonisrc.json` file and
@@ -59,8 +59,9 @@ export class RcFile {
     return this.application
       .rcFile
       .metaFiles
-      .filter(({ pattern }) => pattern !== RCFILE_NAME)
+      .filter(({ pattern }) => ![RCFILE_NAME, ACE_FILE_NAME].includes(pattern))
       .map(({ pattern }) => pattern)
+      .concat([ACE_FILE_NAME])
   }
 
   /**
@@ -70,7 +71,7 @@ export class RcFile {
   public getRestartServerFilesGlob (): string[] {
     return this.application.rcFile.metaFiles
       .filter(({ reloadServer, pattern }) => {
-        return reloadServer === true && pattern !== RCFILE_NAME
+        return reloadServer === true && ![RCFILE_NAME, ACE_FILE_NAME].includes(pattern)
       })
       .map(({ pattern }) => pattern)
   }

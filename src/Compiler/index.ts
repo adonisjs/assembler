@@ -8,6 +8,7 @@
 */
 
 import mem from 'mem'
+import slash from 'slash'
 import copyfiles from 'cpy'
 import tsStatic from 'typescript'
 import { join, relative } from 'path'
@@ -58,10 +59,11 @@ export class Compiler {
   public manifest = new Manifest(this.appRoot, this._logger)
 
   /**
-   * Returns relative path from the project root
+   * Returns relative unix path from the project root. Used for
+   * display only
    */
-  private _getRelativePath = mem((absPath: string) => {
-    return relative(this.appRoot, absPath)
+  private _getRelativeUnixPath = mem((absPath: string) => {
+    return slash(relative(this.appRoot, absPath))
   })
 
   constructor (
@@ -124,7 +126,7 @@ export class Compiler {
    * Cleans up the build directory
    */
   public async cleanupBuildDirectory (outDir: string) {
-    this._logger.info({ message: 'cleaning up build directory', suffix: this._getRelativePath(outDir) })
+    this._logger.info({ message: 'cleaning up build directory', suffix: this._getRelativeUnixPath(outDir) })
     await remove(outDir)
   }
 
@@ -132,7 +134,7 @@ export class Compiler {
    * Copies .adonisrc.json file to the destination
    */
   public async copyAdonisRcFile (outDir: string) {
-    this._logger.info({ message: `copy ${RCFILE_NAME}`, suffix: this._getRelativePath(outDir) })
+    this._logger.info({ message: `copy ${RCFILE_NAME}`, suffix: this._getRelativeUnixPath(outDir) })
     await outputJSON(
       join(outDir, RCFILE_NAME),
       Object.assign({}, this.rcFile.raw, { typescript: false }),
@@ -144,7 +146,7 @@ export class Compiler {
    */
   public async copyMetaFiles (outDir: string, extraFiles?: string[]) {
     const metaFiles = this.rcFile.getMetaFilesGlob().concat(extraFiles || [])
-    this._logger.info({ message: `copy ${metaFiles.join(',')}`, suffix: this._getRelativePath(outDir) })
+    this._logger.info({ message: `copy ${metaFiles.join(',')}`, suffix: this._getRelativeUnixPath(outDir) })
     await this.copyFiles(metaFiles, outDir)
   }
 

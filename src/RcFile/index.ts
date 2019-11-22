@@ -7,8 +7,9 @@
 * file that was distributed with this source code.
 */
 
-import { join, sep } from 'path'
+import slash from 'slash'
 import picomatch from 'picomatch'
+import { join, relative } from 'path'
 import { Ioc } from '@adonisjs/fold'
 import { resolveFrom } from '@poppinss/utils'
 import { Application } from '@adonisjs/application/build/standalone'
@@ -84,17 +85,20 @@ export class RcFile {
   }
 
   /**
-   * Returns the commands glob for registered commands.
+   * Returns the commands glob for registered commands. We convert the
+   * command paths to glob pattern
    */
   public commandsGlob (): string[] {
-    return this.application.rcFile.commands
+    const commands = this.application.rcFile.commands
       .reduce((result: string[], commandPath) => {
         if (/^(.){1,2}\//.test(commandPath)) {
-          commandPath = join(this._appRoot, commandPath).replace(`${this._appRoot}${sep}`, '')
+          commandPath = slash(relative(this._appRoot, join(this._appRoot, commandPath)))
           result = result.concat([`${commandPath}.*`, `${commandPath}/**/*`])
         }
         return result
       }, [])
+
+    return commands
   }
 
   /**

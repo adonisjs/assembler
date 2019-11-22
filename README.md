@@ -20,8 +20,8 @@
 
 The assembler exposes a set of commands to build and serve AdonisJS applications. Docs will follow soon.
 
-[circleci-image]: https://img.shields.io/circleci/project/github/git@github.com/adonisjs/master.svg?style=for-the-badge&logo=circleci
-[circleci-url]: https://circleci.com/gh/git@github.com/adonisjs "circleci"
+[circleci-image]: https://img.shields.io/circleci/project/github/adonisjs/assembler/master.svg?style=for-the-badge&logo=circleci
+[circleci-url]: https://circleci.com/gh/adonisjs/aseembler "circleci"
 
 [npm-image]: https://img.shields.io/npm/v/@adonisjs/assembler.svg?style=for-the-badge&logo=npm
 [npm-url]: https://npmjs.org/package/@adonisjs/assembler "npm"

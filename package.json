@@ -39,6 +39,7 @@
   "homepage": "https://github.com/adonisjs/assembler#readme",
   "devDependencies": {
     "@adonisjs/ace": "^6.5.0",
+    "@adonisjs/fold": "^6.2.3",
     "@adonisjs/mrm-preset": "^2.1.0",
     "@poppinss/dev-utils": "^1.0.1",
     "@types/node": "^12.12.8",
@@ -54,6 +55,10 @@
     "tslint": "^5.20.1",
     "tslint-eslint-rules": "^5.4.0",
     "typescript": "^3.7.2"
+  },
+  "peerDependencies": {
+    "@adonisjs/ace": "^6.x.x",
+    "@adonisjs/fold": "^6.x.x"
   },
   "nyc": {
     "exclude": [
@@ -79,14 +84,11 @@
     "anyBranch": false
   },
   "dependencies": {
-    "@adonisjs/application": "^1.2.1",
-    "@adonisjs/fold": "^6.2.3",
     "@adonisjs/ioc-transformer": "^1.0.0",
     "@poppinss/chokidar-ts": "^2.0.0",
     "@poppinss/fancy-logs": "^1.3.0",
     "@poppinss/utils": "^2.1.0",
     "chokidar": "^3.3.0",
-    "copyfiles": "^2.1.1",
     "cpy": "^7.3.0",
     "emittery": "^0.5.1",
     "execa": "^3.3.0",

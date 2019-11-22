@@ -7,6 +7,7 @@
 * file that was distributed with this source code.
 */
 
+import { join, sep } from 'path'
 import picomatch from 'picomatch'
 import { Ioc } from '@adonisjs/fold'
 import { resolveFrom } from '@poppinss/utils'
@@ -41,6 +42,12 @@ export class RcFile {
    */
   public isRestartServerFile: (filePath: string) => boolean = picomatch(this.getRestartServerFilesGlob())
 
+  /**
+   * Commands match to know, if file path is part of the commands paths defined
+   * inside `.adonisrc.json` file
+   */
+  public isCommandsPath: (filePath: string) => boolean = picomatch(this.commandsGlob())
+
   constructor (private _appRoot: string) {
   }
 
@@ -74,6 +81,20 @@ export class RcFile {
         return reloadServer === true && ![RCFILE_NAME, ACE_FILE_NAME].includes(pattern)
       })
       .map(({ pattern }) => pattern)
+  }
+
+  /**
+   * Returns the commands glob for registered commands.
+   */
+  public commandsGlob (): string[] {
+    return this.application.rcFile.commands
+      .reduce((result: string[], commandPath) => {
+        if (/^(.){1,2}\//.test(commandPath)) {
+          commandPath = join(this._appRoot, commandPath).replace(`${this._appRoot}${sep}`, '')
+          result = result.concat([`${commandPath}.*`, `${commandPath}/**/*`])
+        }
+        return result
+      }, [])
   }
 
   /**

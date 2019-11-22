@@ -51,6 +51,7 @@ export class Watcher {
     await this.compiler.copyAdonisRcFile(config.options.outDir!)
     await this.compiler.copyMetaFiles(config.options.outDir!)
     this.compiler.buildTypescriptSource(config)
+    this.compiler.manifest.generate()
 
     /**
      * Creating the http server instance. Even when serving app is disabled,
@@ -84,17 +85,26 @@ export class Watcher {
       this._logger.compile(path)
 
       /**
-       * Re-start server when emitting process was not skipped
-       */
-      if (!skipped) {
-        this.compiler.httpServer.restart()
-      }
-
-      /**
        * Print diagnostics if any
        */
       if (diagnostics.length) {
         this.compiler.renderDiagnostics(diagnostics, watcher.host)
+      }
+
+      /**
+       * Do not continue when output was never written to the disk
+       */
+      if (skipped) {
+        return
+      }
+
+      this.compiler.httpServer.restart()
+
+      /**
+       * Generate manifest when path is a commands path
+       */
+      if (this.compiler.rcFile.isCommandsPath(path)) {
+        this.compiler.manifest.generate()
       }
     })
 

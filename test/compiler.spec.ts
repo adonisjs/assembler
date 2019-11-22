@@ -7,8 +7,8 @@
 * file that was distributed with this source code.
 */
 
-import execa from 'execa'
 import test from 'japa'
+import execa from 'execa'
 import { join } from 'path'
 import { Logger } from '@poppinss/fancy-logs'
 import { Filesystem } from '@poppinss/dev-utils'
@@ -37,6 +37,7 @@ test.group('Compiler', (group) => {
       },
     }))
 
+    await fs.add('ace', '')
     await fs.add('src/foo.ts', '')
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
@@ -46,12 +47,13 @@ test.group('Compiler', (group) => {
 
     const hasFiles = await Promise.all([
       'build/.adonisrc.json',
+      'build/ace',
       'build/src/foo.js',
       'build/public/styles/main.css',
       'build/public/scripts/main.js',
     ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file))))
 
-    assert.deepEqual(hasFiles, [true, true, true, true])
+    assert.deepEqual(hasFiles, [true, true, true, true, true])
     assert.deepEqual(logger.logs, [
       'underline(blue(info)) cleaning up build directory dim(yellow(build))',
       'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
@@ -79,6 +81,7 @@ test.group('Compiler', (group) => {
       },
     }))
 
+    await fs.add('ace', '')
     await fs.add('src/foo.ts', '')
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
@@ -120,6 +123,7 @@ test.group('Compiler', (group) => {
       },
     }))
 
+    await fs.add('ace', '')
     await fs.add('src/foo.ts', '')
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
@@ -160,6 +164,7 @@ test.group('Compiler', (group) => {
       },
     }))
 
+    await fs.add('ace', '')
     await fs.add('src/foo.ts', '')
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
@@ -200,6 +205,7 @@ test.group('Compiler', (group) => {
       },
     }))
 
+    await fs.add('ace', '')
     await fs.add('src/foo.ts', `import path from 'path'`)
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
@@ -242,6 +248,7 @@ test.group('Compiler', (group) => {
       },
     }))
 
+    await fs.add('ace', '')
     await fs.add('src/foo.ts', `import path from 'path'`)
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
@@ -291,6 +298,7 @@ test.group('Compiler', (group) => {
       },
     }))
 
+    await fs.add('ace', '')
     await fs.add('src/foo.ts', '')
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
@@ -322,5 +330,95 @@ test.group('Compiler', (group) => {
 
     const hasPackageLock = await fs.fsExtra.pathExists(join(fs.basePath, 'build', 'package-lock.json'))
     assert.isTrue(hasPackageLock)
+  }).timeout(0)
+
+  test('gracefully log error when ace file is missing', async (assert) => {
+    const logger = new Logger({ fake: true })
+
+    await fs.add('.adonisrc.json', JSON.stringify({
+      typescript: true,
+      metaFiles: ['public/**/*.(js|css)'],
+    }))
+
+    await fs.add('tsconfig.json', JSON.stringify({
+      include: ['**/*'],
+      exclude: ['build'],
+      compilerOptions: {
+      },
+    }))
+
+    await fs.add('src/foo.ts', '')
+    await fs.add('public/styles/main.css', '')
+    await fs.add('public/scripts/main.js', '')
+
+    const compiler = new Compiler(fs.basePath, false, [], logger)
+    await compiler.compile()
+
+    const hasFiles = await Promise.all([
+      'build/.adonisrc.json',
+      'build/src/foo.js',
+      'build/public/styles/main.css',
+      'build/public/scripts/main.js',
+    ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file))))
+
+    assert.deepEqual(hasFiles, [true, true, true, true])
+
+    assert.deepEqual(logger.logs, [
+      'underline(blue(info)) cleaning up build directory dim(yellow(build))',
+      'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+      'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build))',
+      'underline(magenta(pending)) compiling typescript source files',
+      'underline(green(success)) built successfully',
+      // tslint:disable-next-line:max-line-length
+      'underline(yellow(warn)) Unable to generate manifest file. Make sure to manually run "node ace generate:manifest"',
+    ])
+
+    assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
+  }).timeout(0)
+
+  test('gracefully log error when ace file writes to stderr', async (assert) => {
+    const logger = new Logger({ fake: true })
+
+    await fs.add('.adonisrc.json', JSON.stringify({
+      typescript: true,
+      metaFiles: ['public/**/*.(js|css)'],
+    }))
+
+    await fs.add('tsconfig.json', JSON.stringify({
+      include: ['**/*'],
+      exclude: ['build'],
+      compilerOptions: {
+      },
+    }))
+
+    await fs.add('ace', `console.error('foo')`)
+    await fs.add('src/foo.ts', '')
+    await fs.add('public/styles/main.css', '')
+    await fs.add('public/scripts/main.js', '')
+
+    const compiler = new Compiler(fs.basePath, false, [], logger)
+    await compiler.compile()
+
+    const hasFiles = await Promise.all([
+      'build/.adonisrc.json',
+      'ace',
+      'build/src/foo.js',
+      'build/public/styles/main.css',
+      'build/public/scripts/main.js',
+    ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file))))
+
+    assert.deepEqual(hasFiles, [true, true, true, true, true])
+
+    assert.deepEqual(logger.logs, [
+      'underline(blue(info)) cleaning up build directory dim(yellow(build))',
+      'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+      'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build))',
+      'underline(magenta(pending)) compiling typescript source files',
+      'underline(green(success)) built successfully',
+      // tslint:disable-next-line:max-line-length
+      'underline(yellow(warn)) Unable to generate manifest file. Make sure to manually run "node ace generate:manifest"',
+    ])
+
+    assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
   }).timeout(0)
 })

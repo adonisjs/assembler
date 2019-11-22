@@ -18,6 +18,7 @@ import { TypescriptCompiler } from '@poppinss/chokidar-ts'
 import { iocTransformer } from '@adonisjs/ioc-transformer'
 
 import { RcFile } from '../RcFile'
+import { Manifest } from '../Manifest'
 import { Installer } from '../Installer'
 import { HttpServer, DummyHttpServer } from '../HttpServer'
 import {
@@ -50,6 +51,11 @@ export class Compiler {
    * Reference to rc File
    */
   public rcFile = new RcFile(this.appRoot)
+
+  /**
+   * Manifest instance to generate ace manifest file
+   */
+  public manifest = new Manifest(this.appRoot, this._logger)
 
   /**
    * Returns relative path from the project root
@@ -184,6 +190,7 @@ export class Compiler {
     await this.copyAdonisRcFile(config.options.outDir!)
     await this.copyMetaFiles(config.options.outDir!)
     this.buildTypescriptSource(config)
+    await this.manifest.generate()
 
     /**
      * Start HTTP server
@@ -216,6 +223,7 @@ export class Compiler {
 
     this._logger.info({ message: 'installing production dependencies', suffix: client })
     await new Installer(config.options.outDir!, client).install()
+    await this.manifest.generate()
 
     /**
      * Start HTTP server in production

@@ -132,4 +132,46 @@ test.group('RcFile', (group) => {
       metaFile: false,
     })
   })
+
+  test('match sub paths to the defined command path', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({
+      metaFiles: [],
+      commands: ['./commands'],
+    }))
+
+    const rcFile = new RcFile(fs.basePath)
+    assert.isTrue(rcFile.isCommandsPath('commands/foo.ts'))
+  })
+
+  test('match actual path to the defined command path', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({
+      metaFiles: [],
+      commands: ['./commands'],
+    }))
+
+    const rcFile = new RcFile(fs.basePath)
+    assert.isTrue(rcFile.isCommandsPath('commands.ts'))
+  })
+
+  test('do not work when commands refer to path outside the project root', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({
+      metaFiles: [],
+      commands: ['../commands'],
+    }))
+
+    const rcFile = new RcFile(fs.basePath)
+    assert.isFalse(rcFile.isCommandsPath('commands.ts'))
+    assert.isFalse(rcFile.isCommandsPath('commands/foo.ts'))
+  })
+
+  test('do not work when commands refer to a package', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({
+      metaFiles: [],
+      commands: ['@adonisjs/foo'],
+    }))
+
+    const rcFile = new RcFile(fs.basePath)
+    assert.isFalse(rcFile.isCommandsPath('@adonisjs/foo.ts'))
+    assert.isFalse(rcFile.isCommandsPath('@adonisjs/foo/foo.ts'))
+  })
 })

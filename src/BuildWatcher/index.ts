@@ -13,6 +13,7 @@ import { pathExists } from 'fs-extra'
 import { Logger } from '@poppinss/fancy-logs'
 
 import { RcFile } from '../RcFile'
+import { Manifest } from '../Manifest'
 import { HttpServer } from '../HttpServer'
 import { SERVER_ENTRY_FILE } from '../../config/paths'
 
@@ -21,6 +22,8 @@ import { SERVER_ENTRY_FILE } from '../../config/paths'
  * HTTP server on changes.
  */
 export class BuildWatcher {
+  private _manifest = new Manifest(this._buildRoot, this._logger)
+
   constructor (
     private _buildRoot: string,
     private _nodeArgs: string[],
@@ -74,9 +77,15 @@ export class BuildWatcher {
      */
     watcher.on('add', (filePath: string) => {
       const metaData = rcFile.getMetaData(filePath)
-      if (this._isScriptFile(filePath) || metaData.reload) {
+      const isScriptFile = this._isScriptFile(filePath)
+
+      if (isScriptFile || metaData.reload) {
         this._logger.create(filePath)
         httpServer.restart()
+      }
+
+      if (isScriptFile && rcFile.isCommandsPath(filePath)) {
+        this._manifest.generate()
       }
     })
 
@@ -85,9 +94,15 @@ export class BuildWatcher {
      */
     watcher.on('change', (filePath: string) => {
       const metaData = rcFile.getMetaData(filePath)
-      if (this._isScriptFile(filePath) || metaData.reload) {
+      const isScriptFile = this._isScriptFile(filePath)
+
+      if (isScriptFile || metaData.reload) {
         this._logger.update(filePath)
         httpServer.restart()
+      }
+
+      if (isScriptFile && rcFile.isCommandsPath(filePath)) {
+        this._manifest.generate()
       }
     })
 
@@ -96,15 +111,21 @@ export class BuildWatcher {
      */
     watcher.on('unlink', (filePath: string) => {
       const metaData = rcFile.getMetaData(filePath)
+      const isScriptFile = this._isScriptFile(filePath)
+
       if (metaData.rcFile) {
         this._logger.stop('cannot continue after deletion of .adonisrc.json file')
         watcher.close()
         return
       }
 
-      if (this._isScriptFile(filePath) || metaData.reload) {
+      if (isScriptFile || metaData.reload) {
         this._logger.delete(filePath)
         httpServer.restart()
+      }
+
+      if (isScriptFile && rcFile.isCommandsPath(filePath)) {
+        this._manifest.generate()
       }
     })
 

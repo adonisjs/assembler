@@ -9,8 +9,8 @@
 
 import mem from 'mem'
 import copyfiles from 'cpy'
-import { join, sep } from 'path'
 import tsStatic from 'typescript'
+import { join, relative } from 'path'
 import { Logger } from '@poppinss/fancy-logs'
 import { remove, outputJSON } from 'fs-extra'
 import { resolveFrom } from '@poppinss/utils'
@@ -61,7 +61,7 @@ export class Compiler {
    * Returns relative path from the project root
    */
   private _getRelativePath = mem((absPath: string) => {
-    return absPath!.replace(new RegExp(`^${this.appRoot}${sep}`), '')
+    return relative(this.appRoot, absPath)
   })
 
   constructor (

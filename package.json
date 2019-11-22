@@ -4,6 +4,8 @@
   "description": "Core commands to compiler and build AdonisJs project",
   "main": "build/index.js",
   "files": [
+    "build/commands",
+    "build/config",
     "build/src",
     "build/ace-manifest.json",
     "build/index.d.ts",

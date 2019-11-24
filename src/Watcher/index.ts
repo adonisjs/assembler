@@ -51,6 +51,10 @@ export class Watcher {
     await this.compiler.copyAdonisRcFile(config.options.outDir!)
     await this.compiler.copyMetaFiles(config.options.outDir!)
     this.compiler.buildTypescriptSource(config)
+
+    /**
+     * Manifest can be generated without blocking the flow
+     */
     this.compiler.manifest.generate()
 
     /**

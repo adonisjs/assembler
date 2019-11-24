@@ -225,7 +225,11 @@ export class Compiler {
 
     this._logger.info({ message: 'installing production dependencies', suffix: client })
     await new Installer(config.options.outDir!, client).install()
-    await this.manifest.generate()
+
+    /**
+     * Manifest can be generated without blocking the flow
+     */
+    this.manifest.generate()
 
     /**
      * Start HTTP server in production

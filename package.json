@@ -59,8 +59,7 @@
     "typescript": "^3.7.2"
   },
   "peerDependencies": {
-    "@adonisjs/ace": "^6.x.x",
-    "@adonisjs/fold": "^6.x.x"
+    "@adonisjs/ace": "^6.0.0"
   },
   "nyc": {
     "exclude": [

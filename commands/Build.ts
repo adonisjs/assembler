@@ -9,10 +9,6 @@
 
 import { BaseCommand, flags } from '@adonisjs/ace'
 
-import { Watcher } from '../src/Watcher'
-import { Compiler } from '../src/Compiler'
-import { ADONIS_ACE_CWD, ADONIS_IS_TYPESCRIPT } from '../config/env'
-
 /**
  * Compile typescript project Javascript
  */
@@ -42,6 +38,10 @@ export default class Build extends BaseCommand {
    * Invoked automatically by ace
    */
   public async handle () {
+    const { Watcher } = await import('../src/Watcher')
+    const { Compiler } = await import('../src/Compiler')
+    const { ADONIS_ACE_CWD, ADONIS_IS_TYPESCRIPT } = await import('../config/env')
+
     /**
      * Dis-allow when CWD is missing. It will always be set by `node ace`
      * commands and also when project is not a typescript project.

@@ -121,8 +121,16 @@ export class Watcher {
       const typePath = filePath.replace(/\.(d)?ts$/, '.d.ts')
 
       this._logger.delete(filePath)
-      await remove(join(this.compiler.appRoot, config.options.outDir!, jsPath))
-      await remove(join(this.compiler.appRoot, config.options.outDir!, typePath))
+      await remove(join(config.options.outDir!, jsPath))
+      await remove(join(config.options.outDir!, typePath))
+
+      /**
+       * Generate manifest when filePath is a commands path
+       */
+      if (this.compiler.rcFile.isCommandsPath(filePath)) {
+        this.compiler.manifest.generate()
+      }
+
       this.compiler.httpServer.restart()
     })
 
@@ -184,7 +192,7 @@ export class Watcher {
       }
 
       this._logger.delete(filePath)
-      await remove(join(this.compiler.appRoot, config.options.outDir!, filePath))
+      await remove(join(config.options.outDir!, filePath))
       if (metaData.reload) {
         this.compiler.httpServer.restart()
       }

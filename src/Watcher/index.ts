@@ -138,11 +138,12 @@ export class Watcher {
      * New file added
      */
     watcher.on('add', async (filePath) => {
-      this._clearScreen()
       const metaData = this.compiler.rcFile.getMetaData(filePath)
       if (!metaData.metaFile) {
         return
       }
+
+      this._clearScreen()
 
       this._logger.create(filePath)
       await this.compiler.copyFiles([filePath], config.options.outDir!)
@@ -156,11 +157,12 @@ export class Watcher {
      * File changed
      */
     watcher.on('change', async (filePath) => {
-      this._clearScreen()
       const metaData = this.compiler.rcFile.getMetaData(filePath)
       if (!metaData.metaFile) {
         return
       }
+
+      this._clearScreen()
 
       if (metaData.rcFile) {
         this._logger.skip('in-process changes to .adonisrc.json file are ignored')
@@ -179,11 +181,12 @@ export class Watcher {
      * File removed
      */
     watcher.on('unlink', async (filePath) => {
-      this._clearScreen()
       const metaData = this.compiler.rcFile.getMetaData(filePath)
       if (!metaData.metaFile) {
         return
       }
+
+      this._clearScreen()
 
       if (metaData.rcFile) {
         this._logger.stop('cannot continue after deletion of .adonisrc.json file')

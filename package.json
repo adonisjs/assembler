@@ -6,6 +6,7 @@
   "files": [
     "build/commands",
     "build/config",
+    "build/templates",
     "build/src",
     "build/ace-manifest.json",
     "build/index.d.ts",
@@ -18,7 +19,7 @@
     "lint": "tslint --project tsconfig.json",
     "clean": "del build",
     "compile": "npm run lint && npm run clean && tsc",
-    "build": "npm run compile && node build/index.js",
+    "build": "npm run compile && node build/index.js && copyfiles \"templates/*\" build",
     "commit": "git-cz",
     "release": "np",
     "version": "npm run build"
@@ -45,6 +46,7 @@
     "@poppinss/dev-utils": "^1.0.1",
     "@types/node": "^12.12.12",
     "commitizen": "^4.0.3",
+    "copyfiles": "^2.1.1",
     "cz-conventional-changelog": "^3.0.2",
     "del-cli": "^3.0.0",
     "doctoc": "^1.4.0",

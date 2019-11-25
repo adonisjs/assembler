@@ -13,6 +13,7 @@ import { Ioc } from '@adonisjs/fold'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
+import { toNewlineArray } from '../test-helpers'
 import MakeMiddleware from '../commands/Make/Middleware'
 
 const fs = new Filesystem(join(__dirname, '__app'))
@@ -42,6 +43,9 @@ test.group('Make Middleware', (group) => {
 
     const SpoofMiddleware = await fs.get('app/Middleware/SpoofAccept.ts')
     const MiddlewareTemplate = await templates.get('middleware.txt')
-    assert.equal(SpoofMiddleware, MiddlewareTemplate.replace('${filename}', 'SpoofAccept'))
+    assert.deepEqual(
+      toNewlineArray(SpoofMiddleware),
+      toNewlineArray(MiddlewareTemplate.replace('${filename}', 'SpoofAccept')),
+    )
   })
 })

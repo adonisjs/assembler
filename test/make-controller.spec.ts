@@ -13,6 +13,7 @@ import { Ioc } from '@adonisjs/fold'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
+import { toNewlineArray } from '../test-helpers'
 import MakeController from '../commands/Make/Controller'
 
 const fs = new Filesystem(join(__dirname, '__app'))
@@ -42,7 +43,10 @@ test.group('Make Controller', (group) => {
 
     const UsersController = await fs.get('app/Controllers/Http/UsersController.ts')
     const ControllerTemplate = await templates.get('controller.txt')
-    assert.equal(UsersController, ControllerTemplate.replace('${filename}', 'UsersController'))
+    assert.deepEqual(
+      toNewlineArray(UsersController),
+      toNewlineArray(ControllerTemplate.replace('${filename}', 'UsersController')),
+    )
   })
 
   test('make a resourceful controller inside the default directory', async (assert) => {
@@ -57,7 +61,10 @@ test.group('Make Controller', (group) => {
 
     const UsersController = await fs.get('app/Controllers/Http/UsersController.ts')
     const ResourceTemplate = await templates.get('resource-controller.txt')
-    assert.equal(UsersController, ResourceTemplate.replace('${filename}', 'UsersController'))
+    assert.deepEqual(
+      toNewlineArray(UsersController),
+      toNewlineArray(ResourceTemplate.replace('${filename}', 'UsersController')),
+    )
   })
 
   test('make a controller inside a custom directory', async (assert) => {
@@ -78,6 +85,9 @@ test.group('Make Controller', (group) => {
 
     const UsersController = await fs.get('app/Controllers/UsersController.ts')
     const ControllerTemplate = await templates.get('controller.txt')
-    assert.equal(UsersController, ControllerTemplate.replace('${filename}', 'UsersController'))
+    assert.deepEqual(
+      toNewlineArray(UsersController),
+      toNewlineArray(ControllerTemplate.replace('${filename}', 'UsersController')),
+    )
   })
 })

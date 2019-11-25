@@ -13,6 +13,7 @@ import { Ioc } from '@adonisjs/fold'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
+import { toNewlineArray } from '../test-helpers'
 import MakeCommand from '../commands/Make/Command'
 
 const fs = new Filesystem(join(__dirname, '__app'))
@@ -42,7 +43,10 @@ test.group('Make Command', (group) => {
 
     const GreetCommand = await fs.get('commands/Greet.ts')
     const CommandTemplate = await templates.get('command.txt')
-    assert.equal(GreetCommand, CommandTemplate.replace('${filename}', 'Greet'))
+    assert.deepEqual(
+      toNewlineArray(GreetCommand),
+      toNewlineArray(CommandTemplate.replace('${filename}', 'Greet')),
+    )
   })
 
   test('make a command inside a custom directory', async (assert) => {
@@ -60,6 +64,9 @@ test.group('Make Command', (group) => {
 
     const GreetCommand = await fs.get('foo/Greet.ts')
     const CommandTemplate = await templates.get('command.txt')
-    assert.equal(GreetCommand, CommandTemplate.replace('${filename}', 'Greet'))
+    assert.deepEqual(
+      toNewlineArray(GreetCommand),
+      toNewlineArray(CommandTemplate.replace('${filename}', 'Greet')),
+    )
   })
 })

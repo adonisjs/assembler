@@ -13,6 +13,7 @@ import { Ioc } from '@adonisjs/fold'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
+import { toNewlineArray } from '../test-helpers'
 import MakeProvider from '../commands/Make/Provider'
 
 const fs = new Filesystem(join(__dirname, '__app'))
@@ -42,7 +43,10 @@ test.group('Make Provider', (group) => {
 
     const AppProvider = await fs.get('providers/AppProvider.ts')
     const ProviderTemplate = await templates.get('provider.txt')
-    assert.equal(AppProvider, ProviderTemplate.replace('${filename}', 'AppProvider'))
+    assert.deepEqual(
+      toNewlineArray(AppProvider),
+      toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
+    )
   })
 
   test('make a provider inside a custom directory', async (assert) => {
@@ -60,6 +64,9 @@ test.group('Make Provider', (group) => {
 
     const AppProvider = await fs.get('foo/AppProvider.ts')
     const ProviderTemplate = await templates.get('provider.txt')
-    assert.equal(AppProvider, ProviderTemplate.replace('${filename}', 'AppProvider'))
+    assert.deepEqual(
+      toNewlineArray(AppProvider),
+      toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
+    )
   })
 })

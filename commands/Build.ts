@@ -42,11 +42,13 @@ export default class Build extends BaseCommand {
     const { Compiler } = await import('../src/Compiler')
     const { ADONIS_ACE_CWD, ADONIS_IS_TYPESCRIPT } = await import('../config/env')
 
+    const cwd = ADONIS_ACE_CWD()
+
     /**
      * Dis-allow when CWD is missing. It will always be set by `node ace`
      * commands and also when project is not a typescript project.
      */
-    if (!ADONIS_IS_TYPESCRIPT || !ADONIS_ACE_CWD) {
+    if (!cwd || !ADONIS_IS_TYPESCRIPT()) {
       this.logger.error(
         'Cannot build non-typescript project. Make sure to run "node ace build" from the project root',
       )
@@ -63,11 +65,11 @@ export default class Build extends BaseCommand {
     try {
       if (this.production) {
         const client = this.yarn ? 'yarn' : 'npm'
-        await new Compiler(ADONIS_ACE_CWD, false, [], this.logger).compileForProduction(client)
+        await new Compiler(cwd, false, [], this.logger).compileForProduction(client)
       } else if (this.watch) {
-        await new Watcher(ADONIS_ACE_CWD, false, [], this.logger).watch()
+        await new Watcher(cwd, false, [], this.logger).watch()
       } else {
-        await new Compiler(ADONIS_ACE_CWD, false, [], this.logger).compile()
+        await new Compiler(cwd, false, [], this.logger).compile()
       }
     } catch (error) {
       this.logger.fatal(error)

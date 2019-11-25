@@ -11,4 +11,5 @@ import { Manifest } from '@adonisjs/ace'
 new Manifest(__dirname).generate([
   './commands/Build',
   './commands/Serve',
+  './commands/Invoke',
 ])

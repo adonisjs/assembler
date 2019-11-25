@@ -10,6 +10,6 @@
 /**
  * Env variables set by `node ace`
  */
-export const ADONIS_ACE_CWD = process.env.ADONIS_ACE_CWD
-export const ADONIS_IS_TYPESCRIPT = process.env.ADONIS_IS_TYPESCRIPT
-export const ADONIS_BUILD_DIR = process.env.ADONIS_BUILD_DIR
+export const ADONIS_ACE_CWD = () => process.env.ADONIS_ACE_CWD
+export const ADONIS_IS_TYPESCRIPT = () => process.env.ADONIS_IS_TYPESCRIPT
+export const ADONIS_BUILD_DIR = () => process.env.ADONIS_BUILD_DIR

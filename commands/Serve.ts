@@ -44,11 +44,13 @@ export default class Serve extends BaseCommand {
     const { BuildWatcher } = await import('../src/BuildWatcher')
     const { ADONIS_ACE_CWD, ADONIS_IS_TYPESCRIPT, ADONIS_BUILD_DIR } = await import('../config/env')
 
+    const cwd = ADONIS_ACE_CWD()
+
     /**
      * Dis-allow when CWD is missing. It will always be set by `node ace`
      * commands
      */
-    if (!ADONIS_ACE_CWD) {
+    if (!cwd) {
       this.logger.error(
         'Cannot build non-typescript project. Make sure to run "node ace serve" from the project root',
       )
@@ -59,7 +61,7 @@ export default class Serve extends BaseCommand {
      * Dis-allow when running the command inside the compiled source and still
      * asking to re-compile the code
      */
-    if (!ADONIS_IS_TYPESCRIPT && this.compile !== false) {
+    if (!ADONIS_IS_TYPESCRIPT() && this.compile !== false) {
       this.logger.error(
         'Cannot build non-typescript project. Make sure to run "node ace serve" from the project root, or use "--no-compile" flag',
       )
@@ -68,11 +70,11 @@ export default class Serve extends BaseCommand {
 
     try {
       if (this.compile === false) {
-        await new BuildWatcher(ADONIS_ACE_CWD, this.nodeArgs, this.logger).watch(ADONIS_BUILD_DIR || './')
+        await new BuildWatcher(cwd, this.nodeArgs, this.logger).watch(ADONIS_BUILD_DIR() || './')
       } else if (this.watch) {
-        await new Watcher(ADONIS_ACE_CWD, true, this.nodeArgs, this.logger).watch()
+        await new Watcher(cwd, true, this.nodeArgs, this.logger).watch()
       } else {
-        await new Compiler(ADONIS_ACE_CWD, true, this.nodeArgs, this.logger).compile()
+        await new Compiler(cwd, true, this.nodeArgs, this.logger).compile()
       }
     } catch (error) {
       this.logger.fatal(error)

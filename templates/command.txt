@@ -1,0 +1,10 @@
+import { BaseCommand } from '@adonisjs/ace'
+
+export abstract class {filename} extends BaseCommand {
+  public static commandName = ''
+  public static description = ''
+
+  public async handle () {
+    this.logger.info('Hello world!')
+  }
+}

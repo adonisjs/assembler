@@ -10,9 +10,10 @@
 import test from 'japa'
 import { join } from 'path'
 import { Filesystem } from '@poppinss/dev-utils'
-import Invoke from '../commands/Invoke'
-import { Application } from '@adonisjs/application/build/standalone'
 import { Ioc } from '@adonisjs/fold'
+import { Application } from '@adonisjs/application/build/standalone'
+
+import Invoke from '../commands/Invoke'
 
 const fs = new Filesystem(join(__dirname, '__app'))
 

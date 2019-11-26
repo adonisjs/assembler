@@ -64,11 +64,10 @@ export class Watcher {
     this.compiler.createHttpServer(config.options.outDir!)
 
     /**
-     * Close watcher when server dies
+     * Notify that the http server has died
      */
     this.compiler.httpServer.on('exit', ({ code }) => {
-      this._logger.stop(`closing watcher. Underlying HTTP server died with "%s code"`, code)
-      watcher.chokidar.close()
+      this._logger.warn(`Underlying HTTP server died with "%s code"`, code)
     })
 
     const watcher = this.compiler.tsCompiler.watcher(config)

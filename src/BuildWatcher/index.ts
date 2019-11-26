@@ -65,11 +65,10 @@ export class BuildWatcher {
     })
 
     /**
-     * Close watcher when server dies
+     * Notify that server has died
      */
     httpServer.on('exit', ({ code }) => {
-      this._logger.stop(`closing watcher. Underlying HTTP server died with "%s code"`, code)
-      watcher.close()
+      this._logger.stop(`Underlying HTTP server died with "%s code"`, code)
     })
 
     /**

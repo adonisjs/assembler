@@ -1,7 +1,7 @@
 import { BaseCommand } from '@adonisjs/ace'
 
-export abstract class {filename} extends BaseCommand {
-  public static commandName = ''
+export default class ${filename} extends BaseCommand {
+  public static commandName = '${toCommandName(filename)}'
   public static description = ''
 
   public async handle () {

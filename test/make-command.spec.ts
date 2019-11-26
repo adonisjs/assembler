@@ -45,7 +45,11 @@ test.group('Make Command', (group) => {
     const CommandTemplate = await templates.get('command.txt')
     assert.deepEqual(
       toNewlineArray(GreetCommand),
-      toNewlineArray(CommandTemplate.replace('${filename}', 'Greet')),
+      toNewlineArray(
+        CommandTemplate
+          .replace('${filename}', 'Greet')
+          .replace('${toCommandName(filename)}', 'greet'),
+      ),
     )
   })
 
@@ -66,7 +70,36 @@ test.group('Make Command', (group) => {
     const CommandTemplate = await templates.get('command.txt')
     assert.deepEqual(
       toNewlineArray(GreetCommand),
-      toNewlineArray(CommandTemplate.replace('${filename}', 'Greet')),
+      toNewlineArray(
+        CommandTemplate
+          .replace('${filename}', 'Greet')
+          .replace('${toCommandName(filename)}', 'greet'),
+      ),
+    )
+  })
+
+  test('convert camelcase command path to colon seperated name', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({
+      directories: {
+        commands: './foo',
+      },
+    }))
+
+    const app = new Application(fs.basePath, new Ioc(), {}, {})
+
+    const command = new MakeCommand(app)
+    command.name = 'RunInstructions'
+    await command.handle()
+
+    const GreetCommand = await fs.get('foo/RunInstructions.ts')
+    const CommandTemplate = await templates.get('command.txt')
+    assert.deepEqual(
+      toNewlineArray(GreetCommand),
+      toNewlineArray(
+        CommandTemplate
+          .replace('${filename}', 'RunInstructions')
+          .replace('${toCommandName(filename)}', 'run:instructions'),
+      ),
     )
   })
 })

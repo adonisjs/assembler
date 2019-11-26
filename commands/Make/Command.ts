@@ -8,6 +8,7 @@
 */
 
 import { join } from 'path'
+import snakeCase from 'snake-case'
 import { args } from '@adonisjs/ace'
 import { RcFile } from '@ioc:Adonis/Core/Application'
 import { BaseGenerator } from './Base'
@@ -50,6 +51,17 @@ export default class MakeCommand extends BaseGenerator {
    */
   protected $getDestinationPath (rcFile: RcFile): string {
     return rcFile.directories.commands || 'commands'
+  }
+
+  /**
+   * Passed down to the template.
+   */
+  protected $templateData () {
+    return {
+      toCommandName: (filename: string) => {
+        return snakeCase(filename).replace(/_/, ':')
+      },
+    }
   }
 
   public async handle () {

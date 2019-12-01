@@ -24,6 +24,7 @@ export abstract class BaseGenerator extends BaseCommand {
   protected abstract $getDestinationPath (rcContents: RcFile): string
 
   protected $suffix?: string
+  protected $extname: string = '.ts'
   protected $form?: 'singular' | 'plural'
   protected $pattern?: 'camelcase' | 'snakecase' | 'pascalcase'
   protected $templateData (_rcContents: RcFile): any {
@@ -93,7 +94,12 @@ export abstract class BaseGenerator extends BaseCommand {
     }
 
     this.generator
-      .addFile(this.$resourceName, { suffix: this.$suffix, form: this.$form, pattern: this.$pattern })
+      .addFile(this.$resourceName, {
+        form: this.$form,
+        suffix: this.$suffix,
+        pattern: this.$pattern,
+        extname: this.$extname,
+      })
       .stub(this.$getStub(rcContents))
       .destinationDir(this.$getDestinationPath(rcContents))
       .appRoot(cwd)

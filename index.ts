@@ -16,4 +16,5 @@ new Manifest(__dirname).generate([
   './commands/Make/Controller',
   './commands/Make/Middleware',
   './commands/Make/Provider',
+  './commands/Make/View',
 ])

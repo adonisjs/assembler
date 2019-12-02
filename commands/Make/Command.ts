@@ -8,9 +8,10 @@
 */
 
 import { join } from 'path'
-import snakeCase from 'snake-case'
 import { args } from '@adonisjs/ace'
+import { snakeCase } from 'snake-case'
 import { RcFile } from '@ioc:Adonis/Core/Application'
+
 import { BaseGenerator } from './Base'
 
 /**
@@ -56,15 +57,15 @@ export default class MakeCommand extends BaseGenerator {
   /**
    * Passed down to the template.
    */
-  protected $templateData () {
+  protected $templateData (): { toCommandName: (filename: string) => string } {
     return {
-      toCommandName: (filename: string) => {
+      toCommandName: (filename: string): string => {
         return snakeCase(filename).replace(/_/, ':')
       },
     }
   }
 
-  public async handle () {
+  public async handle (): Promise<void> {
     this.$resourceName = this.name
     await super.handle()
   }

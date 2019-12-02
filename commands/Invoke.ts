@@ -8,6 +8,8 @@
 */
 
 import { BaseCommand, args } from '@adonisjs/ace'
+
+import { Manifest } from '../src/Manifest'
 import { ADONIS_ACE_CWD } from '../config/env'
 
 /**
@@ -42,5 +44,6 @@ export default class Invoke extends BaseCommand {
 
     const { executeInstructions } = await import('@adonisjs/sink')
     await executeInstructions(this.name, cwd, this.application)
+    await new Manifest(cwd, this.logger).generate()
   }
 }

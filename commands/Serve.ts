@@ -63,7 +63,10 @@ export default class Serve extends BaseCommand {
      */
     if (!ADONIS_IS_TYPESCRIPT() && this.compile !== false) {
       this.logger.error(
-        'Cannot build non-typescript project. Make sure to run "node ace serve" from the project root, or use "--no-compile" flag',
+        [
+          'Cannot build non-typescript project. ',
+          'Make sure to run "node ace serve" from the project root, or use "--no-compile" flag',
+        ].join(''),
       )
       return
     }

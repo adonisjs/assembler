@@ -31,7 +31,7 @@ export class HttpServer extends Emittery {
   /**
    * Whether or not the underlying process is connected
    */
-  get isConnected () {
+  public get isConnected () {
     return this._childProcess && this._childProcess.connected && !this._childProcess.killed
   }
 
@@ -74,7 +74,7 @@ export class HttpServer extends Emittery {
  * A dummy implement of Http server to work as null object
  */
 export class DummyHttpServer extends HttpServer {
-  get isConnected () {
+  public get isConnected () {
     return true
   }
 

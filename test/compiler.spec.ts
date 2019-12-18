@@ -206,7 +206,7 @@ test.group('Compiler', (group) => {
     }))
 
     await fs.add('ace', '')
-    await fs.add('src/foo.ts', `import path from 'path'`)
+    await fs.add('src/foo.ts', 'import path from \'path\'')
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
@@ -249,7 +249,7 @@ test.group('Compiler', (group) => {
     }))
 
     await fs.add('ace', '')
-    await fs.add('src/foo.ts', `import path from 'path'`)
+    await fs.add('src/foo.ts', 'import path from \'path\'')
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
@@ -369,7 +369,7 @@ test.group('Compiler', (group) => {
       'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build))',
       'underline(magenta(pending)) compiling typescript source files',
       'underline(green(success)) built successfully',
-      // tslint:disable-next-line:max-line-length
+      /* eslint-disable-next-line */
       'underline(yellow(warn)) Unable to generate manifest file. Make sure to manually run "node ace generate:manifest"',
     ])
 
@@ -391,7 +391,7 @@ test.group('Compiler', (group) => {
       },
     }))
 
-    await fs.add('ace', `console.error('foo')`)
+    await fs.add('ace', 'console.error(\'foo\')')
     await fs.add('src/foo.ts', '')
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
@@ -415,7 +415,7 @@ test.group('Compiler', (group) => {
       'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build))',
       'underline(magenta(pending)) compiling typescript source files',
       'underline(green(success)) built successfully',
-      // tslint:disable-next-line:max-line-length
+      /* eslint-disable-next-line */
       'underline(yellow(warn)) Unable to generate manifest file. Make sure to manually run "node ace generate:manifest"',
     ])
 

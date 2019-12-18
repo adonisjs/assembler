@@ -67,7 +67,7 @@ export class Watcher {
      * Notify that the http server has died
      */
     this.compiler.httpServer.on('exit', ({ code }) => {
-      this._logger.warn(`Underlying HTTP server died with "%s code"`, code)
+      this._logger.warn('Underlying HTTP server died with "%s code"', code)
     })
 
     const watcher = this.compiler.tsCompiler.watcher(config)

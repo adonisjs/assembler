@@ -29,7 +29,13 @@ test.group('Invoke', (group) => {
     const invoke = new Invoke(app)
     await invoke.handle()
 
-    assert.deepEqual(invoke.logger.logs, ['underline(red(error)) Cannot invoke post install instructions. Make sure you running this command as "node ace invoke"'])
+    assert.deepEqual(
+      invoke.logger.logs,
+      [
+        /* eslint-disable-next-line */
+        'underline(red(error)) Cannot invoke post install instructions. Make sure you running this command as "node ace invoke"',
+      ]
+    )
   })
 
   test('execute instructions defined in package.json file', async (assert) => {

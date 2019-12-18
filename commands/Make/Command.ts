@@ -67,6 +67,6 @@ export default class MakeCommand extends BaseGenerator {
 
   public async handle (): Promise<void> {
     this.$resourceName = this.name
-    await super.handle()
+    await super.generate()
   }
 }

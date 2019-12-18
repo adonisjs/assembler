@@ -12,6 +12,7 @@ import { pathExists } from 'fs-extra'
 import { BaseCommand } from '@adonisjs/ace'
 import { RcFile } from '@ioc:Adonis/Core/Application'
 import { rcParser } from '@adonisjs/application/build/standalone'
+import { GeneratorFile } from '@adonisjs/ace/build/src/Generator/File'
 
 import { ADONIS_ACE_CWD } from '../../config/env'
 
@@ -74,7 +75,7 @@ export abstract class BaseGenerator extends BaseCommand {
   /**
    * Handle command
    */
-  public async handle () {
+  public async generate (): Promise<GeneratorFile | undefined> {
     const cwd = ADONIS_ACE_CWD()
     if (!cwd) {
       const commandName = this.constructor['commandName']
@@ -94,7 +95,7 @@ export abstract class BaseGenerator extends BaseCommand {
       return
     }
 
-    this.generator
+    const file = this.generator
       .addFile(this.$resourceName, {
         form: this.$form,
         suffix: this.$suffix,
@@ -108,5 +109,6 @@ export abstract class BaseGenerator extends BaseCommand {
       .apply(this.$templateData(rcContents))
 
     await this.generator.run()
+    return file
   }
 }

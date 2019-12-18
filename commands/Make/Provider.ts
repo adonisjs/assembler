@@ -7,10 +7,13 @@
  * file that was distributed with this source code.
 */
 
-import { join } from 'path'
 import { args } from '@adonisjs/ace'
+import { join, extname } from 'path'
+import { RcFile as SinkRcFile } from '@adonisjs/sink'
 import { RcFile } from '@ioc:Adonis/Core/Application'
+
 import { BaseGenerator } from './Base'
+import { ADONIS_ACE_CWD } from '../../config/env'
 
 /**
  * Command to make a new provider
@@ -55,6 +58,15 @@ export default class MakeProvider extends BaseGenerator {
 
   public async handle () {
     this.$resourceName = this.name
-    await super.handle()
+    const file = await super.generate()
+
+    if (!file) {
+      return
+    }
+
+    const relativePath = file.toJSON().relativepath
+    const rcFile = new SinkRcFile(ADONIS_ACE_CWD()!)
+    rcFile.addProvider(`./${relativePath.replace(extname(relativePath), '')}`)
+    rcFile.commit()
   }
 }

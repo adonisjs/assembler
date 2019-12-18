@@ -47,6 +47,11 @@ test.group('Make Provider', (group) => {
       toNewlineArray(AppProvider),
       toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
     )
+
+    const rcContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcContents), {
+      providers: ['./providers/AppProvider'],
+    })
   })
 
   test('make a provider inside a custom directory', async (assert) => {
@@ -68,5 +73,35 @@ test.group('Make Provider', (group) => {
       toNewlineArray(AppProvider),
       toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
     )
+
+    const rcContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcContents), {
+      directories: {
+        providers: 'foo',
+      },
+      providers: ['./foo/AppProvider'],
+    })
+  })
+
+  test('setup correct path when nested provider is created', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
+
+    const app = new Application(fs.basePath, new Ioc(), {}, {})
+
+    const provider = new MakeProvider(app)
+    provider.name = 'auth/app'
+    await provider.handle()
+
+    const AppProvider = await fs.get('providers/auth/AppProvider.ts')
+    const ProviderTemplate = await templates.get('provider.txt')
+    assert.deepEqual(
+      toNewlineArray(AppProvider),
+      toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
+    )
+
+    const rcContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcContents), {
+      providers: ['./providers/auth/AppProvider'],
+    })
   })
 })

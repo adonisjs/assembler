@@ -65,6 +65,6 @@ export default class MakeController extends BaseGenerator {
 
   public async handle () {
     this.$resourceName = this.name
-    await super.handle()
+    await super.generate()
   }
 }

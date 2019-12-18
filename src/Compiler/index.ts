@@ -137,7 +137,8 @@ export class Compiler {
     this._logger.info({ message: `copy ${RCFILE_NAME}`, suffix: this._getRelativeUnixPath(outDir) })
     await outputJSON(
       join(outDir, RCFILE_NAME),
-      Object.assign({}, this.rcFile.raw, { typescript: false }),
+      Object.assign({}, this.rcFile.getDiskContents(), { typescript: false }),
+      { spaces: 2 },
     )
   }
 

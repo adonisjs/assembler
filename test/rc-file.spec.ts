@@ -174,4 +174,22 @@ test.group('RcFile', (group) => {
     assert.isFalse(rcFile.isCommandsPath('@adonisjs/foo.ts'))
     assert.isFalse(rcFile.isCommandsPath('@adonisjs/foo/foo.ts'))
   })
+
+  test('read file from the disk by-passing the cache', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({
+      metaFiles: ['.env', 'public/**/*.(css|js)'],
+    }))
+
+    const rcFile = new RcFile(fs.basePath)
+    assert.deepEqual(rcFile.getDiskContents(), {
+      metaFiles: ['.env', 'public/**/*.(css|js)'],
+    })
+
+    await fs.add('.adonisrc.json', JSON.stringify({
+      metaFiles: ['.env'],
+    }))
+    assert.deepEqual(rcFile.getDiskContents(), {
+      metaFiles: ['.env'],
+    })
+  })
 })

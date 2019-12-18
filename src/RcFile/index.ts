@@ -11,6 +11,7 @@ import slash from 'slash'
 import picomatch from 'picomatch'
 import { join, relative } from 'path'
 import { Ioc } from '@adonisjs/fold'
+import importFresh from 'import-fresh'
 import { resolveFrom } from '@poppinss/utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
@@ -26,7 +27,7 @@ export class RcFile {
   /**
    * Raw rcfile contents
    */
-  public raw = require(this.rcFilePath)
+  public raw = this.getDiskContents()
 
   /**
    * Reference to application
@@ -57,6 +58,13 @@ export class RcFile {
    */
   public isRcFile (filePath: string) {
     return filePath === RCFILE_NAME
+  }
+
+  /**
+   * Reloads the rcfile.json bypassing the require cache
+   */
+  public getDiskContents (): any {
+    return importFresh(this.rcFilePath) as any
   }
 
   /**

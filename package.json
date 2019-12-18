@@ -98,6 +98,7 @@
     "emittery": "^0.5.1",
     "execa": "^3.4.0",
     "fs-extra": "^8.1.0",
+    "import-fresh": "^3.2.1",
     "mem": "^6.0.1",
     "picomatch": "^2.1.1",
     "slash": "^3.0.0",

@@ -1,24 +1,24 @@
-// import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class ${filename} {
-  public async index () {
+  public async index (ctx: HttpContextContract) {
   }
 
-  public async create () {
+  public async create (ctx: HttpContextContract) {
   }
 
-  public async store () {
+  public async store (ctx: HttpContextContract) {
   }
 
-  public async show () {
+  public async show (ctx: HttpContextContract) {
   }
 
-  public async edit () {
+  public async edit (ctx: HttpContextContract) {
   }
 
-  public async update () {
+  public async update (ctx: HttpContextContract) {
   }
 
-  public async destroy () {
+  public async destroy (ctx: HttpContextContract) {
   }
 }

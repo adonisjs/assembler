@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
 */
 
-import { args } from '@adonisjs/ace'
+import { args, flags } from '@adonisjs/ace'
 import { join, extname } from 'path'
 import { RcFile as SinkRcFile } from '@adonisjs/sink'
 import { RcFile } from '@ioc:Adonis/Core/Application'
@@ -35,6 +35,9 @@ export default class MakeProvider extends BaseGenerator {
 
   @args.string({ description: 'Make of the provider class' })
   public name: string
+
+  @flags.boolean({ description: 'Register provider under the ace providers array' })
+  public ace: boolean
 
   /**
    * Returns the template stub path
@@ -66,7 +69,13 @@ export default class MakeProvider extends BaseGenerator {
 
     const relativePath = file.toJSON().relativepath
     const rcFile = new SinkRcFile(ADONIS_ACE_CWD()!)
-    rcFile.addProvider(`./${relativePath.replace(extname(relativePath), '')}`)
+
+    if (this.ace) {
+      rcFile.addAceProvider(`./${relativePath.replace(extname(relativePath), '')}`)
+    } else {
+      rcFile.addProvider(`./${relativePath.replace(extname(relativePath), '')}`)
+    }
+
     rcFile.commit()
   }
 }

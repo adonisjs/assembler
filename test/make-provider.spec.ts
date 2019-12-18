@@ -104,4 +104,27 @@ test.group('Make Provider', (group) => {
       providers: ['./providers/auth/AppProvider'],
     })
   })
+
+  test('make ace provider', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
+
+    const app = new Application(fs.basePath, new Ioc(), {}, {})
+
+    const provider = new MakeProvider(app)
+    provider.name = 'app'
+    provider.ace = true
+    await provider.handle()
+
+    const AppProvider = await fs.get('providers/AppProvider.ts')
+    const ProviderTemplate = await templates.get('provider.txt')
+    assert.deepEqual(
+      toNewlineArray(AppProvider),
+      toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
+    )
+
+    const rcContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcContents), {
+      aceProviders: ['./providers/AppProvider'],
+    })
+  })
 })

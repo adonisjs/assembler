@@ -27,6 +27,7 @@ export abstract class BaseGenerator extends BaseCommand {
   protected $extname: string = '.ts'
   protected $form?: 'singular' | 'plural'
   protected $pattern?: 'camelcase' | 'snakecase' | 'pascalcase'
+  protected $formIgnoreList?: string[]
   protected $templateData (_rcContents: RcFile): any {
     return {}
   }
@@ -46,8 +47,8 @@ export abstract class BaseGenerator extends BaseCommand {
     }
 
     let output: string | null = null
-    Object.keys(rcContents.autoloads).forEach((baseNamespace) => {
-      const autoloadPath = rcContents.autoloads[baseNamespace]
+    Object.keys(rcContents.aliases).forEach((baseNamespace) => {
+      const autoloadPath = rcContents.aliases[baseNamespace]
       if (rcContents.namespaces[namespaceFor].startsWith(`${baseNamespace}/`)) {
         output = rcContents.namespaces[namespaceFor].replace(baseNamespace, autoloadPath)
       }
@@ -97,6 +98,7 @@ export abstract class BaseGenerator extends BaseCommand {
       .addFile(this.$resourceName, {
         form: this.$form,
         suffix: this.$suffix,
+        formIgnoreList: this.$formIgnoreList,
         pattern: this.$pattern,
         extname: this.$extname,
       })

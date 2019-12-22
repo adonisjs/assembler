@@ -19,7 +19,7 @@ const WARN_MESSAGE = [
  * Exposes the API to execute generate manifest file
  */
 export class Manifest {
-  constructor (private _appRoot: string, private _logger: Logger) {
+  constructor (private appRoot: string, private logger: Logger) {
   }
 
   /**
@@ -31,7 +31,7 @@ export class Manifest {
     try {
       const response = await execa.node('ace', ['generate:manifest'], {
         buffer: true,
-        cwd: this._appRoot,
+        cwd: this.appRoot,
         env: {
           FORCE_COLOR: 'true',
         },
@@ -41,7 +41,7 @@ export class Manifest {
        * Print warning when `stderr` exists
        */
       if (response.stderr) {
-        this._logger.warn(WARN_MESSAGE)
+        this.logger.warn(WARN_MESSAGE)
         return
       }
 
@@ -55,7 +55,7 @@ export class Manifest {
       /**
        * Print warning on error
        */
-      this._logger.warn(WARN_MESSAGE)
+      this.logger.warn(WARN_MESSAGE)
     }
   }
 }

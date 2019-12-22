@@ -22,19 +22,19 @@ import { SERVER_ENTRY_FILE } from '../../config/paths'
  * HTTP server on changes.
  */
 export class BuildWatcher {
-  private _manifest = new Manifest(this._buildRoot, this._logger)
+  private manifest = new Manifest(this.buildRoot, this.logger)
 
   constructor (
-    private _buildRoot: string,
-    private _nodeArgs: string[],
-    private _logger = new Logger(),
+    private buildRoot: string,
+    private nodeArgs: string[],
+    private logger = new Logger(),
   ) {}
 
   /**
    * Returns true when filePath is .js or .json. We need this to
    * restart the HTTP server
    */
-  private _isScriptFile (filePath: string) {
+  private isScriptFile (filePath: string) {
     return ['.js', '.json'].includes(extname(filePath))
   }
 
@@ -42,15 +42,15 @@ export class BuildWatcher {
    * Watch for compiled output changes
    */
   public async watch (buildDir: string) {
-    const absPath = join(this._buildRoot, buildDir)
+    const absPath = join(this.buildRoot, buildDir)
     const hasBuildDir = await pathExists(absPath)
     if (!hasBuildDir) {
-      this._logger.error(`"${buildDir}" doesn't exists. Make sure to compile the source code first.`)
+      this.logger.error(`"${buildDir}" doesn't exists. Make sure to compile the source code first.`)
       return
     }
 
     const rcFile = new RcFile(absPath)
-    const httpServer = new HttpServer(SERVER_ENTRY_FILE, absPath, this._nodeArgs, this._logger)
+    const httpServer = new HttpServer(SERVER_ENTRY_FILE, absPath, this.nodeArgs, this.logger)
 
     /**
      * Initate watcher. Instead of ignoring files upfront, we use the
@@ -68,7 +68,7 @@ export class BuildWatcher {
      * Notify that server has died
      */
     httpServer.on('exit', ({ code }) => {
-      this._logger.stop('Underlying HTTP server died with "%s code"', code)
+      this.logger.stop('Underlying HTTP server died with "%s code"', code)
     })
 
     /**
@@ -76,15 +76,15 @@ export class BuildWatcher {
      */
     watcher.on('add', (filePath: string) => {
       const metaData = rcFile.getMetaData(filePath)
-      const isScriptFile = this._isScriptFile(filePath)
+      const isScriptFile = this.isScriptFile(filePath)
 
       if (isScriptFile || metaData.reload) {
-        this._logger.create(filePath)
+        this.logger.create(filePath)
         httpServer.restart()
       }
 
       if (isScriptFile && rcFile.isCommandsPath(filePath)) {
-        this._manifest.generate()
+        this.manifest.generate()
       }
     })
 
@@ -93,15 +93,15 @@ export class BuildWatcher {
      */
     watcher.on('change', (filePath: string) => {
       const metaData = rcFile.getMetaData(filePath)
-      const isScriptFile = this._isScriptFile(filePath)
+      const isScriptFile = this.isScriptFile(filePath)
 
       if (isScriptFile || metaData.reload) {
-        this._logger.update(filePath)
+        this.logger.update(filePath)
         httpServer.restart()
       }
 
       if (isScriptFile && rcFile.isCommandsPath(filePath)) {
-        this._manifest.generate()
+        this.manifest.generate()
       }
     })
 
@@ -110,21 +110,21 @@ export class BuildWatcher {
      */
     watcher.on('unlink', (filePath: string) => {
       const metaData = rcFile.getMetaData(filePath)
-      const isScriptFile = this._isScriptFile(filePath)
+      const isScriptFile = this.isScriptFile(filePath)
 
       if (metaData.rcFile) {
-        this._logger.stop('cannot continue after deletion of .adonisrc.json file')
+        this.logger.stop('cannot continue after deletion of .adonisrc.json file')
         watcher.close()
         return
       }
 
       if (isScriptFile || metaData.reload) {
-        this._logger.delete(filePath)
+        this.logger.delete(filePath)
         httpServer.restart()
       }
 
       if (isScriptFile && rcFile.isCommandsPath(filePath)) {
-        this._manifest.generate()
+        this.manifest.generate()
       }
     })
 
@@ -132,7 +132,7 @@ export class BuildWatcher {
      * Start the http server when watcher is ready
      */
     watcher.on('ready', () => {
-      this._logger.watch({ message: 'watching for file changes', suffix: buildDir })
+      this.logger.watch({ message: 'watching for file changes', suffix: buildDir })
       httpServer.start()
     })
   }

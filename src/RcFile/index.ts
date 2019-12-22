@@ -22,7 +22,7 @@ import { RCFILE_NAME, ACE_FILE_NAME } from '../../config/paths'
  * also match relative file paths against the defined globs.
  */
 export class RcFile {
-  public rcFilePath = resolveFrom(this._appRoot, `./${RCFILE_NAME}`)
+  public rcFilePath = resolveFrom(this.appRoot, `./${RCFILE_NAME}`)
 
   /**
    * Raw rcfile contents
@@ -32,7 +32,7 @@ export class RcFile {
   /**
    * Reference to application
    */
-  public application = new Application(this._appRoot, new Ioc(), this.raw, {})
+  public application = new Application(this.appRoot, new Ioc(), this.raw, {})
 
   /**
    * A matcher to know if a file is part of the meta files globs
@@ -50,7 +50,7 @@ export class RcFile {
    */
   public isCommandsPath: (filePath: string) => boolean = picomatch(this.commandsGlob())
 
-  constructor (private _appRoot: string) {
+  constructor (private appRoot: string) {
   }
 
   /**
@@ -100,7 +100,7 @@ export class RcFile {
     const commands = this.application.rcFile.commands
       .reduce((result: string[], commandPath) => {
         if (/^(.){1,2}\//.test(commandPath)) {
-          commandPath = slash(relative(this._appRoot, join(this._appRoot, commandPath)))
+          commandPath = slash(relative(this.appRoot, join(this.appRoot, commandPath)))
           result = result.concat([`${commandPath}.*`, `${commandPath}/**/*`])
         }
         return result

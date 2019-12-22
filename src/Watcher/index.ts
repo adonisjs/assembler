@@ -21,17 +21,17 @@ export class Watcher {
 
   constructor (
     appRoot: string,
-    private _serveApp: boolean,
-    private _nodeArgs: string[] = [],
-    private _logger = new Logger(),
+    private serveApp: boolean,
+    private nodeArgs: string[] = [],
+    private logger = new Logger(),
   ) {
-    this.compiler = new Compiler(appRoot, this._serveApp, this._nodeArgs, this._logger)
+    this.compiler = new Compiler(appRoot, this.serveApp, this.nodeArgs, this.logger)
   }
 
   /**
    * Clear stdout
    */
-  private _clearScreen () {
+  private clearScreen () {
     process.stdout.write('\x1B[2J\x1B[3J\x1B[H\x1Bc')
   }
 
@@ -67,7 +67,7 @@ export class Watcher {
      * Notify that the http server has died
      */
     this.compiler.httpServer.on('exit', ({ code }) => {
-      this._logger.warn('Underlying HTTP server died with "%s code"', code)
+      this.logger.warn('Underlying HTTP server died with "%s code"', code)
     })
 
     const watcher = this.compiler.tsCompiler.watcher(config)
@@ -76,7 +76,7 @@ export class Watcher {
      * Watcher is ready after first compile
      */
     watcher.on('watcher:ready', () => {
-      this._logger.watch('watching file system for changes')
+      this.logger.watch('watching file system for changes')
       this.compiler.httpServer.start()
     })
 
@@ -84,8 +84,8 @@ export class Watcher {
      * Subsequent source builds
      */
     watcher.on('subsequent:build', ({ path, skipped, diagnostics }) => {
-      this._clearScreen()
-      this._logger.compile(path)
+      this.clearScreen()
+      this.logger.compile(path)
 
       /**
        * Print diagnostics if any
@@ -115,11 +115,11 @@ export class Watcher {
      * Source file removed
      */
     watcher.on('source:unlink', async (filePath) => {
-      this._clearScreen()
+      this.clearScreen()
       const jsPath = filePath.replace(/\.(d)?ts$/, '.js')
       const typePath = filePath.replace(/\.(d)?ts$/, '.d.ts')
 
-      this._logger.delete(filePath)
+      this.logger.delete(filePath)
       await remove(join(config.options.outDir!, jsPath))
       await remove(join(config.options.outDir!, typePath))
 
@@ -142,9 +142,9 @@ export class Watcher {
         return
       }
 
-      this._clearScreen()
+      this.clearScreen()
 
-      this._logger.create(filePath)
+      this.logger.create(filePath)
       await this.compiler.copyFiles([filePath], config.options.outDir!)
 
       if (metaData.reload) {
@@ -161,13 +161,13 @@ export class Watcher {
         return
       }
 
-      this._clearScreen()
+      this.clearScreen()
 
       if (metaData.rcFile) {
-        this._logger.skip('in-process changes to .adonisrc.json file are ignored')
+        this.logger.skip('in-process changes to .adonisrc.json file are ignored')
         await this.compiler.copyAdonisRcFile(config.options.outDir!)
       } else {
-        this._logger.update(filePath)
+        this.logger.update(filePath)
         await this.compiler.copyFiles([filePath], config.options.outDir!)
       }
 
@@ -185,15 +185,15 @@ export class Watcher {
         return
       }
 
-      this._clearScreen()
+      this.clearScreen()
 
       if (metaData.rcFile) {
-        this._logger.stop('cannot continue after deletion of .adonisrc.json file')
+        this.logger.stop('cannot continue after deletion of .adonisrc.json file')
         watcher.chokidar.close()
         return
       }
 
-      this._logger.delete(filePath)
+      this.logger.delete(filePath)
       await remove(join(config.options.outDir!, filePath))
       if (metaData.reload) {
         this.compiler.httpServer.restart()

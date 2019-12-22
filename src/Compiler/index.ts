@@ -56,21 +56,19 @@ export class Compiler {
   /**
    * Manifest instance to generate ace manifest file
    */
-  public manifest = new Manifest(this.appRoot, this._logger)
+  public manifest = new Manifest(this.appRoot, this.logger)
 
   /**
    * Returns relative unix path from the project root. Used for
    * display only
    */
-  private _getRelativeUnixPath = mem((absPath: string) => {
-    return slash(relative(this.appRoot, absPath))
-  })
+  private getRelativeUnixPath = mem((absPath: string) => slash(relative(this.appRoot, absPath)))
 
   constructor (
     public appRoot: string,
-    private _serveApp: boolean,
-    private _nodeArgs: string[] = [],
-    private _logger: Logger = new Logger(),
+    private serveApp: boolean,
+    private nodeArgs: string[] = [],
+    private logger: Logger = new Logger(),
   ) {
     this.tsCompiler.use(() => {
       return iocTransformer(this.tsCompiler.ts, this.rcFile.application.rcFile)
@@ -85,8 +83,8 @@ export class Compiler {
       return
     }
 
-    const Server = this._serveApp ? HttpServer : DummyHttpServer
-    this.httpServer = new Server(SERVER_ENTRY_FILE, outDir, this._nodeArgs, this._logger)
+    const Server = this.serveApp ? HttpServer : DummyHttpServer
+    this.httpServer = new Server(SERVER_ENTRY_FILE, outDir, this.nodeArgs, this.logger)
   }
 
   /**
@@ -106,13 +104,13 @@ export class Compiler {
     const { error, config } = this.tsCompiler.configParser().parse()
 
     if (error) {
-      this._logger.error(`unable to compile ${TSCONFIG_FILE_NAME}`)
+      this.logger.error(`unable to compile ${TSCONFIG_FILE_NAME}`)
       this.renderDiagnostics([error], this.tsCompiler.ts.createCompilerHost({}))
       return
     }
 
     if (config && config.errors.length) {
-      this._logger.error(`unable to compile ${TSCONFIG_FILE_NAME}`)
+      this.logger.error(`unable to compile ${TSCONFIG_FILE_NAME}`)
       this.renderDiagnostics(config.errors, this.tsCompiler.ts.createCompilerHost(config.options))
       return
     }
@@ -126,7 +124,7 @@ export class Compiler {
    * Cleans up the build directory
    */
   public async cleanupBuildDirectory (outDir: string) {
-    this._logger.info({ message: 'cleaning up build directory', suffix: this._getRelativeUnixPath(outDir) })
+    this.logger.info({ message: 'cleaning up build directory', suffix: this.getRelativeUnixPath(outDir) })
     await remove(outDir)
   }
 
@@ -134,7 +132,7 @@ export class Compiler {
    * Copies .adonisrc.json file to the destination
    */
   public async copyAdonisRcFile (outDir: string) {
-    this._logger.info({ message: `copy ${RCFILE_NAME}`, suffix: this._getRelativeUnixPath(outDir) })
+    this.logger.info({ message: `copy ${RCFILE_NAME}`, suffix: this.getRelativeUnixPath(outDir) })
     await outputJSON(
       join(outDir, RCFILE_NAME),
       Object.assign({}, this.rcFile.getDiskContents(), { typescript: false }),
@@ -147,7 +145,7 @@ export class Compiler {
    */
   public async copyMetaFiles (outDir: string, extraFiles?: string[]) {
     const metaFiles = this.rcFile.getMetaFilesGlob().concat(extraFiles || [])
-    this._logger.info({ message: `copy ${metaFiles.join(',')}`, suffix: this._getRelativeUnixPath(outDir) })
+    this.logger.info({ message: `copy ${metaFiles.join(',')}`, suffix: this.getRelativeUnixPath(outDir) })
     await this.copyFiles(metaFiles, outDir)
   }
 
@@ -155,6 +153,7 @@ export class Compiler {
    * Copy files to destination directory
    */
   public async copyFiles (files: string[], outDir: string) {
+    console.log(files, outDir)
     await copyfiles(files, outDir, { cwd: this.appRoot, parents: true })
   }
 
@@ -162,20 +161,20 @@ export class Compiler {
    * Build typescript source files
    */
   public buildTypescriptSource (config: tsStatic.ParsedCommandLine) {
-    this._logger.pending('compiling typescript source files')
+    this.logger.pending('compiling typescript source files')
 
     const builder = this.tsCompiler.builder(config)
     const { skipped, diagnostics } = builder.build()
 
     if (skipped) {
-      this._logger.info('TS emit skipped')
+      this.logger.info('TS emit skipped')
     }
 
     if (diagnostics.length) {
-      this._logger.error('typescript compiler errors')
+      this.logger.error('typescript compiler errors')
       this.renderDiagnostics(diagnostics, builder.host)
     } else {
-      this._logger.success('built successfully')
+      this.logger.success('built successfully')
     }
   }
 
@@ -198,7 +197,7 @@ export class Compiler {
     /**
      * Start HTTP server
      */
-    if (this._serveApp) {
+    if (this.serveApp) {
       this.createHttpServer(config.options.outDir!)
       this.httpServer.start()
     }
@@ -224,7 +223,7 @@ export class Compiler {
     await this.copyMetaFiles(config.options.outDir!, pkgFiles)
     this.buildTypescriptSource(config)
 
-    this._logger.info({ message: 'installing production dependencies', suffix: client })
+    this.logger.info({ message: 'installing production dependencies', suffix: client })
     await new Installer(config.options.outDir!, client).install()
 
     /**
@@ -235,7 +234,7 @@ export class Compiler {
     /**
      * Start HTTP server in production
      */
-    if (this._serveApp) {
+    if (this.serveApp) {
       this.createHttpServer(config.options.outDir!)
       this.httpServer.start()
     }

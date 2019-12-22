@@ -14,21 +14,18 @@ import execa from 'execa'
  * using yarn or npm
  */
 export class Installer {
-  constructor (
-    private _appRoot: string,
-    private _client: 'npm' | 'yarn',
-  ) {
+  constructor (private appRoot: string, private client: 'npm' | 'yarn') {
   }
 
   /**
    * Install dependencies
    */
   public async install () {
-    const args = this._client === 'npm' ? ['ci', '--production'] : ['install', '--production']
-    await execa(this._client, args, {
+    const args = this.client === 'npm' ? ['ci', '--production'] : ['install', '--production']
+    await execa(this.client, args, {
       buffer: false,
       stdio: 'inherit',
-      cwd: this._appRoot,
+      cwd: this.appRoot,
       env: {
         FORCE_COLOR: 'true',
       },

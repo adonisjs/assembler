@@ -332,50 +332,6 @@ test.group('Compiler', (group) => {
     assert.isTrue(hasPackageLock)
   }).timeout(0)
 
-  test('gracefully log error when ace file is missing', async (assert) => {
-    const logger = new Logger({ fake: true })
-
-    await fs.add('.adonisrc.json', JSON.stringify({
-      typescript: true,
-      metaFiles: ['public/**/*.(js|css)'],
-    }))
-
-    await fs.add('tsconfig.json', JSON.stringify({
-      include: ['**/*'],
-      exclude: ['build'],
-      compilerOptions: {
-      },
-    }))
-
-    await fs.add('src/foo.ts', '')
-    await fs.add('public/styles/main.css', '')
-    await fs.add('public/scripts/main.js', '')
-
-    const compiler = new Compiler(fs.basePath, false, [], logger)
-    await compiler.compile()
-
-    const hasFiles = await Promise.all([
-      'build/.adonisrc.json',
-      'build/src/foo.js',
-      'build/public/styles/main.css',
-      'build/public/scripts/main.js',
-    ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file))))
-
-    assert.deepEqual(hasFiles, [true, true, true, true])
-
-    assert.deepEqual(logger.logs, [
-      'underline(blue(info)) cleaning up build directory dim(yellow(build))',
-      'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
-      'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build))',
-      'underline(magenta(pending)) compiling typescript source files',
-      'underline(green(success)) built successfully',
-      /* eslint-disable-next-line */
-      'underline(yellow(warn)) Unable to generate manifest file. Make sure to manually run "node ace generate:manifest"',
-    ])
-
-    assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
-  }).timeout(0)
-
   test('gracefully log error when ace file writes to stderr', async (assert) => {
     const logger = new Logger({ fake: true })
 

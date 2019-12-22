@@ -17,13 +17,13 @@ import { Logger } from '@poppinss/fancy-logs'
  * dies.
  */
 export class HttpServer extends Emittery {
-  private _childProcess: execa.ExecaChildProcess
+  private childProcess: execa.ExecaChildProcess
 
   constructor (
-    private _sourceFile: string,
-    private _projectRoot: string,
-    private _nodeArgs: string[] = [],
-    private _logger: Logger,
+    private sourceFile: string,
+    private projectRoot: string,
+    private nodeArgs: string[] = [],
+    private logger: Logger,
   ) {
     super()
   }
@@ -32,7 +32,7 @@ export class HttpServer extends Emittery {
    * Whether or not the underlying process is connected
    */
   public get isConnected () {
-    return this._childProcess && this._childProcess.connected && !this._childProcess.killed
+    return this.childProcess && this.childProcess.connected && !this.childProcess.killed
   }
 
   /**
@@ -43,28 +43,28 @@ export class HttpServer extends Emittery {
       throw new Error('Http server is already connected. Call restart instead')
     }
 
-    this._logger.info(this._childProcess ? 're-starting http server' : 'starting http server')
-    this._childProcess = execa.node(this._sourceFile, [], {
+    this.logger.info(this.childProcess ? 're-starting http server' : 'starting http server')
+    this.childProcess = execa.node(this.sourceFile, [], {
       buffer: false,
       stdio: 'inherit',
-      cwd: this._projectRoot,
+      cwd: this.projectRoot,
       env: {
         FORCE_COLOR: 'true',
       },
-      nodeOptions: this._nodeArgs,
+      nodeOptions: this.nodeArgs,
     })
 
-    this._childProcess.on('close', (code, signal) => this.emit('close', { code, signal }))
-    this._childProcess.on('exit', (code, signal) => this.emit('exit', { code, signal }))
+    this.childProcess.on('close', (code, signal) => this.emit('close', { code, signal }))
+    this.childProcess.on('exit', (code, signal) => this.emit('exit', { code, signal }))
   }
 
   /**
    * Restart the server by killing the old one
    */
   public restart () {
-    if (this._childProcess) {
-      this._childProcess.removeAllListeners()
-      this._childProcess.kill('SIGKILL')
+    if (this.childProcess) {
+      this.childProcess.removeAllListeners()
+      this.childProcess.kill('SIGKILL')
     }
     this.start()
   }

@@ -7,8 +7,9 @@
  * file that was distributed with this source code.
 */
 
-import { args, flags } from '@adonisjs/ace'
+import slash from 'slash'
 import { join, extname } from 'path'
+import { args, flags } from '@adonisjs/ace'
 import { RcFile as SinkRcFile } from '@adonisjs/sink'
 import { RcFile } from '@ioc:Adonis/Core/Application'
 
@@ -71,9 +72,9 @@ export default class MakeProvider extends BaseGenerator {
     const rcFile = new SinkRcFile(ADONIS_ACE_CWD()!)
 
     if (this.ace) {
-      rcFile.addAceProvider(`./${relativePath.replace(extname(relativePath), '')}`)
+      rcFile.addAceProvider(`./${(slash(relativePath)).replace(extname(relativePath), '')}`)
     } else {
-      rcFile.addProvider(`./${relativePath.replace(extname(relativePath), '')}`)
+      rcFile.addProvider(`./${slash(relativePath).replace(extname(relativePath), '')}`)
     }
 
     rcFile.commit()

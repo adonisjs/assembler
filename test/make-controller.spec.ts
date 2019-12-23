@@ -10,6 +10,7 @@
 import test from 'japa'
 import { join } from 'path'
 import { Ioc } from '@adonisjs/fold'
+import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
@@ -37,7 +38,7 @@ test.group('Make Controller', (group) => {
 
     const app = new Application(fs.basePath, new Ioc(), {}, {})
 
-    const controller = new MakeController(app)
+    const controller = new MakeController(app, new Kernel(app))
     controller.name = 'user'
     await controller.handle()
 
@@ -54,7 +55,7 @@ test.group('Make Controller', (group) => {
 
     const app = new Application(fs.basePath, new Ioc(), {}, {})
 
-    const controller = new MakeController(app)
+    const controller = new MakeController(app, new Kernel(app))
     controller.name = 'user'
     controller.resource = true
     await controller.handle()
@@ -79,7 +80,7 @@ test.group('Make Controller', (group) => {
 
     const app = new Application(fs.basePath, new Ioc(), {}, {})
 
-    const controller = new MakeController(app)
+    const controller = new MakeController(app, new Kernel(app))
     controller.name = 'user'
     await controller.handle()
 

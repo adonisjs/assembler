@@ -10,6 +10,7 @@
 import test from 'japa'
 import { join } from 'path'
 import { Ioc } from '@adonisjs/fold'
+import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
@@ -37,7 +38,7 @@ test.group('Make Middleware', (group) => {
 
     const app = new Application(fs.basePath, new Ioc(), {}, {})
 
-    const middleware = new MakeMiddleware(app)
+    const middleware = new MakeMiddleware(app, new Kernel(app))
     middleware.name = 'spoof_accept'
     await middleware.handle()
 

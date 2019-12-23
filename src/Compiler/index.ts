@@ -153,7 +153,6 @@ export class Compiler {
    * Copy files to destination directory
    */
   public async copyFiles (files: string[], outDir: string) {
-    console.log(files, outDir)
     await copyfiles(files, outDir, { cwd: this.appRoot, parents: true })
   }
 

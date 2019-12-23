@@ -9,8 +9,9 @@
 
 import test from 'japa'
 import { join } from 'path'
-import { Filesystem } from '@poppinss/dev-utils'
 import { Ioc } from '@adonisjs/fold'
+import { Kernel } from '@adonisjs/ace'
+import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
 import Invoke from '../commands/Invoke'
@@ -26,7 +27,7 @@ test.group('Invoke', (group) => {
     const app = new Application(fs.basePath, new Ioc(), {}, {})
     app.environment = 'test'
 
-    const invoke = new Invoke(app)
+    const invoke = new Invoke(app, new Kernel(app))
     await invoke.handle()
 
     assert.deepEqual(
@@ -52,7 +53,7 @@ test.group('Invoke', (group) => {
 
     const app = new Application(fs.basePath, new Ioc(), {}, {})
 
-    const invoke = new Invoke(app)
+    const invoke = new Invoke(app, new Kernel(app))
     invoke.name = '@adonisjs/sample'
     await invoke.handle()
 

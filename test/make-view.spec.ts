@@ -10,6 +10,7 @@
 import test from 'japa'
 import { join } from 'path'
 import { Ioc } from '@adonisjs/fold'
+import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
@@ -35,7 +36,7 @@ test.group('Make Command', (group) => {
 
     const app = new Application(fs.basePath, new Ioc(), {}, {})
 
-    const view = new MakeView(app)
+    const view = new MakeView(app, new Kernel(app))
     view.name = 'welcome'
     await view.handle()
 
@@ -52,7 +53,7 @@ test.group('Make Command', (group) => {
 
     const app = new Application(fs.basePath, new Ioc(), {}, {})
 
-    const view = new MakeView(app)
+    const view = new MakeView(app, new Kernel(app))
     view.name = 'welcome'
     await view.handle()
 

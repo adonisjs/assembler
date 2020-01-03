@@ -50,7 +50,10 @@ export abstract class BaseGenerator extends BaseCommand {
     let output: string | null = null
     Object.keys(rcContents.aliases).forEach((baseNamespace) => {
       const autoloadPath = rcContents.aliases[baseNamespace]
-      if (rcContents.namespaces[namespaceFor].startsWith(`${baseNamespace}/`)) {
+      if (
+        rcContents.namespaces[namespaceFor].startsWith(`${baseNamespace}/`) ||
+        rcContents.namespaces[namespaceFor] === baseNamespace
+      ) {
         output = rcContents.namespaces[namespaceFor].replace(baseNamespace, autoloadPath)
       }
       return output

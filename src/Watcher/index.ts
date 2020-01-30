@@ -204,10 +204,7 @@ export class Watcher {
      * Start the watcher
      */
     watcher.watch(['.'], {
-      ignored: [
-        'node_modules/**',
-        `${config.options.outDir}/**`,
-      ],
+      ignored: config.raw.exclude,
     })
   }
 }

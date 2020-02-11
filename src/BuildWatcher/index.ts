@@ -41,7 +41,7 @@ export class BuildWatcher {
   /**
    * Watch for compiled output changes
    */
-  public async watch (buildDir: string) {
+  public async watch (buildDir: string, poll = false) {
     const absPath = join(this.buildRoot, buildDir)
     const hasBuildDir = await pathExists(absPath)
     if (!hasBuildDir) {
@@ -58,6 +58,7 @@ export class BuildWatcher {
      */
     const watcher = chokidar.watch(['.'], {
       ignoreInitial: true,
+      usePolling: poll,
       cwd: absPath,
       ignored: [
         'node_modules/**',

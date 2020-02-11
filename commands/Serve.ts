@@ -24,6 +24,15 @@ export default class Serve extends BaseCommand {
   public watch: boolean
 
   /**
+   * Detect changes by polling files
+   */
+  @flags.boolean({
+    description: 'Detect file changes by polling files instead of listening to filesystem events',
+    alias: 'p',
+  })
+  public poll: boolean
+
+  /**
    * Allows watching for file changes
    */
   @flags.boolean({
@@ -73,9 +82,9 @@ export default class Serve extends BaseCommand {
 
     try {
       if (this.compile === false) {
-        await new BuildWatcher(cwd, this.nodeArgs, this.logger).watch(ADONIS_BUILD_DIR() || './')
+        await new BuildWatcher(cwd, this.nodeArgs, this.logger).watch(ADONIS_BUILD_DIR() || './', this.poll)
       } else if (this.watch) {
-        await new Watcher(cwd, true, this.nodeArgs, this.logger).watch()
+        await new Watcher(cwd, true, this.nodeArgs, this.logger).watch(this.poll)
       } else {
         await new Compiler(cwd, true, this.nodeArgs, this.logger).compile()
       }

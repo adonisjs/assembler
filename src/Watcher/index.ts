@@ -38,7 +38,7 @@ export class Watcher {
   /**
    * Build and watch for file changes
    */
-  public async watch () {
+  public async watch (poll = false) {
     const config = this.compiler.parseConfig()
     if (!config) {
       return
@@ -205,6 +205,7 @@ export class Watcher {
      */
     watcher.watch(['.'], {
       ignored: config.raw.exclude,
+      usePolling: poll,
     })
   }
 }

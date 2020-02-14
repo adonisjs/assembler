@@ -15,12 +15,12 @@ import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
 
 import { toNewlineArray } from '../test-helpers'
-import MakeModel from '../commands/Make/Model'
+import MakeValidator from '../commands/Make/Validator'
 
 const fs = new Filesystem(join(__dirname, '__app'))
 const templates = new Filesystem(join(__dirname, '..', 'templates'))
 
-test.group('Make Model', (group) => {
+test.group('Make Validator', (group) => {
   group.before(() => {
     process.env.ADONIS_ACE_CWD = fs.basePath
   })
@@ -38,22 +38,22 @@ test.group('Make Model', (group) => {
 
     const app = new Application(fs.basePath, new Ioc(), {}, {})
 
-    const model = new MakeModel(app, new Kernel(app))
-    model.name = 'user'
-    await model.handle()
+    const validator = new MakeValidator(app, new Kernel(app))
+    validator.name = 'user'
+    await validator.handle()
 
-    const UserModel = await fs.get('app/Models/User.ts')
-    const ModelTemplate = await templates.get('model.txt')
+    const UserValidator = await fs.get('app/Validators/User.ts')
+    const ValidatorTemplate = await templates.get('validator.txt')
     assert.deepEqual(
-      toNewlineArray(UserModel),
-      toNewlineArray(ModelTemplate.replace(new RegExp('\\${filename}', 'g'), 'User')),
+      toNewlineArray(UserValidator),
+      toNewlineArray(ValidatorTemplate.replace(new RegExp('\\${filename}', 'g'), 'User')),
     )
   })
 
-  test('make a model inside a custom directory', async (assert) => {
+  test('make a validator inside a custom directory', async (assert) => {
     await fs.add('.adonisrc.json', JSON.stringify({
       namespaces: {
-        models: 'App',
+        validators: 'App',
       },
       autoloads: {
         App: './app',
@@ -62,15 +62,15 @@ test.group('Make Model', (group) => {
 
     const app = new Application(fs.basePath, new Ioc(), {}, {})
 
-    const model = new MakeModel(app, new Kernel(app))
-    model.name = 'user'
-    await model.handle()
+    const validator = new MakeValidator(app, new Kernel(app))
+    validator.name = 'user'
+    await validator.handle()
 
-    const UserModel = await fs.get('app/User.ts')
-    const ModelTemplate = await templates.get('model.txt')
+    const UserValidator = await fs.get('app/User.ts')
+    const ValidatorTemplate = await templates.get('validator.txt')
     assert.deepEqual(
-      toNewlineArray(UserModel),
-      toNewlineArray(ModelTemplate.replace(new RegExp('\\${filename}', 'g'), 'User')),
+      toNewlineArray(UserValidator),
+      toNewlineArray(ValidatorTemplate.replace(new RegExp('\\${filename}', 'g'), 'User')),
     )
   })
 })

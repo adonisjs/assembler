@@ -30,7 +30,7 @@ export default class MakeCommand extends BaseGenerator {
   public static commandName = 'make:command'
   public static description = 'Make a new ace command'
 
-  @args.string({ description: 'Make of the command class' })
+  @args.string({ description: 'Name of the command class' })
   public name: string
 
   /**

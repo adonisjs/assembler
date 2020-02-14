@@ -30,7 +30,7 @@ export default class MakeValidator extends BaseGenerator {
   public static commandName = 'make:validator'
   public static description = 'Make a new validator'
 
-  @args.string({ description: 'Name of the validator' })
+  @args.string({ description: 'Name of the validator class' })
   public name: string
 
   /**

@@ -29,7 +29,7 @@ export default class MakeMiddleware extends BaseGenerator {
   public static commandName = 'make:middleware'
   public static description = 'Make a new middleware'
 
-  @args.string({ description: 'Make of the middleware class' })
+  @args.string({ description: 'Name of the middleware class' })
   public name: string
 
   /**

@@ -35,10 +35,10 @@ export default class MakeController extends BaseGenerator {
   public static commandName = 'make:controller'
   public static description = 'Make a new HTTP controller'
 
-  @args.string({ description: 'Make of the controller class' })
+  @args.string({ description: 'Name of the controller class' })
   public name: string
 
-  @flags.boolean({ description: 'Add resourceful methods to the controller class', alias: 'r' })
+  @flags.boolean({ description: 'Adds resourceful methods to the controller class', alias: 'r' })
   public resource: boolean
 
   /**

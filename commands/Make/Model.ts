@@ -30,7 +30,7 @@ export default class MakeModel extends BaseGenerator {
   public static commandName = 'make:model'
   public static description = 'Make a new Lucid model'
 
-  @args.string({ description: 'Make of the model class' })
+  @args.string({ description: 'Name of the model class' })
   public name: string
 
   /**

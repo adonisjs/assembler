@@ -98,6 +98,7 @@
     "emittery": "^0.5.1",
     "execa": "^4.0.0",
     "fs-extra": "^8.1.0",
+    "has-yarn": "^2.1.0",
     "import-fresh": "^3.2.1",
     "mem": "^6.0.1",
     "picomatch": "^2.2.1",

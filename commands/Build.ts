@@ -7,6 +7,7 @@
 * file that was distributed with this source code.
 */
 
+import hasYarn from 'has-yarn'
 import { BaseCommand, flags } from '@adonisjs/ace'
 
 /**
@@ -31,8 +32,8 @@ export default class Build extends BaseCommand {
   /**
    * Use yarn when building for production to install dependencies
    */
-  @flags.boolean({ description: 'Use yarn for installing dependencies. Defaults to npm' })
-  public yarn: boolean
+  @flags.string({ description: 'Select between npm or yarn for installing dependencies' })
+  public client: string
 
   /**
    * Invoked automatically by ace
@@ -62,10 +63,18 @@ export default class Build extends BaseCommand {
       this.logger.info('--watch and --production flags cannot be used together. Skipping --watch')
     }
 
+    /**
+     * Deciding the client to use for installing dependencies
+     */
+    this.client = this.client || hasYarn(cwd) ? 'yarn' : 'npm'
+    if (this.client !== 'npm' && this.client !== 'yarn') {
+      this.logger.warn('--client must be set to "npm" or "yarn"')
+      return
+    }
+
     try {
       if (this.production) {
-        const client = this.yarn ? 'yarn' : 'npm'
-        await new Compiler(cwd, false, [], this.logger).compileForProduction(client)
+        await new Compiler(cwd, false, [], this.logger).compileForProduction(this.client)
       } else if (this.watch) {
         await new Watcher(cwd, false, [], this.logger).watch()
       } else {

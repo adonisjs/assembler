@@ -56,8 +56,8 @@ test.group('Make Listener', (group) => {
         eventListeners: 'App/Events/Listeners',
       },
       aliases: {
-        App: './app'
-      }
+        App: './app',
+      },
     }))
 
     const app = new Application(fs.basePath, new Ioc(), {}, {})

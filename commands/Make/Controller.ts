@@ -25,9 +25,14 @@ export default class MakeController extends BaseGenerator {
   protected $resourceName: string
 
   /**
-   * Do not pluralize `HomeController` name
+   * Do not pluralize following controller names
    */
-  protected $formIgnoreList = ['Home']
+  protected $formIgnoreList = [
+    'Home',
+    'Auth',
+    'Login',
+    'Authentication',
+  ]
 
   /**
    * Command meta data

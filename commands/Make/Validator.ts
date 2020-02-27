@@ -19,7 +19,7 @@ export default class MakeValidator extends BaseGenerator {
   /**
    * Required by BaseGenerator
    */
-  protected $suffix = ''
+  protected $suffix = 'Validator'
   protected $form = 'singular' as const
   protected $pattern = 'pascalcase' as const
   protected $resourceName: string

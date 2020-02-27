@@ -42,11 +42,11 @@ test.group('Make Validator', (group) => {
     validator.name = 'user'
     await validator.handle()
 
-    const UserValidator = await fs.get('app/Validators/User.ts')
+    const UserValidator = await fs.get('app/Validators/UserValidator.ts')
     const ValidatorTemplate = await templates.get('validator.txt')
     assert.deepEqual(
       toNewlineArray(UserValidator),
-      toNewlineArray(ValidatorTemplate.replace(new RegExp('\\${filename}', 'g'), 'User')),
+      toNewlineArray(ValidatorTemplate.replace(new RegExp('\\${filename}', 'g'), 'UserValidator')),
     )
   })
 
@@ -66,11 +66,11 @@ test.group('Make Validator', (group) => {
     validator.name = 'user'
     await validator.handle()
 
-    const UserValidator = await fs.get('app/User.ts')
+    const UserValidator = await fs.get('app/UserValidator.ts')
     const ValidatorTemplate = await templates.get('validator.txt')
     assert.deepEqual(
       toNewlineArray(UserValidator),
-      toNewlineArray(ValidatorTemplate.replace(new RegExp('\\${filename}', 'g'), 'User')),
+      toNewlineArray(ValidatorTemplate.replace(new RegExp('\\${filename}', 'g'), 'UserValidator')),
     )
   })
 })

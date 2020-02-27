@@ -215,7 +215,7 @@ export class Compiler {
 
     const pkgFiles = client === 'npm'
       ? ['package.json', 'package-lock.json']
-      : ['package.json']
+      : ['package.json', 'yarn.lock']
 
     await this.cleanupBuildDirectory(config.options.outDir!)
     await this.copyAdonisRcFile(config.options.outDir!)

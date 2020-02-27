@@ -12,8 +12,8 @@ import { Logger } from '@poppinss/fancy-logs'
 
 const WARN_MESSAGE = [
   'Unable to generate manifest file.',
-  ' Make sure to manually run "node ace generate:manifest"',
-].join('')
+  'Check the following error stack for more info',
+].join(' ')
 
 /**
  * Exposes the API to execute generate manifest file
@@ -42,6 +42,10 @@ export class Manifest {
        */
       if (response.stderr) {
         this.logger.warn(WARN_MESSAGE)
+        this.logger.fatal({
+          message: response.stderr,
+          prefix: 'generate:manifest',
+        })
         return
       }
 
@@ -56,6 +60,12 @@ export class Manifest {
        * Print warning on error
        */
       this.logger.warn(WARN_MESSAGE)
+      if (error.stderr) {
+        this.logger.fatal({
+          message: error.stderr,
+          prefix: 'generate:manifest',
+        })
+      }
     }
   }
 }

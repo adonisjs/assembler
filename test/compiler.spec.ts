@@ -363,16 +363,16 @@ test.group('Compiler', (group) => {
       'build/public/scripts/main.js',
     ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file))))
 
-    assert.deepEqual(hasFiles, [true, true, true, true, true])
+    logger.logs.pop()
 
+    assert.deepEqual(hasFiles, [true, true, true, true, true])
     assert.deepEqual(logger.logs, [
       'underline(blue(info)) cleaning up build directory dim(yellow(build))',
       'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
       'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build))',
       'underline(magenta(pending)) compiling typescript source files',
       'underline(green(success)) built successfully',
-      /* eslint-disable-next-line */
-      'underline(yellow(warn)) Unable to generate manifest file. Make sure to manually run "node ace generate:manifest"',
+      'underline(yellow(warn)) Unable to generate manifest file. Check the following error stack for more info',
     ])
 
     assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
@@ -405,6 +405,8 @@ test.group('Compiler', (group) => {
       'build/src/foo.js',
     ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file))))
 
+    logger.logs.pop()
+
     assert.deepEqual(hasFiles, [true, false, true])
     assert.deepEqual(logger.logs, [
       'underline(blue(info)) cleaning up build directory dim(yellow(build))',
@@ -412,8 +414,7 @@ test.group('Compiler', (group) => {
       'underline(blue(info)) copy ace dim(yellow(build))',
       'underline(magenta(pending)) compiling typescript source files',
       'underline(green(success)) built successfully',
-      /* eslint-disable-next-line */
-      'underline(yellow(warn)) Unable to generate manifest file. Make sure to manually run "node ace generate:manifest"',
+      'underline(yellow(warn)) Unable to generate manifest file. Check the following error stack for more info',
     ])
 
     assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)

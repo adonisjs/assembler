@@ -5,7 +5,7 @@
 <br />
 
 <div align="center">
-  <h3> Set of core commands for building AdonisJS projects </h3>
+  <h3> Core Commands for building AdonisJS projects </h3>
   <p>
     Assembler contains a set of core commands to <strong>build and serve the AdonisJS typescript project</strong>, along with scaffolding <code>make</code> commands.
   </p>
@@ -42,5 +42,5 @@
 [circleci-image]: https://img.shields.io/circleci/project/github/adonisjs/assembler/master.svg?style=for-the-badge&logo=circleci
 [circleci-url]: https://circleci.com/gh/adonisjs/aseembler "circleci"
 
-[npm-image]: https://img.shields.io/npm/v/@adonisjs/assembler.svg?style=for-the-badge&logo=npm
-[npm-url]: https://npmjs.org/package/@adonisjs/assembler "npm"
+[npm-image]: https://img.shields.io/npm/v/@adonisjs/assembler/latest.svg?style=for-the-badge&logo=npm
+[npm-url]: https://npmjs.org/package/@adonisjs/assembler/v/latest "npm"

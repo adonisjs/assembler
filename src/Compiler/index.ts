@@ -10,6 +10,7 @@
 import mem from 'mem'
 import slash from 'slash'
 import copyfiles from 'cpy'
+import debounce from 'debounce'
 import tsStatic from 'typescript'
 import { join, relative } from 'path'
 import { Logger } from '@poppinss/fancy-logs'
@@ -59,6 +60,11 @@ export class Compiler {
   public manifest = new Manifest(this.appRoot, this.logger)
 
   /**
+   * Same as [[this.writeRcFile]] but waits for 2secs
+   */
+  public touchRcFile = debounce(this.writeRcFile.bind(this), 2000)
+
+  /**
    * Returns relative unix path from the project root. Used for
    * display only
    */
@@ -73,6 +79,20 @@ export class Compiler {
     this.tsCompiler.use(() => {
       return iocTransformer(this.tsCompiler.ts, this.rcFile.application.rcFile)
     }, 'after')
+  }
+
+  /**
+   * write .adonisrc.json file to the build directory
+   */
+  private async writeRcFile (outDir: string) {
+    await outputJSON(
+      join(outDir, RCFILE_NAME),
+      Object.assign({}, this.rcFile.getDiskContents(), {
+        typescript: false,
+        lastCompiledAt: new Date().toISOString(),
+      }),
+      { spaces: 2 },
+    )
   }
 
   /**
@@ -133,11 +153,7 @@ export class Compiler {
    */
   public async copyAdonisRcFile (outDir: string) {
     this.logger.info({ message: `copy ${RCFILE_NAME}`, suffix: this.getRelativeUnixPath(outDir) })
-    await outputJSON(
-      join(outDir, RCFILE_NAME),
-      Object.assign({}, this.rcFile.getDiskContents(), { typescript: false }),
-      { spaces: 2 },
-    )
+    await this.writeRcFile(outDir)
   }
 
   /**
@@ -194,9 +210,10 @@ export class Compiler {
     }
 
     await this.cleanupBuildDirectory(config.options.outDir!)
-    await this.copyAdonisRcFile(config.options.outDir!)
     await this.copyMetaFiles(config.options.outDir!)
     this.buildTypescriptSource(config)
+    await this.copyAdonisRcFile(config.options.outDir!)
+
     await this.manifest.generate()
 
     /**
@@ -224,9 +241,9 @@ export class Compiler {
       : ['package.json', 'yarn.lock']
 
     await this.cleanupBuildDirectory(config.options.outDir!)
-    await this.copyAdonisRcFile(config.options.outDir!)
     await this.copyMetaFiles(config.options.outDir!, pkgFiles)
     this.buildTypescriptSource(config)
+    await this.copyAdonisRcFile(config.options.outDir!)
 
     this.logger.info({ message: 'installing production dependencies', suffix: client })
     await new Installer(config.options.outDir!, client).install()

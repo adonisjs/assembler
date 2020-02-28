@@ -48,9 +48,9 @@ export class Watcher {
      * Standard build steps
      */
     await this.compiler.cleanupBuildDirectory(config.options.outDir!)
-    await this.compiler.copyAdonisRcFile(config.options.outDir!)
     await this.compiler.copyMetaFiles(config.options.outDir!)
     this.compiler.buildTypescriptSource(config)
+    await this.compiler.copyAdonisRcFile(config.options.outDir!)
 
     /**
      * Manifest can be generated without blocking the flow
@@ -83,7 +83,7 @@ export class Watcher {
     /**
      * Subsequent source builds
      */
-    watcher.on('subsequent:build', ({ path, skipped, diagnostics }) => {
+    watcher.on('subsequent:build', async ({ path, skipped, diagnostics }) => {
       this.clearScreen()
       this.logger.compile(path)
 
@@ -109,6 +109,8 @@ export class Watcher {
       if (this.compiler.rcFile.isCommandsPath(path)) {
         this.compiler.manifest.generate()
       }
+
+      await this.compiler.touchRcFile(config.options.outDir!)
     })
 
     /**

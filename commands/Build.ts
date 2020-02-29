@@ -20,7 +20,7 @@ export default class Build extends BaseCommand {
   /**
    * Allows watching for file changes
    */
-  @flags.boolean({ description: 'Watch for file changes and re-build the project', alias: 'w' })
+  @flags.boolean({ description: 'Watch filesystem and re-compile changes', alias: 'w' })
   public watch: boolean
 
   /**
@@ -30,10 +30,20 @@ export default class Build extends BaseCommand {
   public production: boolean
 
   /**
-   * Use yarn when building for production to install dependencies
+   * Select the client for deciding the lock file to copy to the
+   * build folder
    */
-  @flags.string({ description: 'Select between npm or yarn for installing dependencies' })
+  @flags.string({ description: 'Select the package manager to decide which lock file to copy to the build folder' })
   public client: string
+
+  /**
+   * Detect changes by polling files
+   */
+  @flags.boolean({
+    description: 'Detect file changes by polling files instead of listening to filesystem events',
+    alias: 'p',
+  })
+  public poll: boolean
 
   /**
    * Invoked automatically by ace
@@ -51,7 +61,7 @@ export default class Build extends BaseCommand {
      */
     if (!cwd || !ADONIS_IS_TYPESCRIPT()) {
       this.logger.error(
-        'Cannot build non-typescript project. Make sure to run "node ace build" from the project root',
+        'Cannot build a non-typescript project. Make sure to run "node ace build" from the project root',
       )
       return
     }
@@ -76,7 +86,7 @@ export default class Build extends BaseCommand {
       if (this.production) {
         await new Compiler(cwd, false, [], this.logger).compileForProduction(this.client)
       } else if (this.watch) {
-        await new Watcher(cwd, false, [], this.logger).watch()
+        await new Watcher(cwd, false, [], this.logger).watch(this.poll)
       } else {
         await new Compiler(cwd, false, [], this.logger).compile()
       }

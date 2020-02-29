@@ -275,7 +275,7 @@ test.group('Compiler', (group) => {
     ])
   }).timeout(0)
 
-  test('build for production by doing npm install', async (assert) => {
+  test('build for production should copy package files to build folder', async (assert) => {
     const logger = new Logger({ fake: true })
 
     await fs.add('.adonisrc.json', JSON.stringify({
@@ -325,7 +325,6 @@ test.group('Compiler', (group) => {
       'underline(magenta(pending)) compiling typescript source files',
       'underline(green(success)) built successfully',
       'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
-      'underline(blue(info)) installing production dependencies dim(yellow(npm))',
     ])
 
     const hasPackageLock = await fs.fsExtra.pathExists(join(fs.basePath, 'build', 'package-lock.json'))

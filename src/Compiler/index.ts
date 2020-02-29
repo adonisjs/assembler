@@ -13,6 +13,7 @@ import copyfiles from 'cpy'
 import debounce from 'debounce'
 import tsStatic from 'typescript'
 import { join, relative } from 'path'
+import { Colors } from '@poppinss/colors'
 import { Logger } from '@poppinss/fancy-logs'
 import { remove, outputJSON } from 'fs-extra'
 import { resolveFrom } from '@poppinss/utils'
@@ -21,7 +22,6 @@ import { iocTransformer } from '@adonisjs/ioc-transformer'
 
 import { RcFile } from '../RcFile'
 import { Manifest } from '../Manifest'
-import { Installer } from '../Installer'
 import { HttpServer, DummyHttpServer } from '../HttpServer'
 import {
   RCFILE_NAME,
@@ -69,6 +69,8 @@ export class Compiler {
    * display only
    */
   private getRelativeUnixPath = mem((absPath: string) => slash(relative(this.appRoot, absPath)))
+
+  private colors = new Colors()
 
   constructor (
     public appRoot: string,
@@ -244,22 +246,18 @@ export class Compiler {
     await this.copyMetaFiles(config.options.outDir!, pkgFiles)
     this.buildTypescriptSource(config)
     await this.copyAdonisRcFile(config.options.outDir!)
+    await this.manifest.generate()
 
-    this.logger.info({ message: 'installing production dependencies', suffix: client })
-    await new Installer(config.options.outDir!, client).install()
+    const installCommand = client === 'npm'
+      ? 'npm ci --production'
+      : 'yarn install --production'
 
-    /**
-     * Manifest can be generated without blocking the flow
-     */
-    this.manifest.generate()
+    console.log('   Run the following commands to start the server in production')
+    const relativeBuildPath = this.getRelativeUnixPath(config.options.outDir!)
 
-    /**
-     * Start HTTP server in production
-     */
-    if (this.serveApp) {
-      this.createHttpServer(config.options.outDir!)
-      this.httpServer.start()
-    }
+    console.log(`   ${this.colors.gray('$')} ${this.colors.cyan(`cd ${relativeBuildPath}`)}`)
+    console.log(`   ${this.colors.gray('$')} ${this.colors.cyan(installCommand)}`)
+    console.log(`   ${this.colors.gray('$')} ${this.colors.cyan('node server.js')}`)
 
     return true
   }

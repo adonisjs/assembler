@@ -1,6 +1,6 @@
 {
   "name": "@adonisjs/assembler",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "description": "Core commands to compiler and build AdonisJs project",
   "main": "build/index.js",
   "files": [

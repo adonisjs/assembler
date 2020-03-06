@@ -18,5 +18,4 @@ new Manifest(__dirname).generate([
   './commands/Make/Provider',
   './commands/Make/Validator',
   './commands/Make/View',
-  './commands/Make/Model',
 ])

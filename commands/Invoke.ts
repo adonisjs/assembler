@@ -12,6 +12,8 @@ import { BaseCommand, args } from '@adonisjs/ace'
 import { Manifest } from '../src/Manifest'
 import { ADONIS_ACE_CWD } from '../config/env'
 
+const sleep = (timeout: number) => new Promise((resolve) => setTimeout(resolve, timeout))
+
 /**
  * Invoke post install instructions
  */
@@ -44,6 +46,19 @@ export default class Invoke extends BaseCommand {
 
     const { executeInstructions } = await import('@adonisjs/sink')
     await executeInstructions(this.name, cwd, this.application)
+
+    /**
+     * When we execute the instructions that updates the `.adonisrc.json` file, we watcher
+     * copies it's contents to the `build` directory.
+     *
+     * Once the copy is in progress, running the ace instructions leads to reading an empty
+     * `.adonisrc.json` file.
+     *
+     * Now there is no simple way to know when the separate process watching and processing
+     * files will copy the `.adonisrc.json` file. So we add a small cool off period in
+     * between.
+     */
+    await sleep(400)
     await new Manifest(cwd, this.logger).generate()
   }
 }

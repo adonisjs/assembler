@@ -9,7 +9,6 @@
 
 import { join } from 'path'
 import { args } from '@adonisjs/ace'
-import { RcFile } from '@ioc:Adonis/Core/Application'
 import { BaseGenerator } from './Base'
 
 /**
@@ -49,8 +48,8 @@ export default class MakeListener extends BaseGenerator {
    * Pull path from the `listeners` directory declaration from
    * the `.adonisrc.json` file or fallback to `app/Listeners`
    */
-  protected $getDestinationPath (rcContents: RcFile): string {
-    return this.$getPathForNamespace(rcContents, 'eventListeners') || 'app/Listeners'
+  protected $getDestinationPath (): string {
+    return this.$getPathForNamespace('eventListeners') || 'app/Listeners'
   }
 
   public async handle () {

@@ -11,7 +11,6 @@ import slash from 'slash'
 import { join, extname } from 'path'
 import { args, flags } from '@adonisjs/ace'
 import { RcFile as SinkRcFile } from '@adonisjs/sink'
-import { RcFile } from '@ioc:Adonis/Core/Application'
 
 import { BaseGenerator } from './Base'
 import { ADONIS_ACE_CWD } from '../../config/env'
@@ -56,8 +55,8 @@ export default class MakeProvider extends BaseGenerator {
   /**
    * Path to the providers directory
    */
-  protected $getDestinationPath (rcFile: RcFile): string {
-    return rcFile.directories.providers || 'providers'
+  protected $getDestinationPath (): string {
+    return this.application.rcFile.directories.providers || 'providers'
   }
 
   public async handle () {

@@ -9,7 +9,6 @@
 
 import { join } from 'path'
 import { args } from '@adonisjs/ace'
-import { RcFile } from '@ioc:Adonis/Core/Application'
 import { BaseGenerator } from './Base'
 
 /**
@@ -50,8 +49,8 @@ export default class MakeView extends BaseGenerator {
   /**
    * Path to the providers directory
    */
-  protected $getDestinationPath (rcFile: RcFile): string {
-    return rcFile.directories.views || 'resources/views'
+  protected $getDestinationPath (): string {
+    return this.application.rcFile.directories.views || 'resources/views'
   }
 
   public async handle () {

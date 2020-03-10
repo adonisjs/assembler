@@ -9,7 +9,6 @@
 
 import { join } from 'path'
 import { args, flags } from '@adonisjs/ace'
-import { RcFile } from '@ioc:Adonis/Core/Application'
 import { BaseGenerator } from './Base'
 
 /**
@@ -64,8 +63,8 @@ export default class MakeController extends BaseGenerator {
    * Pull path from the `httpControllers` directory declaration from
    * the `.adonisrc.json` file or fallback to `app/Controllers/Http`
    */
-  protected $getDestinationPath (rcContents: RcFile): string {
-    return this.$getPathForNamespace(rcContents, 'httpControllers') || 'app/Controllers/Http'
+  protected $getDestinationPath (): string {
+    return this.$getPathForNamespace('httpControllers') || 'app/Controllers/Http'
   }
 
   public async handle () {

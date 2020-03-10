@@ -10,8 +10,6 @@
 import { join } from 'path'
 import { pathExists } from 'fs-extra'
 import { BaseCommand } from '@adonisjs/ace'
-import { RcFile } from '@ioc:Adonis/Core/Application'
-import { rcParser } from '@adonisjs/application/build/standalone'
 import { GeneratorFile } from '@adonisjs/ace/build/src/Generator/File'
 
 import { ADONIS_ACE_CWD } from '../../config/env'
@@ -21,15 +19,15 @@ import { ADONIS_ACE_CWD } from '../../config/env'
  */
 export abstract class BaseGenerator extends BaseCommand {
   protected abstract $resourceName: string
-  protected abstract $getStub (rcContents: RcFile): string
-  protected abstract $getDestinationPath (rcContents: RcFile): string
+  protected abstract $getStub (): string
+  protected abstract $getDestinationPath (): string
 
   protected $suffix?: string
   protected $extname: string = '.ts'
   protected $form?: 'singular' | 'plural'
   protected $pattern?: 'camelcase' | 'snakecase' | 'pascalcase'
   protected $formIgnoreList?: string[]
-  protected $templateData (_rcContents: RcFile): any {
+  protected $templateData (): any {
     return {}
   }
 
@@ -38,41 +36,16 @@ export abstract class BaseGenerator extends BaseCommand {
    * with the defined directories map inside the `.adonisrc.json`
    * file
    */
-  protected $getPathForNamespace (rcContents: RcFile, namespaceFor: string): string | null {
-    /**
-     * Return null when rcfile doesn't have a special
-     * entry for namespaces
-    */
-    if (!rcContents.namespaces[namespaceFor]) {
-      return null
-    }
-
-    let output: string | null = null
-    Object.keys(rcContents.aliases).forEach((baseNamespace) => {
-      const autoloadPath = rcContents.aliases[baseNamespace]
-      if (
-        rcContents.namespaces[namespaceFor].startsWith(`${baseNamespace}/`) ||
-        rcContents.namespaces[namespaceFor] === baseNamespace
-      ) {
-        output = rcContents.namespaces[namespaceFor].replace(baseNamespace, autoloadPath)
-      }
-      return output
-    })
-
-    return output
+  protected $getPathForNamespace (namespaceFor: string): string | null {
+    return this.application.resolveNamespaceDirectory(namespaceFor)
   }
 
   /**
    * Returns contents of the rcFile
    */
-  protected async $getRcContents (cwd: string) {
+  protected async $hasRcFile (cwd: string) {
     const filePath = join(cwd, '.adonisrc.json')
-    const hasRcFile = await pathExists(filePath)
-    if (!hasRcFile) {
-      return null
-    }
-
-    return rcParser.parse(require(filePath))
+    return pathExists(filePath)
   }
 
   /**
@@ -88,12 +61,12 @@ export abstract class BaseGenerator extends BaseCommand {
       return
     }
 
-    const rcContents = await this.$getRcContents(cwd)
+    const hasRcFile = await this.$hasRcFile(cwd)
 
     /**
      * Ensure `.adonisrc.json` file exists
      */
-    if (!rcContents) {
+    if (!hasRcFile) {
       this.logger.error('Make sure your project root has .adonisrc.json file to continue')
       return
     }
@@ -106,10 +79,10 @@ export abstract class BaseGenerator extends BaseCommand {
         pattern: this.$pattern,
         extname: this.$extname,
       })
-      .stub(this.$getStub(rcContents))
-      .destinationDir(this.$getDestinationPath(rcContents))
+      .stub(this.$getStub())
+      .destinationDir(this.$getDestinationPath())
       .appRoot(cwd)
-      .apply(this.$templateData(rcContents))
+      .apply(this.$templateData())
 
     await this.generator.run()
     return file

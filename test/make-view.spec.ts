@@ -10,6 +10,7 @@
 import test from 'japa'
 import { join } from 'path'
 import { Ioc } from '@adonisjs/fold'
+import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
@@ -34,7 +35,8 @@ test.group('Make Command', (group) => {
   test('make an empty view inside the default directory', async (assert) => {
     await fs.add('.adonisrc.json', JSON.stringify({}))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const view = new MakeView(app, new Kernel(app))
     view.name = 'welcome'
@@ -51,7 +53,8 @@ test.group('Make Command', (group) => {
       },
     }))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const view = new MakeView(app, new Kernel(app))
     view.name = 'welcome'

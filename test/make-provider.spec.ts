@@ -10,6 +10,7 @@
 import test from 'japa'
 import { join } from 'path'
 import { Ioc } from '@adonisjs/fold'
+import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
@@ -36,7 +37,8 @@ test.group('Make Provider', (group) => {
   test('make a provider inside the default directory', async (assert) => {
     await fs.add('.adonisrc.json', JSON.stringify({}))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const provider = new MakeProvider(app, new Kernel(app))
     provider.name = 'app'
@@ -49,8 +51,8 @@ test.group('Make Provider', (group) => {
       toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
     )
 
-    const rcContents = await fs.get('.adonisrc.json')
-    assert.deepEqual(JSON.parse(rcContents), {
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
       providers: ['./providers/AppProvider'],
     })
   })
@@ -62,7 +64,8 @@ test.group('Make Provider', (group) => {
       },
     }))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const provider = new MakeProvider(app, new Kernel(app))
     provider.name = 'app'
@@ -75,8 +78,8 @@ test.group('Make Provider', (group) => {
       toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
     )
 
-    const rcContents = await fs.get('.adonisrc.json')
-    assert.deepEqual(JSON.parse(rcContents), {
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
       directories: {
         providers: 'foo',
       },
@@ -87,7 +90,8 @@ test.group('Make Provider', (group) => {
   test('setup correct path when nested provider is created', async (assert) => {
     await fs.add('.adonisrc.json', JSON.stringify({}))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const provider = new MakeProvider(app, new Kernel(app))
     provider.name = 'auth/app'
@@ -100,8 +104,8 @@ test.group('Make Provider', (group) => {
       toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
     )
 
-    const rcContents = await fs.get('.adonisrc.json')
-    assert.deepEqual(JSON.parse(rcContents), {
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
       providers: ['./providers/auth/AppProvider'],
     })
   })
@@ -109,7 +113,8 @@ test.group('Make Provider', (group) => {
   test('make ace provider', async (assert) => {
     await fs.add('.adonisrc.json', JSON.stringify({}))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const provider = new MakeProvider(app, new Kernel(app))
     provider.name = 'app'
@@ -123,8 +128,8 @@ test.group('Make Provider', (group) => {
       toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
     )
 
-    const rcContents = await fs.get('.adonisrc.json')
-    assert.deepEqual(JSON.parse(rcContents), {
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
       aceProviders: ['./providers/AppProvider'],
     })
   })

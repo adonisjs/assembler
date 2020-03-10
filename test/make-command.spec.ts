@@ -9,6 +9,7 @@
 
 import test from 'japa'
 import { join } from 'path'
+import importFresh from 'import-fresh'
 import { Ioc } from '@adonisjs/fold'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
@@ -36,7 +37,8 @@ test.group('Make Command', (group) => {
   test('make a command inside the default directory', async (assert) => {
     await fs.add('.adonisrc.json', JSON.stringify({}))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const command = new MakeCommand(app, new Kernel(app))
     command.name = 'greet'
@@ -61,7 +63,8 @@ test.group('Make Command', (group) => {
       },
     }))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const command = new MakeCommand(app, new Kernel(app))
     command.name = 'greet'
@@ -86,7 +89,8 @@ test.group('Make Command', (group) => {
       },
     }))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const command = new MakeCommand(app, new Kernel(app))
     command.name = 'RunInstructions'

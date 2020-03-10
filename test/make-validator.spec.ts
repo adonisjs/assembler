@@ -10,6 +10,7 @@
 import test from 'japa'
 import { join } from 'path'
 import { Ioc } from '@adonisjs/fold'
+import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application/build/standalone'
@@ -36,7 +37,8 @@ test.group('Make Validator', (group) => {
   test('make a model inside the default directory', async (assert) => {
     await fs.add('.adonisrc.json', JSON.stringify({}))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const validator = new MakeValidator(app, new Kernel(app))
     validator.name = 'user'
@@ -60,7 +62,8 @@ test.group('Make Validator', (group) => {
       },
     }))
 
-    const app = new Application(fs.basePath, new Ioc(), {}, {})
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, new Ioc(), rcContents, {})
 
     const validator = new MakeValidator(app, new Kernel(app))
     validator.name = 'user'

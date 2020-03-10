@@ -9,7 +9,6 @@
 
 import { join } from 'path'
 import { args, flags } from '@adonisjs/ace'
-import { RcFile } from '@ioc:Adonis/Core/Application'
 import { BaseGenerator } from './Base'
 
 /**
@@ -53,8 +52,8 @@ export default class MakeException extends BaseGenerator {
    * Pull path from the `exceptions` namespace declaration from
    * the `.adonisrc.json` file or fallback to `app/Exceptions`
    */
-  protected $getDestinationPath (rcContents: RcFile): string {
-    return this.$getPathForNamespace(rcContents, 'exceptions') || 'app/Exceptions'
+  protected $getDestinationPath (): string {
+    return this.$getPathForNamespace('exceptions') || 'app/Exceptions'
   }
 
   public async handle () {

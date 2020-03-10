@@ -9,7 +9,6 @@
 
 import { join } from 'path'
 import { args } from '@adonisjs/ace'
-import { RcFile } from '@ioc:Adonis/Core/Application'
 import { BaseGenerator } from './Base'
 
 /**
@@ -50,8 +49,8 @@ export default class MakeValidator extends BaseGenerator {
    * Pull path for the `validators` directory declaration from
    * the `.adonisrc.json` file or fallback to `app/Validators`
    */
-  protected $getDestinationPath (rcContents: RcFile): string {
-    return this.$getPathForNamespace(rcContents, 'validators') || 'app/Validators'
+  protected $getDestinationPath (): string {
+    return this.$getPathForNamespace('validators') || 'app/Validators'
   }
 
   public async handle () {

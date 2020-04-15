@@ -31,7 +31,7 @@ export default class {{ filename }} {
    * defining a unique cache key. The simplest way is to use the current request route
    * key, which is a combination of the route pattern and HTTP method.
    */
-  public cacheKey = this.ctx.route.key
+  public cacheKey = this.ctx.routeKey
 
   /**
    * Custom messages for validation failures. You can make use of dot notation `(.)`

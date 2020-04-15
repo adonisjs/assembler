@@ -50,8 +50,8 @@ test.group('Make Command', (group) => {
       toNewlineArray(GreetCommand),
       toNewlineArray(
         CommandTemplate
-          .replace('${filename}', 'Greet')
-          .replace('${toCommandName(filename)}', 'greet'),
+          .replace('{{ filename }}', 'Greet')
+          .replace('{{#toCommandName}}{{ filename }}{{/toCommandName}}', 'greet'),
       ),
     )
   })
@@ -76,8 +76,8 @@ test.group('Make Command', (group) => {
       toNewlineArray(GreetCommand),
       toNewlineArray(
         CommandTemplate
-          .replace('${filename}', 'Greet')
-          .replace('${toCommandName(filename)}', 'greet'),
+          .replace('{{ filename }}', 'Greet')
+          .replace('{{#toCommandName}}{{ filename }}{{/toCommandName}}', 'greet'),
       ),
     )
   })
@@ -102,8 +102,8 @@ test.group('Make Command', (group) => {
       toNewlineArray(GreetCommand),
       toNewlineArray(
         CommandTemplate
-          .replace('${filename}', 'RunInstructions')
-          .replace('${toCommandName(filename)}', 'run:instructions'),
+          .replace('{{ filename }}', 'RunInstructions')
+          .replace('{{#toCommandName}}{{ filename }}{{/toCommandName}}', 'run:instructions'),
       ),
     )
   })

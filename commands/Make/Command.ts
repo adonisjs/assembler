@@ -9,7 +9,7 @@
 
 import { join } from 'path'
 import { args } from '@adonisjs/ace'
-import { snakeCase } from 'snake-case'
+import { lodash } from '@poppinss/utils'
 
 import { BaseGenerator } from './Base'
 
@@ -20,8 +20,8 @@ export default class MakeCommand extends BaseGenerator {
   /**
    * Required by BaseGenerator
    */
-  protected $pattern = 'pascalcase' as const
-  protected $resourceName: string
+  protected pattern = 'pascalcase' as const
+  protected resourceName: string
 
   /**
    * Command meta data
@@ -36,7 +36,7 @@ export default class MakeCommand extends BaseGenerator {
    * Returns the template stub based upon the `--resource`
    * flag value
    */
-  protected $getStub (): string {
+  protected getStub (): string {
     return join(
       __dirname,
       '..',
@@ -49,23 +49,25 @@ export default class MakeCommand extends BaseGenerator {
   /**
    * Path to the commands directory
    */
-  protected $getDestinationPath (): string {
+  protected getDestinationPath (): string {
     return this.application.rcFile.directories.commands || 'commands'
   }
 
   /**
    * Passed down to the template.
    */
-  protected $templateData (): { toCommandName: (filename: string) => string } {
+  protected templateData () {
     return {
-      toCommandName: (filename: string): string => {
-        return snakeCase(filename).replace(/_/, ':')
+      toCommandName: () => {
+        return function (filename: string, render: any) {
+          return lodash.snakeCase(render(filename)).replace(/_/, ':')
+        }
       },
     }
   }
 
   public async handle (): Promise<void> {
-    this.$resourceName = this.name
+    this.resourceName = this.name
     await super.generate()
   }
 }

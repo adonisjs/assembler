@@ -17,7 +17,7 @@ import { ADONIS_ACE_CWD } from '../config/env'
  */
 export default class Invoke extends BaseCommand {
   public static commandName = 'invoke'
-  public static description = 'Invoke post install instructions on a given AdonisJs package'
+  public static description = 'Invoke post install instructions on a given AdonisJS package'
 
   /**
    * Use yarn when building for production to install dependencies
@@ -42,8 +42,8 @@ export default class Invoke extends BaseCommand {
       return
     }
 
-    const { executeInstructions } = await import('@adonisjs/sink')
-    await executeInstructions(this.name, cwd, this.application)
+    const { tasks } = await import('@adonisjs/sink')
+    await new tasks.Instructions(this.name, cwd, this.application).execute()
     await new Manifest(cwd, this.logger).generate()
   }
 }

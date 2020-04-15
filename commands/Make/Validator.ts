@@ -18,10 +18,10 @@ export default class MakeValidator extends BaseGenerator {
   /**
    * Required by BaseGenerator
    */
-  protected $suffix = 'Validator'
-  protected $form = 'singular' as const
-  protected $pattern = 'pascalcase' as const
-  protected $resourceName: string
+  protected suffix = 'Validator'
+  protected form = 'singular' as const
+  protected pattern = 'pascalcase' as const
+  protected resourceName: string
 
   /**
    * Command meta data
@@ -35,7 +35,7 @@ export default class MakeValidator extends BaseGenerator {
   /**
    * Returns the template stub path
    */
-  protected $getStub (): string {
+  protected getStub (): string {
     return join(
       __dirname,
       '..',
@@ -49,12 +49,12 @@ export default class MakeValidator extends BaseGenerator {
    * Pull path for the `validators` directory declaration from
    * the `.adonisrc.json` file or fallback to `app/Validators`
    */
-  protected $getDestinationPath (): string {
-    return this.$getPathForNamespace('validators') || 'app/Validators'
+  protected getDestinationPath (): string {
+    return this.getPathForNamespace('validators') || 'app/Validators'
   }
 
   public async handle () {
-    this.$resourceName = this.name
+    this.resourceName = this.name
     await super.generate()
   }
 }

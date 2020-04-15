@@ -1,6 +1,6 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class ${filename} {
+export default class {{ filename }} {
   public async handle (error: this, ctx: HttpContextContract) {
     ctx.response.status(error.status || 500).send(error.message)
   }

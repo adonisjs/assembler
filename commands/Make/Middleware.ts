@@ -18,10 +18,10 @@ export default class MakeMiddleware extends BaseGenerator {
   /**
    * Required by BaseGenerator
    */
-  protected $suffix = ''
-  protected $form = 'singular' as const
-  protected $pattern = 'pascalcase' as const
-  protected $resourceName: string
+  protected suffix = ''
+  protected form = 'singular' as const
+  protected pattern = 'pascalcase' as const
+  protected resourceName: string
 
   /**
    * Command meta data
@@ -35,7 +35,7 @@ export default class MakeMiddleware extends BaseGenerator {
   /**
    * Returns the template stub path
    */
-  protected $getStub (): string {
+  protected getStub (): string {
     return join(
       __dirname,
       '..',
@@ -49,12 +49,12 @@ export default class MakeMiddleware extends BaseGenerator {
    * Middleware are always created inside `app/Middleware` directory.
    * We can look into configuring it later.
    */
-  protected $getDestinationPath (): string {
+  protected getDestinationPath (): string {
     return 'app/Middleware'
   }
 
   public async handle () {
-    this.$resourceName = this.name
+    this.resourceName = this.name
     await super.generate()
   }
 }

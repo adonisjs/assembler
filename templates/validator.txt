@@ -1,6 +1,6 @@
 import { schema, validator } from '@ioc:Adonis/Core/Validator'
 
-class ${filename} {
+class {{ filename }} {
   /**
    * Using a pre-compiled schema you can validate the "shape", "type",
    * "formatting" and "integrity" of data.
@@ -37,4 +37,4 @@ class ${filename} {
   public messages = {}
 }
 
-export default new ${filename}()
+export default new {{ filename }}()

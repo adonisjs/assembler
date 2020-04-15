@@ -18,9 +18,9 @@ export default class MakeListener extends BaseGenerator {
   /**
    * Required by BaseGenerator
    */
-  protected $form = 'singular' as const
-  protected $pattern = 'pascalcase' as const
-  protected $resourceName: string
+  protected form = 'singular' as const
+  protected pattern = 'pascalcase' as const
+  protected resourceName: string
 
   /**
    * Command meta data
@@ -34,7 +34,7 @@ export default class MakeListener extends BaseGenerator {
   /**
    * Returns the template stub
    */
-  protected $getStub (): string {
+  protected getStub (): string {
     return join(
       __dirname,
       '..',
@@ -48,12 +48,12 @@ export default class MakeListener extends BaseGenerator {
    * Pull path from the `listeners` directory declaration from
    * the `.adonisrc.json` file or fallback to `app/Listeners`
    */
-  protected $getDestinationPath (): string {
-    return this.$getPathForNamespace('eventListeners') || 'app/Listeners'
+  protected getDestinationPath (): string {
+    return this.getPathForNamespace('eventListeners') || 'app/Listeners'
   }
 
   public async handle () {
-    this.$resourceName = this.name
+    this.resourceName = this.name
     await super.generate()
   }
 }

@@ -18,15 +18,15 @@ export default class MakeController extends BaseGenerator {
   /**
    * Required by BaseGenerator
    */
-  protected $suffix = 'Controller'
-  protected $form = 'plural' as const
-  protected $pattern = 'pascalcase' as const
-  protected $resourceName: string
+  protected suffix = 'Controller'
+  protected form = 'plural' as const
+  protected pattern = 'pascalcase' as const
+  protected resourceName: string
 
   /**
    * Do not pluralize following controller names
    */
-  protected $formIgnoreList = [
+  protected formIgnoreList = [
     'Home',
     'Auth',
     'Login',
@@ -49,7 +49,7 @@ export default class MakeController extends BaseGenerator {
    * Returns the template stub based upon the `--resource`
    * flag value
    */
-  protected $getStub (): string {
+  protected getStub (): string {
     return join(
       __dirname,
       '..',
@@ -63,12 +63,12 @@ export default class MakeController extends BaseGenerator {
    * Pull path from the `httpControllers` directory declaration from
    * the `.adonisrc.json` file or fallback to `app/Controllers/Http`
    */
-  protected $getDestinationPath (): string {
-    return this.$getPathForNamespace('httpControllers') || 'app/Controllers/Http'
+  protected getDestinationPath (): string {
+    return this.getPathForNamespace('httpControllers') || 'app/Controllers/Http'
   }
 
   public async handle () {
-    this.$resourceName = this.name
+    this.resourceName = this.name
     await super.generate()
   }
 }

@@ -48,7 +48,7 @@ test.group('Make Provider', (group) => {
     const ProviderTemplate = await templates.get('provider.txt')
     assert.deepEqual(
       toNewlineArray(AppProvider),
-      toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
+      toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider')),
     )
 
     const rcRawContents = await fs.get('.adonisrc.json')
@@ -75,7 +75,7 @@ test.group('Make Provider', (group) => {
     const ProviderTemplate = await templates.get('provider.txt')
     assert.deepEqual(
       toNewlineArray(AppProvider),
-      toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
+      toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider')),
     )
 
     const rcRawContents = await fs.get('.adonisrc.json')
@@ -101,7 +101,7 @@ test.group('Make Provider', (group) => {
     const ProviderTemplate = await templates.get('provider.txt')
     assert.deepEqual(
       toNewlineArray(AppProvider),
-      toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
+      toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider')),
     )
 
     const rcRawContents = await fs.get('.adonisrc.json')
@@ -125,7 +125,7 @@ test.group('Make Provider', (group) => {
     const ProviderTemplate = await templates.get('provider.txt')
     assert.deepEqual(
       toNewlineArray(AppProvider),
-      toNewlineArray(ProviderTemplate.replace('${filename}', 'AppProvider')),
+      toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider')),
     )
 
     const rcRawContents = await fs.get('.adonisrc.json')

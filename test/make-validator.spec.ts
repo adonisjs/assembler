@@ -48,7 +48,7 @@ test.group('Make Validator', (group) => {
     const ValidatorTemplate = await templates.get('validator.txt')
     assert.deepEqual(
       toNewlineArray(UserValidator),
-      toNewlineArray(ValidatorTemplate.replace(new RegExp('\\${filename}', 'g'), 'UserValidator')),
+      toNewlineArray(ValidatorTemplate.replace(new RegExp('\\{{ filename }}', 'g'), 'UserValidator')),
     )
   })
 
@@ -73,7 +73,7 @@ test.group('Make Validator', (group) => {
     const ValidatorTemplate = await templates.get('validator.txt')
     assert.deepEqual(
       toNewlineArray(UserValidator),
-      toNewlineArray(ValidatorTemplate.replace(new RegExp('\\${filename}', 'g'), 'UserValidator')),
+      toNewlineArray(ValidatorTemplate.replace(new RegExp('\\{{ filename }}', 'g'), 'UserValidator')),
     )
   })
 })

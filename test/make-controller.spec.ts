@@ -48,7 +48,7 @@ test.group('Make Controller', (group) => {
     const ControllerTemplate = await templates.get('controller.txt')
     assert.deepEqual(
       toNewlineArray(UsersController),
-      toNewlineArray(ControllerTemplate.replace('${filename}', 'UsersController')),
+      toNewlineArray(ControllerTemplate.replace('{{ filename }}', 'UsersController')),
     )
   })
 
@@ -67,7 +67,7 @@ test.group('Make Controller', (group) => {
     const ResourceTemplate = await templates.get('resource-controller.txt')
     assert.deepEqual(
       toNewlineArray(UsersController),
-      toNewlineArray(ResourceTemplate.replace('${filename}', 'UsersController')),
+      toNewlineArray(ResourceTemplate.replace('{{ filename }}', 'UsersController')),
     )
   })
 
@@ -92,7 +92,7 @@ test.group('Make Controller', (group) => {
     const ControllerTemplate = await templates.get('controller.txt')
     assert.deepEqual(
       toNewlineArray(UsersController),
-      toNewlineArray(ControllerTemplate.replace('${filename}', 'UsersController')),
+      toNewlineArray(ControllerTemplate.replace('{{ filename }}', 'UsersController')),
     )
   })
 })

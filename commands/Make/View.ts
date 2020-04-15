@@ -18,11 +18,11 @@ export default class MakeView extends BaseGenerator {
   /**
    * Required by BaseGenerator
    */
-  protected $suffix = ''
-  protected $extname = '.edge'
-  protected $form = 'singular' as const
-  protected $pattern = 'snakecase' as const
-  protected $resourceName: string
+  protected suffix = ''
+  protected extname = '.edge'
+  protected form = 'singular' as const
+  protected pattern = 'snakecase' as const
+  protected resourceName: string
 
   /**
    * Command meta data
@@ -36,7 +36,7 @@ export default class MakeView extends BaseGenerator {
   /**
    * Returns the template stub path
    */
-  protected $getStub (): string {
+  protected getStub (): string {
     return join(
       __dirname,
       '..',
@@ -49,12 +49,12 @@ export default class MakeView extends BaseGenerator {
   /**
    * Path to the providers directory
    */
-  protected $getDestinationPath (): string {
+  protected getDestinationPath (): string {
     return this.application.rcFile.directories.views || 'resources/views'
   }
 
   public async handle () {
-    this.$resourceName = this.name
+    this.resourceName = this.name
     await super.generate()
   }
 }

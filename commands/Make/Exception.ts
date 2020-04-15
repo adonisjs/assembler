@@ -18,10 +18,10 @@ export default class MakeException extends BaseGenerator {
   /**
    * Required by BaseGenerator
    */
-  protected $form = 'singular' as const
-  protected $pattern = 'pascalcase' as const
-  protected $resourceName: string
-  protected $suffix = 'Exception'
+  protected form = 'singular' as const
+  protected pattern = 'pascalcase' as const
+  protected resourceName: string
+  protected suffix = 'Exception'
 
   /**
    * Command meta data
@@ -38,7 +38,7 @@ export default class MakeException extends BaseGenerator {
   /**
    * Returns the template stub
    */
-  protected $getStub (): string {
+  protected getStub (): string {
     return join(
       __dirname,
       '..',
@@ -52,12 +52,12 @@ export default class MakeException extends BaseGenerator {
    * Pull path from the `exceptions` namespace declaration from
    * the `.adonisrc.json` file or fallback to `app/Exceptions`
    */
-  protected $getDestinationPath (): string {
-    return this.$getPathForNamespace('exceptions') || 'app/Exceptions'
+  protected getDestinationPath (): string {
+    return this.getPathForNamespace('exceptions') || 'app/Exceptions'
   }
 
   public async handle () {
-    this.$resourceName = this.name
+    this.resourceName = this.name
     await super.generate()
   }
 }

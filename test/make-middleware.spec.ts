@@ -48,7 +48,7 @@ test.group('Make Middleware', (group) => {
     const MiddlewareTemplate = await templates.get('middleware.txt')
     assert.deepEqual(
       toNewlineArray(SpoofMiddleware),
-      toNewlineArray(MiddlewareTemplate.replace('${filename}', 'SpoofAccept')),
+      toNewlineArray(MiddlewareTemplate.replace('{{ filename }}', 'SpoofAccept')),
     )
   })
 })

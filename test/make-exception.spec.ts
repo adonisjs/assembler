@@ -48,7 +48,7 @@ test.group('Make Exception', (group) => {
     const ExceptionTemplate = await templates.get('exception.txt')
     assert.deepEqual(
       toNewlineArray(UserException),
-      toNewlineArray(ExceptionTemplate.replace('{{ filename }}', 'UserException')),
+      toNewlineArray(ExceptionTemplate.replace(new RegExp('\\{{ filename }}', 'g'), 'UserException')),
     )
   })
 
@@ -67,7 +67,7 @@ test.group('Make Exception', (group) => {
     const ExceptionTemplate = await templates.get('self-handle-exception.txt')
     assert.deepEqual(
       toNewlineArray(UserException),
-      toNewlineArray(ExceptionTemplate.replace('{{ filename }}', 'UserException')),
+      toNewlineArray(ExceptionTemplate.replace(new RegExp('\\{{ filename }}', 'g'), 'UserException')),
     )
   })
 
@@ -93,7 +93,7 @@ test.group('Make Exception', (group) => {
     const ExceptionTemplate = await templates.get('self-handle-exception.txt')
     assert.deepEqual(
       toNewlineArray(UserException),
-      toNewlineArray(ExceptionTemplate.replace('{{ filename }}', 'UserException')),
+      toNewlineArray(ExceptionTemplate.replace(new RegExp('\\{{ filename }}', 'g'), 'UserException')),
     )
   })
 })

@@ -1,9 +1,8 @@
-import { schema, validator } from '@ioc:Adonis/Core/Validator'
+import { schema } from '@ioc:Adonis/Core/Validator'
 
-class {{ filename }} {
+export default class {{ filename }} {
   /**
-   * Using a pre-compiled schema you can validate the "shape", "type",
-   * "formatting" and "integrity" of data.
+   * Defining a schema to validate the "shape", "type", "formatting" and "integrity" of data.
    *
    * For example:
    * 1. The username must be of data type string. But then also, it should
@@ -21,8 +20,18 @@ class {{ filename }} {
    *     ])
    *    ```
    */
-  public schema = validator.compile(schema.create({
-  }))
+  public schema = schema.create({
+  })
+
+  /**
+   * The `schema` first gets compiled to a reusable function and then that compiled
+   * function validates the data at runtime.
+   *
+   * Since, compiling the schema is an expensive operation, you must always cache it by
+   * defining a unique cache key. The simplest way is to use the current request route
+   * key, which is a combination of the route pattern and HTTP method.
+   */
+  public cacheKey = this.ctx.route.key
 
   /**
    * Custom messages for validation failures. You can make use of dot notation `(.)`
@@ -36,5 +45,3 @@ class {{ filename }} {
   */
   public messages = {}
 }
-
-export default new {{ filename }}()

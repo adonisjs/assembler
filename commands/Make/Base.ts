@@ -67,11 +67,12 @@ export abstract class BaseGenerator extends BaseCommand {
      * Ensure `.adonisrc.json` file exists
      */
     if (!hasRcFile) {
-      this.logger.error('Make sure your project root has .adonisrc.json file to continue')
+      this.logger.error('Make sure your project root has ".adonisrc.json" file')
       return
     }
 
-    const file = this.generator
+    const file = this
+      .generator
       .addFile(this.resourceName, {
         form: this.form,
         suffix: this.suffix,

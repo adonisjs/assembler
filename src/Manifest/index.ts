@@ -69,10 +69,7 @@ export class Manifest {
         }
 
         this.logger.warn(WARN_MESSAGE)
-        this.logger.fatal({
-          message: response.stderr,
-          prefix: 'generate:manifest',
-        })
+        console.log(response.stderr)
         return
       }
 
@@ -94,10 +91,7 @@ export class Manifest {
        */
       this.logger.warn(WARN_MESSAGE)
       if (error.stderr) {
-        this.logger.fatal({
-          message: error.stderr,
-          prefix: 'generate:manifest',
-        })
+        console.log(error.stderr)
       }
     }
   }

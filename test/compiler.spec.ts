@@ -371,7 +371,6 @@ test.group('Compiler', (group) => {
       'underline(magenta(pending)) compiling typescript source files',
       'underline(green(success)) built successfully',
       'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
-      'underline(yellow(warn)) Unable to generate manifest file. Check the following error stack for more info',
     ])
 
     assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
@@ -413,7 +412,6 @@ test.group('Compiler', (group) => {
       'underline(magenta(pending)) compiling typescript source files',
       'underline(green(success)) built successfully',
       'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
-      'underline(yellow(warn)) Unable to generate manifest file. Check the following error stack for more info',
     ])
 
     assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)

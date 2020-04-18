@@ -1,6 +1,10 @@
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { schema } from '@ioc:Adonis/Core/Validator'
 
 export default class {{ filename }} {
+  constructor (private ctx: HttpContextContract) {
+  }
+
   /**
    * Defining a schema to validate the "shape", "type", "formatting" and "integrity" of data.
    *

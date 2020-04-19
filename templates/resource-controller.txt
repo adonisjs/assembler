@@ -19,6 +19,6 @@ export default class {{ filename }} {
   public async update (ctx: HttpContextContract) {
   }
 
-  public async destroy (ctx: HttpContextContract) {
+  public async delete (ctx: HttpContextContract) {
   }
 }

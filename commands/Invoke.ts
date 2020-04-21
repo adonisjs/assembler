@@ -43,7 +43,7 @@ export default class Invoke extends BaseCommand {
     }
 
     const { tasks } = await import('@adonisjs/sink')
-    await new tasks.Instructions(this.name, cwd, this.application).execute()
+    await new tasks.Instructions(this.name, cwd, this.application, true).execute()
     await new Manifest(cwd, this.logger).generate()
   }
 }

@@ -7,18 +7,13 @@
 * file that was distributed with this source code.
 */
 
+import { join } from 'path'
+import { fsReadAll } from '@poppinss/utils/build'
 import { Manifest } from '@adonisjs/ace'
-new Manifest(__dirname).generate([
-  './commands/Build',
-  './commands/Serve',
-  './commands/Invoke',
-  './commands/Make/Command',
-  './commands/Make/Controller',
-  './commands/Make/Middleware',
-  './commands/Make/Provider',
-  './commands/Make/Validator',
-  './commands/Make/View',
-  './commands/Make/PreloadFile',
-  './commands/Make/Listener',
-  './commands/Make/Exception',
-])
+
+new Manifest(__dirname).generate(
+  fsReadAll(
+    join(__dirname, './commands'),
+    (file) => !file.includes('Base') && file.endsWith('.js')
+  ).map(file => `./commands/${file}`)
+)

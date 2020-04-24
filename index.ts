@@ -20,4 +20,5 @@ new Manifest(__dirname).generate([
   './commands/Make/View',
   './commands/Make/PreloadFile',
   './commands/Make/Listener',
+  './commands/Make/Exception',
 ])

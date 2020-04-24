@@ -8,7 +8,7 @@
 */
 
 import { join } from 'path'
-import { fsReadAll } from '@poppinss/utils/build'
+import { fsReadAll } from '@poppinss/utils'
 import { Manifest } from '@adonisjs/ace'
 
 new Manifest(__dirname).generate(

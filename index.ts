@@ -19,4 +19,5 @@ new Manifest(__dirname).generate([
   './commands/Make/Validator',
   './commands/Make/View',
   './commands/Make/PreloadFile',
+  './commands/Make/Listener',
 ])

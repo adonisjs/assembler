@@ -20,7 +20,7 @@ export default class {{ filename }} {
    *    ```
    *     schema.string({}, [
    *       rules.email(),
-   *       rules.unique({ inTable: 'users', column: 'email' }),
+   *       rules.unique({ table: 'users', column: 'email' }),
    *     ])
    *    ```
    */

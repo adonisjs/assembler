@@ -10,13 +10,14 @@
 import mem from 'mem'
 import slash from 'slash'
 import copyfiles from 'cpy'
+import getPort from 'get-port'
 import debounce from 'debounce'
 import tsStatic from 'typescript'
 import { join, relative } from 'path'
 import { Colors } from '@poppinss/colors'
 import { Logger } from '@poppinss/fancy-logs'
-import { remove, outputJSON } from 'fs-extra'
 import { resolveFrom } from '@poppinss/utils'
+import { remove, outputJSON } from 'fs-extra'
 import { TypescriptCompiler } from '@poppinss/chokidar-ts'
 import { iocTransformer } from '@adonisjs/ioc-transformer'
 
@@ -29,6 +30,7 @@ import {
   SERVER_ENTRY_FILE,
   DEFAULT_BUILD_DIR,
 } from '../../config/paths'
+import { EnvParser } from '../EnvParser'
 
 /**
  * Exposes the API to build the AdonisJs project for development or
@@ -100,13 +102,31 @@ export class Compiler {
   /**
    * Create the http server
    */
-  public createHttpServer (outDir: string) {
+  public async createHttpServer (outDir: string) {
     if (this.httpServer) {
       return
     }
 
+    const envParser = new EnvParser()
+    await envParser.parse(outDir)
+
+    const envOptions = envParser.asEnvObject(['PORT', 'TZ'])
+
+    /**
+     * Obtains a random port by giving preference to the one defined inside
+     * the `.env` file. This eases the process of running the application
+     * without manually changing ports inside the `.env` file when
+     * original port is in use.
+     */
+    if (envOptions.PORT) {
+      envOptions.PORT = String(await getPort({
+        port: [Number(envOptions.PORT)],
+        host: envParser.get('HOST'),
+      }))
+    }
+
     const Server = this.serveApp ? HttpServer : DummyHttpServer
-    this.httpServer = new Server(SERVER_ENTRY_FILE, outDir, this.nodeArgs, this.logger)
+    this.httpServer = new Server(SERVER_ENTRY_FILE, outDir, this.nodeArgs, this.logger, envOptions)
   }
 
   /**
@@ -222,7 +242,7 @@ export class Compiler {
      * Start HTTP server
      */
     if (this.serveApp) {
-      this.createHttpServer(config.options.outDir!)
+      await this.createHttpServer(config.options.outDir!)
       this.httpServer.start()
     }
 

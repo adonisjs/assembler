@@ -61,7 +61,7 @@ export class Watcher {
      * Creating the http server instance. Even when serving app is disabled,
      * we create an instance of null server to avoid conditionals.
      */
-    this.compiler.createHttpServer(config.options.outDir!)
+    await this.compiler.createHttpServer(config.options.outDir!)
 
     /**
      * Notify that the http server has died

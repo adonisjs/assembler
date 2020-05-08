@@ -8,6 +8,7 @@
 */
 
 import chokidar from 'chokidar'
+import getPort from 'get-port'
 import { join, extname } from 'path'
 import { pathExists } from 'fs-extra'
 import { Logger } from '@poppinss/fancy-logs'
@@ -16,6 +17,7 @@ import { RcFile } from '../RcFile'
 import { Manifest } from '../Manifest'
 import { HttpServer } from '../HttpServer'
 import { SERVER_ENTRY_FILE } from '../../config/paths'
+import { EnvParser } from '../EnvParser'
 
 /**
  * Exposes the API to watch the output build folder and restart
@@ -49,8 +51,32 @@ export class BuildWatcher {
       return
     }
 
+    /**
+     * Parser the .env file
+     */
+    const envParser = new EnvParser()
+    await envParser.parse(absPath)
+
+    /**
+     * Pull defined env values inside an object (only if defined)
+     */
+    const envOptions = envParser.asEnvObject(['PORT', 'TZ'])
+
+    /**
+     * Obtains a random port by giving preference to the one defined inside
+     * the `.env` file. This eases the process of running the application
+     * without manually changing ports inside the `.env` file when
+     * original port is in use.
+     */
+    if (envOptions.PORT) {
+      envOptions.PORT = String(await getPort({
+        port: [Number(envOptions.PORT)],
+        host: envParser.get('HOST'),
+      }))
+    }
+
     const rcFile = new RcFile(absPath)
-    const httpServer = new HttpServer(SERVER_ENTRY_FILE, absPath, this.nodeArgs, this.logger)
+    const httpServer = new HttpServer(SERVER_ENTRY_FILE, absPath, this.nodeArgs, this.logger, envOptions)
 
     /**
      * Initate watcher. Instead of ignoring files upfront, we use the

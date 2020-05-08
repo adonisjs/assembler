@@ -24,6 +24,7 @@ export class HttpServer extends Emittery {
     private projectRoot: string,
     private nodeArgs: string[] = [],
     private logger: Logger,
+    private env: { [key: string]: string } = {}
   ) {
     super()
   }
@@ -50,6 +51,7 @@ export class HttpServer extends Emittery {
       cwd: this.projectRoot,
       env: {
         FORCE_COLOR: 'true',
+        ...this.env,
       },
       nodeOptions: this.nodeArgs,
     })

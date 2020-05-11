@@ -2,15 +2,13 @@
   "name": "@adonisjs/assembler",
   "version": "2.1.0",
   "description": "Core commands to compiler and build AdonisJs project",
-  "main": "build/index.js",
+  "main": "build/ace-manifest.json",
   "files": [
     "build/commands",
     "build/config",
     "build/templates",
     "build/src",
-    "build/ace-manifest.json",
-    "build/index.d.ts",
-    "build/index.js"
+    "build/ace-manifest.json"
   ],
   "scripts": {
     "mrm": "mrm --preset=@adonisjs/mrm-preset",
@@ -19,7 +17,7 @@
     "lint": "eslint . --ext=.ts",
     "clean": "del build",
     "compile": "npm run lint && npm run clean && tsc",
-    "build": "npm run compile && node build/index.js && copyfiles \"templates/*\" build",
+    "build": "npm run compile && node build/bin/index.js && copyfiles \"templates/*\" build",
     "commit": "git-cz",
     "release": "np",
     "version": "npm run build"

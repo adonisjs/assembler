@@ -11,9 +11,9 @@ import { join } from 'path'
 import { fsReadAll } from '@poppinss/utils'
 import { Manifest } from '@adonisjs/ace'
 
-new Manifest(__dirname).generate(
+new Manifest(join(__dirname, '..')).generate(
   fsReadAll(
-    join(__dirname, './commands'),
+    join(__dirname, '../commands'),
     (file) => !file.includes('Base') && file.endsWith('.js')
   ).map(file => `./commands/${file}`)
 )

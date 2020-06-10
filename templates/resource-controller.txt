@@ -1,24 +1,66 @@
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class {{ filename }} {
+  /**
+   * Display a listing of the resource.
+   *
+   * @param {HttpContextContract} ctx
+   */
   public async index (ctx: HttpContextContract) {
+    // TODO: Implement index method
   }
 
+  /**
+   * Show the form for creating a new resource.
+   *
+   * @param {HttpContextContract} ctx
+   */
   public async create (ctx: HttpContextContract) {
+    // TODO: Implement create method
   }
 
+  /**
+   * Store a newly created resource in storage.
+   *
+   * @param {HttpContextContract} ctx
+   */
   public async store (ctx: HttpContextContract) {
+    //  TODO: Implement store method
   }
 
+  /**
+   * Display the specified resource.
+   *
+   * @param {HttpContextContract} ctx
+   */
   public async show (ctx: HttpContextContract) {
+    // TODO: Implement show method
   }
 
+  /**
+   * Show the form for editing the specified resource.
+   *
+   * @param {HttpContextContract} ctx
+   */
   public async edit (ctx: HttpContextContract) {
+    // TODO: Implement edit method
   }
 
+  /**
+   * Update the specified resource in storage.
+   *
+   * @param {HttpContextContract} ctx
+   */
   public async update (ctx: HttpContextContract) {
+    // TODO: Implement update method
   }
 
+  /**
+   * Remove the specified resource from storage.
+   *
+   * @param {HttpContextContract} ctx
+   */
   public async destroy (ctx: HttpContextContract) {
+    // TODO: Implement destroy method
   }
 }

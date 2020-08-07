@@ -51,21 +51,29 @@ export default class MakePreloadFile extends BaseGenerator {
 			return this.environment.split(',')
 		}
 
-		return this.prompt.multiple('Select the environment(s) in which you want to load this file', [
+		return this.prompt.multiple(
+			'Select the environment(s) in which you want to load this file',
+			[
+				{
+					name: 'console',
+					message: 'During ace commands',
+				},
+				{
+					name: 'web',
+					message: 'During HTTP server',
+				},
+			],
 			{
-				name: 'console',
-				message: 'During ace commands',
-			},
-			{
-				name: 'web',
-				message: 'During HTTP server',
-			},
-		])
+				validate(choices) {
+					return choices && choices.length ? true : 'Please the environment for the preload file'
+				},
+			}
+		)
 	}
 
 	/**
 	 * Validates environments to ensure they are allowed. Especially when
-	 * define as a flag.
+	 * defined as a flag.
 	 */
 	private validateEnvironments(
 		environments: string[]
@@ -117,7 +125,12 @@ export default class MakePreloadFile extends BaseGenerator {
 		const relativePath = file.toJSON().relativepath
 		const rcFile = new files.AdonisRcFile(ADONIS_ACE_CWD()!)
 
-		rcFile.setPreload(`./${slash(relativePath).replace(extname(relativePath), '')}`, environments)
+		if (environments && environments.length) {
+			rcFile.setPreload(`./${slash(relativePath).replace(extname(relativePath), '')}`, environments)
+		} else {
+			rcFile.setPreload(`./${slash(relativePath).replace(extname(relativePath), '')}`)
+		}
+
 		rcFile.commit()
 	}
 }

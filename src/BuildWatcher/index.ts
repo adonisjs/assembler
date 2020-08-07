@@ -5,7 +5,7 @@
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
-*/
+ */
 
 import chokidar from 'chokidar'
 import getPort from 'get-port'
@@ -24,143 +24,149 @@ import { EnvParser } from '../EnvParser'
  * HTTP server on changes.
  */
 export class BuildWatcher {
-  private manifest = new Manifest(this.buildRoot, this.logger)
+	private manifest = new Manifest(this.buildRoot, this.logger)
 
-  constructor (
-    private buildRoot: string,
-    private nodeArgs: string[],
-    private logger = new Logger(),
-  ) {}
+	constructor(
+		private buildRoot: string,
+		private nodeArgs: string[],
+		private logger = new Logger()
+	) {}
 
-  /**
-   * Returns true when filePath is .js or .json. We need this to
-   * restart the HTTP server
-   */
-  private isScriptFile (filePath: string) {
-    return ['.js', '.json'].includes(extname(filePath))
-  }
+	/**
+	 * Returns true when filePath is .js or .json. We need this to
+	 * restart the HTTP server
+	 */
+	private isScriptFile(filePath: string) {
+		return ['.js', '.json'].includes(extname(filePath))
+	}
 
-  /**
-   * Watch for compiled output changes
-   */
-  public async watch (buildDir: string, poll = false) {
-    const absPath = join(this.buildRoot, buildDir)
-    const hasBuildDir = await pathExists(absPath)
-    if (!hasBuildDir) {
-      this.logger.error(`"${buildDir}" doesn't exists. Make sure to compile the source code first.`)
-      return
-    }
+	/**
+	 * Watch for compiled output changes
+	 */
+	public async watch(buildDir: string, poll = false) {
+		const absPath = join(this.buildRoot, buildDir)
+		const hasBuildDir = await pathExists(absPath)
+		if (!hasBuildDir) {
+			this.logger.error(`"${buildDir}" doesn't exists. Make sure to compile the source code first.`)
+			return
+		}
 
-    /**
-     * Parser the .env file
-     */
-    const envParser = new EnvParser()
-    await envParser.parse(absPath)
+		/**
+		 * Parser the .env file
+		 */
+		const envParser = new EnvParser()
+		await envParser.parse(absPath)
 
-    /**
-     * Pull defined env values inside an object (only if defined)
-     */
-    const envOptions = envParser.asEnvObject(['PORT', 'TZ'])
+		/**
+		 * Pull defined env values inside an object (only if defined)
+		 */
+		const envOptions = envParser.asEnvObject(['PORT', 'TZ'])
 
-    /**
-     * Obtains a random port by giving preference to the one defined inside
-     * the `.env` file. This eases the process of running the application
-     * without manually changing ports inside the `.env` file when
-     * original port is in use.
-     */
-    if (envOptions.PORT) {
-      envOptions.PORT = String(await getPort({
-        port: [Number(envOptions.PORT)],
-        host: envParser.get('HOST'),
-      }))
-    }
+		/**
+		 * Obtains a random port by giving preference to the one defined inside
+		 * the `.env` file. This eases the process of running the application
+		 * without manually changing ports inside the `.env` file when
+		 * original port is in use.
+		 */
+		if (envOptions.PORT) {
+			envOptions.PORT = String(
+				await getPort({
+					port: [Number(envOptions.PORT)],
+					host: envParser.get('HOST'),
+				})
+			)
+		}
 
-    const rcFile = new RcFile(absPath)
-    const httpServer = new HttpServer(SERVER_ENTRY_FILE, absPath, this.nodeArgs, this.logger, envOptions)
+		const rcFile = new RcFile(absPath)
+		const httpServer = new HttpServer(
+			SERVER_ENTRY_FILE,
+			absPath,
+			this.nodeArgs,
+			this.logger,
+			envOptions
+		)
 
-    /**
-     * Initate watcher. Instead of ignoring files upfront, we use the
-     * events handler to filter out files.
-     */
-    const watcher = chokidar.watch(['.'], {
-      ignoreInitial: true,
-      usePolling: poll,
-      cwd: absPath,
-      ignored: [
-        'node_modules/**',
-      ],
-    })
+		/**
+		 * Initate watcher. Instead of ignoring files upfront, we use the
+		 * events handler to filter out files.
+		 */
+		const watcher = chokidar.watch(['.'], {
+			ignoreInitial: true,
+			usePolling: poll,
+			cwd: absPath,
+			ignored: ['node_modules/**'],
+		})
 
-    /**
-     * Notify that server has died
-     */
-    httpServer.on('exit', ({ code }) => {
-      this.logger.stop('Underlying HTTP server died with "%s code"', code)
-    })
+		/**
+		 * Notify that server has died
+		 */
+		httpServer.on('exit', ({ code }) => {
+			this.logger.stop('Underlying HTTP server died with "%s code"', code)
+		})
 
-    /**
-     * Handle new file additions
-     */
-    watcher.on('add', (filePath: string) => {
-      const metaData = rcFile.getMetaData(filePath)
-      const isScriptFile = this.isScriptFile(filePath)
+		/**
+		 * Handle new file additions
+		 */
+		watcher.on('add', (filePath: string) => {
+			const metaData = rcFile.getMetaData(filePath)
+			const isScriptFile = this.isScriptFile(filePath)
 
-      if (isScriptFile || metaData.reload) {
-        this.logger.create(filePath)
-        httpServer.restart()
-      }
+			if (isScriptFile || metaData.reload) {
+				this.logger.create(filePath)
+				httpServer.restart()
+			}
 
-      if (isScriptFile && rcFile.isCommandsPath(filePath)) {
-        this.manifest.generate()
-      }
-    })
+			if (isScriptFile && rcFile.isCommandsPath(filePath)) {
+				this.manifest.generate()
+			}
+		})
 
-    /**
-     * Handle file updates
-     */
-    watcher.on('change', (filePath: string) => {
-      const metaData = rcFile.getMetaData(filePath)
-      const isScriptFile = this.isScriptFile(filePath)
+		/**
+		 * Handle file updates
+		 */
+		watcher.on('change', (filePath: string) => {
+			const metaData = rcFile.getMetaData(filePath)
+			const isScriptFile = this.isScriptFile(filePath)
 
-      if (isScriptFile || metaData.reload) {
-        this.logger.update(filePath)
-        httpServer.restart()
-      }
+			if (isScriptFile || metaData.reload) {
+				this.logger.update(filePath)
+				httpServer.restart()
+			}
 
-      if (isScriptFile && rcFile.isCommandsPath(filePath)) {
-        this.manifest.generate()
-      }
-    })
+			if (isScriptFile && rcFile.isCommandsPath(filePath)) {
+				this.manifest.generate()
+			}
+		})
 
-    /**
-     * Handle file removals
-     */
-    watcher.on('unlink', (filePath: string) => {
-      const metaData = rcFile.getMetaData(filePath)
-      const isScriptFile = this.isScriptFile(filePath)
+		/**
+		 * Handle file removals
+		 */
+		watcher.on('unlink', (filePath: string) => {
+			const metaData = rcFile.getMetaData(filePath)
+			const isScriptFile = this.isScriptFile(filePath)
 
-      if (metaData.rcFile) {
-        this.logger.stop('cannot continue after deletion of .adonisrc.json file')
-        watcher.close()
-        return
-      }
+			if (metaData.rcFile) {
+				this.logger.stop('cannot continue after deletion of .adonisrc.json file')
+				watcher.close()
+				return
+			}
 
-      if (isScriptFile || metaData.reload) {
-        this.logger.delete(filePath)
-        httpServer.restart()
-      }
+			if (isScriptFile || metaData.reload) {
+				this.logger.delete(filePath)
+				httpServer.restart()
+			}
 
-      if (isScriptFile && rcFile.isCommandsPath(filePath)) {
-        this.manifest.generate()
-      }
-    })
+			if (isScriptFile && rcFile.isCommandsPath(filePath)) {
+				this.manifest.generate()
+			}
+		})
 
-    /**
-     * Start the http server when watcher is ready
-     */
-    watcher.on('ready', () => {
-      this.logger.watch({ message: 'watching for file changes', suffix: buildDir })
-      httpServer.start()
-    })
-  }
+		/**
+		 * Start the http server when watcher is ready
+		 */
+		watcher.on('ready', () => {
+			this.logger.watch({ message: 'watching for file changes', suffix: buildDir })
+			httpServer.start()
+		})
+	}
 }

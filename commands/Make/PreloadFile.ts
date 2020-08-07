@@ -65,7 +65,7 @@ export default class MakePreloadFile extends BaseGenerator {
 			],
 			{
 				validate(choices) {
-					return choices && choices.length ? true : 'Please the environment for the preload file'
+					return choices && choices.length ? true : 'Select the environment for the preload file'
 				},
 			}
 		)

@@ -32,7 +32,7 @@ test.group('RcFile', (group) => {
 		assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
 	})
 
-	test('get an array of meta file patterns that has reload server set to true', async (assert) => {
+	test('get info about a meta file', async (assert) => {
 		await fs.add(
 			'.adonisrc.json',
 			JSON.stringify({
@@ -41,8 +41,23 @@ test.group('RcFile', (group) => {
 		)
 
 		const rcFile = new RcFile(fs.basePath)
-		assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
-		assert.deepEqual(rcFile.getRestartServerFilesGlob(), ['public/**/*.(css|js)'])
+		assert.deepEqual(rcFile.getMetaData('.env'), {
+			metaFile: true,
+			reload: false,
+			rcFile: false,
+		})
+
+		assert.deepEqual(rcFile.getMetaData('public/foo.js'), {
+			metaFile: true,
+			reload: true,
+			rcFile: false,
+		})
+
+		assert.deepEqual(rcFile.getMetaData('schema/app.js'), {
+			metaFile: false,
+			reload: false,
+			rcFile: false,
+		})
 	})
 
 	test('match relative paths against meta files', async (assert) => {
@@ -54,6 +69,7 @@ test.group('RcFile', (group) => {
 		)
 
 		const rcFile = new RcFile(fs.basePath)
+		assert.isTrue(rcFile.isMetaFile('.env'))
 		assert.isTrue(rcFile.isMetaFile('public/style.css'))
 		assert.isTrue(rcFile.isMetaFile('public/script.js'))
 		assert.isFalse(rcFile.isMetaFile('public/script.sass'))
@@ -87,7 +103,6 @@ test.group('RcFile', (group) => {
 
 		const rcFile = new RcFile(fs.basePath)
 		assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
-		assert.deepEqual(rcFile.getRestartServerFilesGlob(), ['public/**/*.(css|js)'])
 	})
 
 	test('filter ace file from files globs array', async (assert) => {
@@ -100,7 +115,6 @@ test.group('RcFile', (group) => {
 
 		const rcFile = new RcFile(fs.basePath)
 		assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
-		assert.deepEqual(rcFile.getRestartServerFilesGlob(), ['public/**/*.(css|js)'])
 	})
 
 	test('get metadata for files', async (assert) => {

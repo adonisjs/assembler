@@ -10,10 +10,9 @@
 import slash from 'slash'
 import picomatch from 'picomatch'
 import { join, relative } from 'path'
-import { Ioc } from '@adonisjs/fold'
 import importFresh from 'import-fresh'
 import { resolveFrom } from '@poppinss/utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import { RCFILE_NAME, ACE_FILE_NAME } from '../../config/paths'
 
@@ -32,7 +31,7 @@ export class RcFile {
 	/**
 	 * Reference to application
 	 */
-	public application = new Application(this.appRoot, new Ioc(), this.raw, {})
+	public application = new Application(this.appRoot, 'console', this.raw)
 
 	/**
 	 * A matcher to know if a file is part of the meta files globs
@@ -55,17 +54,38 @@ export class RcFile {
 	constructor(private appRoot: string) {}
 
 	/**
-	 * Returns true when file is `.adonisrc.json` itself
+	 * Returns an array of globs for the meta files that has `reloadServer`
+	 * set to true
 	 */
-	public isRcFile(filePath: string) {
-		return filePath === RCFILE_NAME
+	private getRestartServerFilesGlob(): string[] {
+		return this.application.rcFile.metaFiles
+			.filter(({ reloadServer, pattern }) => {
+				return reloadServer === true && ![RCFILE_NAME, ACE_FILE_NAME].includes(pattern)
+			})
+			.map(({ pattern }) => pattern)
 	}
 
 	/**
-	 * Reloads the rcfile.json bypassing the require cache
+	 * Returns the commands glob for registered commands. We convert the
+	 * command paths to glob pattern
 	 */
-	public getDiskContents(): any {
-		return importFresh(this.rcFilePath) as any
+	private commandsGlob(): string[] {
+		const commands = this.application.rcFile.commands.reduce((result: string[], commandPath) => {
+			if (/^(.){1,2}\//.test(commandPath)) {
+				commandPath = slash(relative(this.appRoot, join(this.appRoot, commandPath)))
+				result = result.concat([`${commandPath}.*`, `${commandPath}/**/*`])
+			}
+			return result
+		}, [])
+
+		return commands
+	}
+
+	/**
+	 * Returns true when file is `.adonisrc.json` itself
+	 */
+	private isRcFile(filePath: string) {
+		return filePath === RCFILE_NAME
 	}
 
 	/**
@@ -80,31 +100,10 @@ export class RcFile {
 	}
 
 	/**
-	 * Returns an array of globs for the meta files that has `reloadServer`
-	 * set to true
+	 * Reloads the rcfile.json bypassing the require cache
 	 */
-	public getRestartServerFilesGlob(): string[] {
-		return this.application.rcFile.metaFiles
-			.filter(({ reloadServer, pattern }) => {
-				return reloadServer === true && ![RCFILE_NAME, ACE_FILE_NAME].includes(pattern)
-			})
-			.map(({ pattern }) => pattern)
-	}
-
-	/**
-	 * Returns the commands glob for registered commands. We convert the
-	 * command paths to glob pattern
-	 */
-	public commandsGlob(): string[] {
-		const commands = this.application.rcFile.commands.reduce((result: string[], commandPath) => {
-			if (/^(.){1,2}\//.test(commandPath)) {
-				commandPath = slash(relative(this.appRoot, join(this.appRoot, commandPath)))
-				result = result.concat([`${commandPath}.*`, `${commandPath}/**/*`])
-			}
-			return result
-		}, [])
-
-		return commands
+	public getDiskContents(): any {
+		return importFresh(this.rcFilePath) as any
 	}
 
 	/**

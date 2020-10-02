@@ -9,7 +9,7 @@
 
 import execa from 'execa'
 import Emittery from 'emittery'
-import { Logger } from '@poppinss/fancy-logs'
+import { logger as uiLogger } from '@poppinss/cliui'
 
 /**
  * Exposes the API to start Node.js HTTP server as a child process. The
@@ -23,7 +23,7 @@ export class HttpServer extends Emittery {
 		private sourceFile: string,
 		private projectRoot: string,
 		private nodeArgs: string[] = [],
-		private logger: Logger,
+		private logger: typeof uiLogger,
 		private env: { [key: string]: string } = {}
 	) {
 		super()
@@ -61,26 +61,20 @@ export class HttpServer extends Emittery {
 	}
 
 	/**
-	 * Restart the server by killing the old one
+	 * Stop the underlying process
 	 */
-	public restart() {
+	public stop() {
 		if (this.childProcess) {
 			this.childProcess.removeAllListeners()
 			this.childProcess.kill('SIGKILL')
 		}
+	}
+
+	/**
+	 * Restart the server by killing the old one
+	 */
+	public restart() {
+		this.stop()
 		this.start()
 	}
-}
-
-/**
- * A dummy implement of Http server to work as null object
- */
-export class DummyHttpServer extends HttpServer {
-	public get isConnected() {
-		return true
-	}
-
-	public start() {}
-
-	public restart() {}
 }

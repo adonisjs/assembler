@@ -12,7 +12,6 @@ import { join, extname } from 'path'
 import { args, flags } from '@adonisjs/ace'
 
 import { BaseGenerator } from './Base'
-import { ADONIS_ACE_CWD } from '../../config/env'
 
 /**
  * Command to make a new preloaded file
@@ -29,47 +28,43 @@ export default class MakePreloadFile extends BaseGenerator {
 	private allowedEnvironments = ['console', 'web', 'test']
 
 	/**
-	 * Command meta data
+	 * Command name
 	 */
 	public static commandName = 'make:prldfile'
+
+	/**
+	 * Command description
+	 */
 	public static description =
-		'Make a new preloaded file. Preloaded files are loaded automatically on boot'
+		'Make a new preload file. Preloaded files are loaded automatically on boot'
 
 	@args.string({ description: 'Name of the file' })
 	public name: string
 
 	@flags.string({
 		description: 'Explicitly define the environment in which you want to load this file',
+		async defaultValue(command: MakePreloadFile) {
+			return command.prompt.multiple(
+				'Select the environment(s) in which you want to load this file',
+				[
+					{
+						name: 'console',
+						message: 'During ace commands',
+					},
+					{
+						name: 'web',
+						message: 'During HTTP server',
+					},
+				],
+				{
+					validate(choices) {
+						return choices && choices.length ? true : 'Use space to select the environment'
+					},
+				}
+			)
+		},
 	})
-	public environment: string
-
-	/**
-	 * Returns the environments for the preloaded file
-	 */
-	private async getEnvironments(): Promise<string[]> {
-		if (this.environment) {
-			return this.environment.split(',')
-		}
-
-		return this.prompt.multiple(
-			'Select the environment(s) in which you want to load this file',
-			[
-				{
-					name: 'console',
-					message: 'During ace commands',
-				},
-				{
-					name: 'web',
-					message: 'During HTTP server',
-				},
-			],
-			{
-				validate(choices) {
-					return choices && choices.length ? true : 'Select the environment for the preload file'
-				},
-			}
-		)
-	}
+	public environment: ('console' | 'web')[]
 
 	/**
 	 * Validates environments to ensure they are allowed. Especially when
@@ -95,8 +90,14 @@ export default class MakePreloadFile extends BaseGenerator {
 		return this.application.rcFile.directories.start || 'start'
 	}
 
-	public async handle() {
-		const environments = await this.getEnvironments()
+	/**
+	 * Run command
+	 */
+	public async run() {
+		const environments =
+			typeof this.environment === 'string'
+				? (this.environment as string).split(',')
+				: this.environment
 
 		/**
 		 * Show error when defined environments are invalid
@@ -123,7 +124,7 @@ export default class MakePreloadFile extends BaseGenerator {
 		 */
 		const { files } = await import('@adonisjs/sink')
 		const relativePath = file.toJSON().relativepath
-		const rcFile = new files.AdonisRcFile(ADONIS_ACE_CWD()!)
+		const rcFile = new files.AdonisRcFile(this.application.appRoot)
 
 		if (environments && environments.length) {
 			rcFile.setPreload(`./${slash(relativePath).replace(extname(relativePath), '')}`, environments)

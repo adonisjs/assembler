@@ -9,11 +9,10 @@
 
 import test from 'japa'
 import { join } from 'path'
-import { Ioc } from '@adonisjs/fold'
 import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import { toNewlineArray } from '../test-helpers'
 import PreloadFile from '../commands/Make/PreloadFile'
@@ -38,12 +37,12 @@ test.group('Make Preloaded File', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const preloadFile = new PreloadFile(app, new Kernel(app))
 		preloadFile.name = 'viewGlobals'
-		preloadFile.environment = 'console,web'
-		await preloadFile.handle()
+		preloadFile.environment = 'console,web' as any
+		await preloadFile.run()
 
 		const AppProvider = await fs.get('start/viewGlobals.ts')
 		const ProviderTemplate = await templates.get('preload-file.txt')
@@ -74,12 +73,12 @@ test.group('Make Preloaded File', (group) => {
 		)
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const preloadFile = new PreloadFile(app, new Kernel(app))
 		preloadFile.name = 'viewGlobals'
-		preloadFile.environment = 'console,web'
-		await preloadFile.handle()
+		preloadFile.environment = ['console', 'web']
+		await preloadFile.run()
 
 		const AppProvider = await fs.get('foo/viewGlobals.ts')
 		const ProviderTemplate = await templates.get('preload-file.txt')

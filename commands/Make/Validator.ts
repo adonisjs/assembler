@@ -47,7 +47,7 @@ export default class MakeValidator extends BaseGenerator {
 		return this.getPathForNamespace('validators') || 'app/Validators'
 	}
 
-	public async handle() {
+	public async run() {
 		this.resourceName = this.name
 		await super.generate()
 	}

@@ -9,11 +9,10 @@
 
 import test from 'japa'
 import { join } from 'path'
-import { Ioc } from '@adonisjs/fold'
 import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import MakeView from '../commands/Make/View'
 
@@ -36,11 +35,11 @@ test.group('Make Command', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const view = new MakeView(app, new Kernel(app))
 		view.name = 'welcome'
-		await view.handle()
+		await view.run()
 
 		const welcomeView = await fs.get('resources/views/welcome.edge')
 		assert.deepEqual(welcomeView.trim(), '')
@@ -57,11 +56,11 @@ test.group('Make Command', (group) => {
 		)
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const view = new MakeView(app, new Kernel(app))
 		view.name = 'welcome'
-		await view.handle()
+		await view.run()
 
 		const welcomeView = await fs.get('public/views/welcome.edge')
 		assert.deepEqual(welcomeView.trim(), '')

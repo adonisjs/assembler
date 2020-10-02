@@ -12,8 +12,6 @@ import { pathExists } from 'fs-extra'
 import { BaseCommand } from '@adonisjs/ace'
 import { GeneratorFile } from '@adonisjs/ace/build/src/Generator/File'
 
-import { ADONIS_ACE_CWD } from '../../config/env'
-
 /**
  * Base class to generate framework entities
  */
@@ -52,16 +50,7 @@ export abstract class BaseGenerator extends BaseCommand {
 	 * Handle command
 	 */
 	public async generate(): Promise<GeneratorFile | undefined> {
-		const cwd = ADONIS_ACE_CWD()
-		if (!cwd) {
-			const commandName = this.constructor['commandName']
-			this.logger.error(
-				`Cannot run "${commandName}". Make sure you running this command as "node ace ${commandName}"`
-			)
-			return
-		}
-
-		const hasRcFile = await this.hasRcFile(cwd)
+		const hasRcFile = await this.hasRcFile(this.application.appRoot)
 
 		/**
 		 * Ensure `.adonisrc.json` file exists
@@ -82,7 +71,7 @@ export abstract class BaseGenerator extends BaseCommand {
 			.stub(this.getStub())
 			.useMustache()
 			.destinationDir(this.getDestinationPath())
-			.appRoot(cwd)
+			.appRoot(this.application.appRoot)
 			.apply(this.templateData())
 
 		await this.generator.run()

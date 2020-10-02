@@ -9,11 +9,10 @@
 
 import test from 'japa'
 import { join } from 'path'
-import { Ioc } from '@adonisjs/fold'
 import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import { toNewlineArray } from '../test-helpers'
 import MakeProvider from '../commands/Make/Provider'
@@ -38,11 +37,11 @@ test.group('Make Provider', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const provider = new MakeProvider(app, new Kernel(app))
 		provider.name = 'app'
-		await provider.handle()
+		await provider.run()
 
 		const AppProvider = await fs.get('providers/AppProvider.ts')
 		const ProviderTemplate = await templates.get('provider.txt')
@@ -68,11 +67,11 @@ test.group('Make Provider', (group) => {
 		)
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const provider = new MakeProvider(app, new Kernel(app))
 		provider.name = 'app'
-		await provider.handle()
+		await provider.run()
 
 		const AppProvider = await fs.get('foo/AppProvider.ts')
 		const ProviderTemplate = await templates.get('provider.txt')
@@ -94,11 +93,11 @@ test.group('Make Provider', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const provider = new MakeProvider(app, new Kernel(app))
 		provider.name = 'auth/app'
-		await provider.handle()
+		await provider.run()
 
 		const AppProvider = await fs.get('providers/auth/AppProvider.ts')
 		const ProviderTemplate = await templates.get('provider.txt')
@@ -117,12 +116,12 @@ test.group('Make Provider', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const provider = new MakeProvider(app, new Kernel(app))
 		provider.name = 'app'
 		provider.ace = true
-		await provider.handle()
+		await provider.run()
 
 		const AppProvider = await fs.get('providers/AppProvider.ts')
 		const ProviderTemplate = await templates.get('provider.txt')

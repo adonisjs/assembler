@@ -9,11 +9,10 @@
 
 import test from 'japa'
 import { join } from 'path'
-import importFresh from 'import-fresh'
-import { Ioc } from '@adonisjs/fold'
 import { Kernel } from '@adonisjs/ace'
+import importFresh from 'import-fresh'
 import { Filesystem } from '@poppinss/dev-utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import { toNewlineArray } from '../test-helpers'
 import MakeCommand from '../commands/Make/Command'
@@ -38,11 +37,11 @@ test.group('Make Command', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const command = new MakeCommand(app, new Kernel(app))
 		command.name = 'greet'
-		await command.handle()
+		await command.run()
 
 		const GreetCommand = await fs.get('commands/Greet.ts')
 		const CommandTemplate = await templates.get('command.txt')
@@ -68,11 +67,11 @@ test.group('Make Command', (group) => {
 		)
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const command = new MakeCommand(app, new Kernel(app))
 		command.name = 'greet'
-		await command.handle()
+		await command.run()
 
 		const GreetCommand = await fs.get('foo/Greet.ts')
 		const CommandTemplate = await templates.get('command.txt')
@@ -98,11 +97,11 @@ test.group('Make Command', (group) => {
 		)
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const command = new MakeCommand(app, new Kernel(app))
 		command.name = 'RunInstructions'
-		await command.handle()
+		await command.run()
 
 		const GreetCommand = await fs.get('foo/RunInstructions.ts')
 		const CommandTemplate = await templates.get('command.txt')

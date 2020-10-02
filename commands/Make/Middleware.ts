@@ -47,7 +47,7 @@ export default class MakeMiddleware extends BaseGenerator {
 		return 'app/Middleware'
 	}
 
-	public async handle() {
+	public async run() {
 		this.resourceName = this.name
 		await super.generate()
 	}

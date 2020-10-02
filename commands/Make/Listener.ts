@@ -46,7 +46,7 @@ export default class MakeListener extends BaseGenerator {
 		return this.getPathForNamespace('eventListeners') || 'app/Listeners'
 	}
 
-	public async handle() {
+	public async run() {
 		this.resourceName = this.name
 		await super.generate()
 	}

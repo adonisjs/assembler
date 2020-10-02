@@ -62,7 +62,7 @@ export default class MakeController extends BaseGenerator {
 		return this.getPathForNamespace('httpControllers') || 'app/Controllers/Http'
 	}
 
-	public async handle() {
+	public async run() {
 		this.resourceName = this.name
 		await super.generate()
 	}

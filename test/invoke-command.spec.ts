@@ -9,12 +9,12 @@
 
 import test from 'japa'
 import { join } from 'path'
-import { Ioc } from '@adonisjs/fold'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import Invoke from '../commands/Invoke'
+// import { testingRenderer } from '@poppinss/cliui'
 
 const fs = new Filesystem(join(__dirname, '__app'))
 
@@ -23,22 +23,7 @@ test.group('Invoke', (group) => {
 		await fs.cleanup()
 	})
 
-	test('return with error when not ADONIS_ACE_CWD is not defined', async (assert) => {
-		const app = new Application(fs.basePath, new Ioc(), {}, {})
-		app.environment = 'test'
-
-		const invoke = new Invoke(app, new Kernel(app))
-		await invoke.handle()
-
-		assert.deepEqual(invoke.logger.logs, [
-			/* eslint-disable-next-line */
-			'underline(red(error)) Cannot invoke post install instructions. Make sure you running this command as "node ace invoke"',
-		])
-	})
-
 	test('execute instructions defined in package.json file', async (assert) => {
-		process.env.ADONIS_ACE_CWD = fs.basePath
-
 		await fs.add(
 			'node_modules/@adonisjs/sample/package.json',
 			JSON.stringify({
@@ -51,11 +36,11 @@ test.group('Invoke', (group) => {
 			})
 		)
 
-		const app = new Application(fs.basePath, new Ioc(), {}, {})
+		const app = new Application(fs.basePath, 'test', {})
 
 		const invoke = new Invoke(app, new Kernel(app))
 		invoke.name = '@adonisjs/sample'
-		await invoke.handle()
+		await invoke.run()
 
 		const envFile = await fs.fsExtra.readFile(join(fs.basePath, '.env'), 'utf-8')
 		const envExampleFile = await fs.fsExtra.readFile(join(fs.basePath, '.env.example'), 'utf-8')

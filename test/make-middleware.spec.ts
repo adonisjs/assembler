@@ -9,11 +9,10 @@
 
 import test from 'japa'
 import { join } from 'path'
-import { Ioc } from '@adonisjs/fold'
 import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import { toNewlineArray } from '../test-helpers'
 import MakeMiddleware from '../commands/Make/Middleware'
@@ -38,11 +37,11 @@ test.group('Make Middleware', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const middleware = new MakeMiddleware(app, new Kernel(app))
 		middleware.name = 'spoof_accept'
-		await middleware.handle()
+		await middleware.run()
 
 		const SpoofMiddleware = await fs.get('app/Middleware/SpoofAccept.ts')
 		const MiddlewareTemplate = await templates.get('middleware.txt')

@@ -9,11 +9,10 @@
 
 import test from 'japa'
 import { join } from 'path'
-import { Ioc } from '@adonisjs/fold'
 import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import { toNewlineArray } from '../test-helpers'
 import MakeValidator from '../commands/Make/Validator'
@@ -38,11 +37,11 @@ test.group('Make Validator', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const validator = new MakeValidator(app, new Kernel(app))
 		validator.name = 'user'
-		await validator.handle()
+		await validator.run()
 
 		const UserValidator = await fs.get('app/Validators/UserValidator.ts')
 		const ValidatorTemplate = await templates.get('validator.txt')
@@ -68,11 +67,11 @@ test.group('Make Validator', (group) => {
 		)
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const validator = new MakeValidator(app, new Kernel(app))
 		validator.name = 'user'
-		await validator.handle()
+		await validator.run()
 
 		const UserValidator = await fs.get('app/UserValidator.ts')
 		const ValidatorTemplate = await templates.get('validator.txt')

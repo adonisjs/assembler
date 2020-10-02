@@ -9,11 +9,10 @@
 
 import test from 'japa'
 import { join } from 'path'
-import { Ioc } from '@adonisjs/fold'
 import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import { toNewlineArray } from '../test-helpers'
 import MakeException from '../commands/Make/Exception'
@@ -38,11 +37,11 @@ test.group('Make Exception', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const exception = new MakeException(app, new Kernel(app))
 		exception.name = 'user'
-		await exception.handle()
+		await exception.run()
 
 		const UserException = await fs.get('app/Exceptions/UserException.ts')
 		const ExceptionTemplate = await templates.get('exception.txt')
@@ -58,12 +57,12 @@ test.group('Make Exception', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const exception = new MakeException(app, new Kernel(app))
 		exception.name = 'user'
 		exception.selfHandle = true
-		await exception.handle()
+		await exception.run()
 
 		const UserException = await fs.get('app/Exceptions/UserException.ts')
 		const ExceptionTemplate = await templates.get('self-handle-exception.txt')
@@ -89,12 +88,12 @@ test.group('Make Exception', (group) => {
 		)
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const exception = new MakeException(app, new Kernel(app))
 		exception.name = 'user'
 		exception.selfHandle = true
-		await exception.handle()
+		await exception.run()
 
 		const UserException = await fs.get('app/Exceptions/Custom/UserException.ts')
 		const ExceptionTemplate = await templates.get('self-handle-exception.txt')

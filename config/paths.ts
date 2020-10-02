@@ -7,8 +7,8 @@
  * file that was distributed with this source code.
  */
 
-export const RCFILE_NAME = '.adonisrc.json'
-export const TSCONFIG_FILE_NAME = 'tsconfig.json'
-export const DEFAULT_BUILD_DIR = 'build'
-export const SERVER_ENTRY_FILE = 'server.js'
 export const ACE_FILE_NAME = 'ace'
+export const DEFAULT_BUILD_DIR = 'build'
+export const RCFILE_NAME = '.adonisrc.json'
+export const SERVER_ENTRY_FILE = 'server.ts'
+export const TSCONFIG_FILE_NAME = 'tsconfig.json'

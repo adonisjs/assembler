@@ -56,7 +56,7 @@ export default class MakeException extends BaseGenerator {
 		return this.getPathForNamespace('exceptions') || 'app/Exceptions'
 	}
 
-	public async handle() {
+	public async run() {
 		this.resourceName = this.name
 		await super.generate()
 	}

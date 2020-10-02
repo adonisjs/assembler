@@ -9,11 +9,10 @@
 
 import test from 'japa'
 import { join } from 'path'
-import { Ioc } from '@adonisjs/fold'
 import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import { toNewlineArray } from '../test-helpers'
 import MakeController from '../commands/Make/Controller'
@@ -38,11 +37,11 @@ test.group('Make Controller', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const controller = new MakeController(app, new Kernel(app))
 		controller.name = 'user'
-		await controller.handle()
+		await controller.run()
 
 		const UsersController = await fs.get('app/Controllers/Http/UsersController.ts')
 		const ControllerTemplate = await templates.get('controller.txt')
@@ -56,12 +55,12 @@ test.group('Make Controller', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const controller = new MakeController(app, new Kernel(app))
 		controller.name = 'user'
 		controller.resource = true
-		await controller.handle()
+		await controller.run()
 
 		const UsersController = await fs.get('app/Controllers/Http/UsersController.ts')
 		const ResourceTemplate = await templates.get('resource-controller.txt')
@@ -85,11 +84,11 @@ test.group('Make Controller', (group) => {
 		)
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const controller = new MakeController(app, new Kernel(app))
 		controller.name = 'user'
-		await controller.handle()
+		await controller.run()
 
 		const UsersController = await fs.get('app/Controllers/UsersController.ts')
 		const ControllerTemplate = await templates.get('controller.txt')

@@ -7,30 +7,18 @@
  * file that was distributed with this source code.
  */
 
-import mem from 'mem'
 import slash from 'slash'
 import copyfiles from 'cpy'
-import getPort from 'get-port'
-import debounce from 'debounce'
 import tsStatic from 'typescript'
 import { join, relative } from 'path'
-import { Colors } from '@poppinss/colors'
-import { Logger } from '@poppinss/fancy-logs'
-import { resolveFrom } from '@poppinss/utils'
 import { remove, outputJSON } from 'fs-extra'
-import { TypescriptCompiler } from '@poppinss/chokidar-ts'
 import { iocTransformer } from '@adonisjs/ioc-transformer'
+import { logger as uiLogger, instructions } from '@poppinss/cliui'
 
+import { Ts } from '../Ts'
 import { RcFile } from '../RcFile'
 import { Manifest } from '../Manifest'
-import { HttpServer, DummyHttpServer } from '../HttpServer'
-import {
-	RCFILE_NAME,
-	TSCONFIG_FILE_NAME,
-	SERVER_ENTRY_FILE,
-	DEFAULT_BUILD_DIR,
-} from '../../config/paths'
-import { EnvParser } from '../EnvParser'
+import { RCFILE_NAME } from '../../config/paths'
 
 /**
  * Exposes the API to build the AdonisJs project for development or
@@ -40,55 +28,48 @@ export class Compiler {
 	/**
 	 * Reference to typescript compiler
 	 */
-	public tsCompiler = new TypescriptCompiler(
-		this.appRoot,
-		TSCONFIG_FILE_NAME,
-		require(resolveFrom(this.appRoot, 'typescript/lib/typescript'))
-	)
-
-	/**
-	 * Reference to HTTP server
-	 */
-	public httpServer: HttpServer | DummyHttpServer
+	private ts = new Ts(this.appRoot, this.logger)
 
 	/**
 	 * Reference to rc File
 	 */
-	public rcFile = new RcFile(this.appRoot)
+	private rcFile = new RcFile(this.appRoot)
 
 	/**
 	 * Manifest instance to generate ace manifest file
 	 */
-	public manifest = new Manifest(this.appRoot, this.logger)
+	private manifest = new Manifest(this.appRoot, this.logger)
 
-	/**
-	 * Same as [[this.writeRcFile]] but waits for 2secs
-	 */
-	public touchRcFile = debounce(this.writeRcFile.bind(this), 2000)
+	constructor(public appRoot: string, private logger: typeof uiLogger = uiLogger) {
+		this.ts.tsCompiler.use(() => {
+			return iocTransformer(this.ts.tsCompiler.ts, this.rcFile.application.rcFile)
+		}, 'after')
+	}
 
 	/**
 	 * Returns relative unix path from the project root. Used for
 	 * display only
 	 */
-	private getRelativeUnixPath = mem((absPath: string) => slash(relative(this.appRoot, absPath)))
-
-	private colors = new Colors()
-
-	constructor(
-		public appRoot: string,
-		private serveApp: boolean,
-		private nodeArgs: string[] = [],
-		private logger: Logger = new Logger()
-	) {
-		this.tsCompiler.use(() => {
-			return iocTransformer(this.tsCompiler.ts, this.rcFile.application.rcFile)
-		}, 'after')
+	private getRelativeUnixPath(absPath: string): string {
+		return slash(relative(this.appRoot, absPath))
 	}
 
 	/**
-	 * write .adonisrc.json file to the build directory
+	 * Cleans up the build directory
 	 */
-	private async writeRcFile(outDir: string) {
+	private async cleanupBuildDirectory(outDir: string) {
+		this.logger.info('cleaning up build directory', undefined, this.getRelativeUnixPath(outDir))
+		await remove(outDir)
+	}
+
+	/**
+	 * Copies .adonisrc.json file to the destination
+	 */
+	private async copyAdonisRcFile(outDir: string) {
+		this.logger.info(
+			`copy (${this.logger.colors.yellow(`${RCFILE_NAME} => ${this.getRelativeUnixPath(outDir)}`)})`
+		)
+
 		await outputJSON(
 			join(outDir, RCFILE_NAME),
 			Object.assign({}, this.rcFile.getDiskContents(), {
@@ -100,102 +81,18 @@ export class Compiler {
 	}
 
 	/**
-	 * Create the http server
-	 */
-	public async createHttpServer(outDir: string) {
-		if (this.httpServer) {
-			return
-		}
-
-		const envParser = new EnvParser()
-		await envParser.parse(outDir)
-
-		const envOptions = envParser.asEnvObject(['PORT', 'TZ'])
-
-		/**
-		 * Obtains a random port by giving preference to the one defined inside
-		 * the `.env` file. This eases the process of running the application
-		 * without manually changing ports inside the `.env` file when
-		 * original port is in use.
-		 */
-		if (envOptions.PORT) {
-			envOptions.PORT = String(
-				await getPort({
-					port: [Number(envOptions.PORT)],
-					host: envParser.get('HOST'),
-				})
-			)
-		}
-
-		const Server = this.serveApp ? HttpServer : DummyHttpServer
-		this.httpServer = new Server(SERVER_ENTRY_FILE, outDir, this.nodeArgs, this.logger, envOptions)
-	}
-
-	/**
-	 * Render ts diagnostics
-	 */
-	public renderDiagnostics(diagnostics: tsStatic.Diagnostic[], host: tsStatic.CompilerHost) {
-		console.log(this.tsCompiler.ts.formatDiagnosticsWithColorAndContext(diagnostics, host))
-	}
-
-	/**
-	 * Parses the tsconfig file
-	 */
-	public parseConfig(): undefined | tsStatic.ParsedCommandLine {
-		const { error, config } = this.tsCompiler.configParser().parse()
-
-		if (error) {
-			this.logger.error(`unable to compile ${TSCONFIG_FILE_NAME}`)
-			this.renderDiagnostics([error], this.tsCompiler.ts.createCompilerHost({}))
-			return
-		}
-
-		if (config && config.errors.length) {
-			this.logger.error(`unable to compile ${TSCONFIG_FILE_NAME}`)
-			this.renderDiagnostics(config.errors, this.tsCompiler.ts.createCompilerHost(config.options))
-			return
-		}
-
-		config!.options.rootDir = config!.options.rootDir || this.appRoot
-		config!.options.outDir = config!.options.outDir || join(this.appRoot, DEFAULT_BUILD_DIR)
-		return config
-	}
-
-	/**
-	 * Cleans up the build directory
-	 */
-	public async cleanupBuildDirectory(outDir: string) {
-		this.logger.info({
-			message: 'cleaning up build directory',
-			suffix: this.getRelativeUnixPath(outDir),
-		})
-		await remove(outDir)
-	}
-
-	/**
-	 * Copies .adonisrc.json file to the destination
-	 */
-	public async copyAdonisRcFile(outDir: string) {
-		this.logger.info({ message: `copy ${RCFILE_NAME}`, suffix: this.getRelativeUnixPath(outDir) })
-		await this.writeRcFile(outDir)
-	}
-
-	/**
 	 * Copy all meta files to the build directory
 	 */
-	public async copyMetaFiles(outDir: string, extraFiles?: string[]) {
+	private async copyMetaFiles(outDir: string, extraFiles?: string[]) {
 		const metaFiles = this.rcFile.getMetaFilesGlob().concat(extraFiles || [])
-		this.logger.info({
-			message: `copy ${metaFiles.join(',')}`,
-			suffix: this.getRelativeUnixPath(outDir),
-		})
+		this.logger.info(`copy ${metaFiles.join(',')}`, undefined, this.getRelativeUnixPath(outDir))
 		await this.copyFiles(metaFiles, outDir)
 	}
 
 	/**
 	 * Copy files to destination directory
 	 */
-	public async copyFiles(files: string[], outDir: string) {
+	private async copyFiles(files: string[], outDir: string) {
 		try {
 			await copyfiles(files, outDir, { cwd: this.appRoot, parents: true })
 		} catch (error) {
@@ -208,49 +105,71 @@ export class Compiler {
 	/**
 	 * Build typescript source files
 	 */
-	public buildTypescriptSource(config: tsStatic.ParsedCommandLine) {
-		this.logger.pending('compiling typescript source files')
+	private buildTypescriptSource(config: tsStatic.ParsedCommandLine): boolean {
+		this.logger.info('compiling typescript source files')
 
-		const builder = this.tsCompiler.builder(config)
+		const builder = this.ts.tsCompiler.builder(config)
 		const { skipped, diagnostics } = builder.build()
 
 		if (skipped) {
-			this.logger.info('TS emit skipped')
+			this.logger.warning('Aborting. Typescript emit skipped')
 		}
 
 		if (diagnostics.length) {
 			this.logger.error('typescript compiler errors')
-			this.renderDiagnostics(diagnostics, builder.host)
-		} else {
-			this.logger.success('built successfully')
+			this.ts.renderDiagnostics(diagnostics, builder.host)
 		}
+
+		return !skipped
 	}
 
 	/**
 	 * Compile project. See [[Compiler.compileForProduction]] for
 	 * production build
 	 */
-	public async compile(): Promise<boolean> {
-		const config = this.parseConfig()
+	public async compile(extraFiles?: string[]): Promise<boolean> {
+		const config = this.ts.parseConfig()
 		if (!config) {
 			return false
 		}
 
+		/**
+		 * Always cleanup the out directory
+		 */
 		await this.cleanupBuildDirectory(config.options.outDir!)
-		await this.copyMetaFiles(config.options.outDir!)
-		this.buildTypescriptSource(config)
-		await this.copyAdonisRcFile(config.options.outDir!)
-
-		await this.manifest.generate()
 
 		/**
-		 * Start HTTP server
+		 * Build typescript source
 		 */
-		if (this.serveApp) {
-			await this.createHttpServer(config.options.outDir!)
-			this.httpServer.start()
+		const emitOutput = this.buildTypescriptSource(config)
+		if (!emitOutput) {
+			return false
 		}
 
+		/**
+		 * Begin by copying meta files
+		 */
+		await this.copyMetaFiles(config.options.outDir!, extraFiles)
+
+		/**
+		 * Copy `.adonisrc.json` file
+		 */
+		await this.copyAdonisRcFile(config.options.outDir!)
+
+		/**
+		 * Generate commands manifest
+		 */
+		const created = await this.manifest.generate()
+
+		/**
+		 * Do not continue when unable to generate the manifest file as commands
+		 * won't be available
+		 */
+		if (!created) {
+			return false
+		}
+
+		this.logger.success('built successfully')
 		return true
 	}
 
@@ -258,7 +177,7 @@ export class Compiler {
 	 * Compile project. See [[Compiler.compile]] for development build
 	 */
 	public async compileForProduction(client: 'npm' | 'yarn'): Promise<boolean> {
-		const config = this.parseConfig()
+		const config = this.ts.parseConfig()
 		if (!config) {
 			return false
 		}
@@ -266,20 +185,57 @@ export class Compiler {
 		const pkgFiles =
 			client === 'npm' ? ['package.json', 'package-lock.json'] : ['package.json', 'yarn.lock']
 
+		/**
+		 * Always cleanup the out directory
+		 */
 		await this.cleanupBuildDirectory(config.options.outDir!)
+
+		/**
+		 * Build typescript source
+		 */
+		const emitOutput = this.buildTypescriptSource(config)
+		if (!emitOutput) {
+			return false
+		}
+
+		/**
+		 * Begin by copying meta files
+		 */
 		await this.copyMetaFiles(config.options.outDir!, pkgFiles)
-		this.buildTypescriptSource(config)
+
+		/**
+		 * Copy `.adonisrc.json` file
+		 */
 		await this.copyAdonisRcFile(config.options.outDir!)
-		await this.manifest.generate()
 
+		/**
+		 * Generate commands manifest
+		 */
+		const created = await this.manifest.generate()
+
+		/**
+		 * Do not continue when unable to generate the manifest file as commands
+		 * won't be available
+		 */
+		if (!created) {
+			return false
+		}
+
+		/**
+		 * Print usage instructions
+		 */
 		const installCommand = client === 'npm' ? 'npm ci --production' : 'yarn install --production'
-
-		console.log('   Run the following commands to start the server in production')
 		const relativeBuildPath = this.getRelativeUnixPath(config.options.outDir!)
 
-		console.log(`   ${this.colors.gray('$')} ${this.colors.cyan(`cd ${relativeBuildPath}`)}`)
-		console.log(`   ${this.colors.gray('$')} ${this.colors.cyan(installCommand)}`)
-		console.log(`   ${this.colors.gray('$')} ${this.colors.cyan('node server.js')}`)
+		this.logger.success('built successfully')
+		this.logger.log('')
+
+		instructions()
+			.heading('Run the following commands to start the server in production')
+			.add(this.logger.colors.cyan(`cd ${relativeBuildPath}`))
+			.add(this.logger.colors.cyan(installCommand))
+			.add(this.logger.colors.cyan('node server.js'))
+			.render()
 
 		return true
 	}

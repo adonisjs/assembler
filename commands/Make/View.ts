@@ -47,7 +47,7 @@ export default class MakeView extends BaseGenerator {
 		return this.application.rcFile.directories.views || 'resources/views'
 	}
 
-	public async handle() {
+	public async run() {
 		this.resourceName = this.name
 		await super.generate()
 	}

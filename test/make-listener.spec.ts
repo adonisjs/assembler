@@ -9,11 +9,10 @@
 
 import test from 'japa'
 import { join } from 'path'
-import { Ioc } from '@adonisjs/fold'
 import importFresh from 'import-fresh'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
-import { Application } from '@adonisjs/application/build/standalone'
+import { Application } from '@adonisjs/application'
 
 import { toNewlineArray } from '../test-helpers'
 import MakeListener from '../commands/Make/Listener'
@@ -38,11 +37,11 @@ test.group('Make Listener', (group) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const listener = new MakeListener(app, new Kernel(app))
 		listener.name = 'user'
-		await listener.handle()
+		await listener.run()
 
 		const UserListener = await fs.get('app/Listeners/User.ts')
 		const ListenerTemplate = await templates.get('event-listener.txt')
@@ -66,11 +65,11 @@ test.group('Make Listener', (group) => {
 		)
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, new Ioc(), rcContents, {})
+		const app = new Application(fs.basePath, 'test', rcContents)
 
 		const listener = new MakeListener(app, new Kernel(app))
 		listener.name = 'user'
-		await listener.handle()
+		await listener.run()
 
 		const UserListener = await fs.get('app/Events/Listeners/User.ts')
 		const ListenerTemplate = await templates.get('event-listener.txt')

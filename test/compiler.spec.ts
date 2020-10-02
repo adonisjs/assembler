@@ -10,21 +10,29 @@
 import test from 'japa'
 import execa from 'execa'
 import { join } from 'path'
-import { Logger } from '@poppinss/fancy-logs'
 import { Filesystem } from '@poppinss/dev-utils'
+import { instantiate } from '@poppinss/cliui/build/api'
 
 import { Compiler } from '../src/Compiler'
+import { success, info, warning, error } from '../test-helpers'
 
+const ui = instantiate(true)
 const fs = new Filesystem(join(__dirname, '__app'))
 
 test.group('Compiler', (group) => {
+	group.before(() => {
+		ui.logger.useRenderer(ui.testingRenderer)
+	})
+
+	group.afterEach(() => {
+		ui.testingRenderer.logs = []
+	})
+
 	group.afterEach(async () => {
 		await fs.cleanup()
 	})
 
 	test('build source files', async (assert) => {
-		const logger = new Logger({ fake: true })
-
 		await fs.add(
 			'.adonisrc.json',
 			JSON.stringify({
@@ -47,7 +55,7 @@ test.group('Compiler', (group) => {
 		await fs.add('public/styles/main.css', '')
 		await fs.add('public/scripts/main.js', '')
 
-		const compiler = new Compiler(fs.basePath, false, [], logger)
+		const compiler = new Compiler(fs.basePath, ui.logger)
 		await compiler.compile()
 
 		const hasFiles = await Promise.all(
@@ -61,20 +69,33 @@ test.group('Compiler', (group) => {
 		)
 
 		assert.deepEqual(hasFiles, [true, true, true, true, true])
-		assert.deepEqual(logger.logs, [
-			'underline(blue(info)) cleaning up build directory dim(yellow(build))',
-			'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build))',
-			'underline(magenta(pending)) compiling typescript source files',
-			'underline(green(success)) built successfully',
-			'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+		assert.deepEqual(ui.testingRenderer.logs, [
+			{
+				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  compiling typescript source files`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${success}  built successfully`,
+				stream: 'stdout',
+			},
 		])
 
 		assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
 	}).timeout(0)
 
 	test('build source files with explicit outDir', async (assert) => {
-		const logger = new Logger({ fake: true })
-
 		await fs.add(
 			'.adonisrc.json',
 			JSON.stringify({
@@ -99,7 +120,7 @@ test.group('Compiler', (group) => {
 		await fs.add('public/styles/main.css', '')
 		await fs.add('public/scripts/main.js', '')
 
-		const compiler = new Compiler(fs.basePath, false, [], logger)
+		const compiler = new Compiler(fs.basePath, ui.logger)
 		await compiler.compile()
 
 		const hasFiles = await Promise.all(
@@ -112,18 +133,31 @@ test.group('Compiler', (group) => {
 		)
 
 		assert.deepEqual(hasFiles, [true, true, true, true])
-		assert.deepEqual(logger.logs, [
-			'underline(blue(info)) cleaning up build directory dim(yellow(build))',
-			'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build))',
-			'underline(magenta(pending)) compiling typescript source files',
-			'underline(green(success)) built successfully',
-			'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+		assert.deepEqual(ui.testingRenderer.logs, [
+			{
+				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  compiling typescript source files`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${success}  built successfully`,
+				stream: 'stdout',
+			},
 		])
 	}).timeout(0)
 
 	test('build source files with explicit rootDir', async (assert) => {
-		const logger = new Logger({ fake: true })
-
 		await fs.add(
 			'.adonisrc.json',
 			JSON.stringify({
@@ -149,7 +183,7 @@ test.group('Compiler', (group) => {
 		await fs.add('public/styles/main.css', '')
 		await fs.add('public/scripts/main.js', '')
 
-		const compiler = new Compiler(fs.basePath, false, [], logger)
+		const compiler = new Compiler(fs.basePath, ui.logger)
 		await compiler.compile()
 
 		const hasFiles = await Promise.all(
@@ -162,17 +196,31 @@ test.group('Compiler', (group) => {
 		)
 
 		assert.deepEqual(hasFiles, [true, true, true, true])
-		assert.deepEqual(logger.logs, [
-			'underline(blue(info)) cleaning up build directory dim(yellow(build))',
-			'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build))',
-			'underline(magenta(pending)) compiling typescript source files',
-			'underline(green(success)) built successfully',
-			'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+		assert.deepEqual(ui.testingRenderer.logs, [
+			{
+				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  compiling typescript source files`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${success}  built successfully`,
+				stream: 'stdout',
+			},
 		])
 	}).timeout(0)
 
 	test('build source files to nested outDir', async (assert) => {
-		const logger = new Logger({ fake: true })
 		await fs.add(
 			'.adonisrc.json',
 			JSON.stringify({
@@ -198,7 +246,7 @@ test.group('Compiler', (group) => {
 		await fs.add('public/styles/main.css', '')
 		await fs.add('public/scripts/main.js', '')
 
-		const compiler = new Compiler(fs.basePath, false, [], logger)
+		const compiler = new Compiler(fs.basePath, ui.logger)
 		await compiler.compile()
 
 		const hasFiles = await Promise.all(
@@ -211,17 +259,80 @@ test.group('Compiler', (group) => {
 		)
 
 		assert.deepEqual(hasFiles, [true, true, true, true])
-		assert.deepEqual(logger.logs, [
-			'underline(blue(info)) cleaning up build directory dim(yellow(build/dist))',
-			'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build/dist))',
-			'underline(magenta(pending)) compiling typescript source files',
-			'underline(green(success)) built successfully',
-			'underline(blue(info)) copy .adonisrc.json dim(yellow(build/dist))',
+		assert.deepEqual(ui.testingRenderer.logs, [
+			{
+				message: `${info}  cleaning up build directory dim(yellow((build/dist)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  compiling typescript source files`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build/dist)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy (yellow(.adonisrc.json => build/dist))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${success}  built successfully`,
+				stream: 'stdout',
+			},
+		])
+	}).timeout(0)
+
+	test('do not build when config has errors', async (assert) => {
+		await fs.add(
+			'.adonisrc.json',
+			JSON.stringify({
+				typescript: true,
+				metaFiles: ['public/**/*.(js|css)'],
+			})
+		)
+
+		await fs.add(
+			'tsconfig.json',
+			JSON.stringify({
+				include: ['**/*'],
+				exclude: ['build'],
+				compilerOptions: {
+					foo: 'bar',
+					rootDir: './',
+					outDir: 'build/dist',
+				},
+			})
+		)
+
+		await fs.add('ace', '')
+		await fs.add('src/foo.ts', "import path from 'path'")
+		await fs.add('public/styles/main.css', '')
+		await fs.add('public/scripts/main.js', '')
+
+		const compiler = new Compiler(fs.basePath, ui.logger)
+		await compiler.compile()
+
+		const hasFiles = await Promise.all(
+			[
+				'build/dist/.adonisrc.json',
+				'build/dist/src/foo.js',
+				'build/dist/public/styles/main.css',
+				'build/dist/public/scripts/main.js',
+			].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file)))
+		)
+
+		assert.deepEqual(hasFiles, [false, false, false, false])
+
+		assert.deepEqual(ui.testingRenderer.logs, [
+			{
+				message: `${error}  unable to parse tsconfig.json`,
+				stream: 'stderr',
+			}
 		])
 	}).timeout(0)
 
 	test('catch and report typescript errors', async (assert) => {
-		const logger = new Logger({ fake: true })
 		await fs.add(
 			'.adonisrc.json',
 			JSON.stringify({
@@ -247,7 +358,7 @@ test.group('Compiler', (group) => {
 		await fs.add('public/styles/main.css', '')
 		await fs.add('public/scripts/main.js', '')
 
-		const compiler = new Compiler(fs.basePath, false, [], logger)
+		const compiler = new Compiler(fs.basePath, ui.logger)
 		await compiler.compile()
 
 		const hasFiles = await Promise.all(
@@ -261,17 +372,35 @@ test.group('Compiler', (group) => {
 
 		assert.deepEqual(hasFiles, [true, true, true, true])
 
-		assert.deepEqual(logger.logs, [
-			'underline(blue(info)) cleaning up build directory dim(yellow(build/dist))',
-			'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build/dist))',
-			'underline(magenta(pending)) compiling typescript source files',
-			'underline(red(error)) typescript compiler errors',
-			'underline(blue(info)) copy .adonisrc.json dim(yellow(build/dist))',
+		assert.deepEqual(ui.testingRenderer.logs, [
+			{
+				message: `${info}  cleaning up build directory dim(yellow((build/dist)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  compiling typescript source files`,
+				stream: 'stdout',
+			},
+			{
+				message: `${error}  typescript compiler errors`,
+				stream: 'stderr',
+			},
+			{
+				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build/dist)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy (yellow(.adonisrc.json => build/dist))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${success}  built successfully`,
+				stream: 'stdout',
+			},
 		])
 	}).timeout(0)
 
 	test('do not emit when noEmitOnError is true', async (assert) => {
-		const logger = new Logger({ fake: true })
 		await fs.add(
 			'.adonisrc.json',
 			JSON.stringify({
@@ -298,7 +427,7 @@ test.group('Compiler', (group) => {
 		await fs.add('public/styles/main.css', '')
 		await fs.add('public/scripts/main.js', '')
 
-		const compiler = new Compiler(fs.basePath, false, [], logger)
+		const compiler = new Compiler(fs.basePath, ui.logger)
 		await compiler.compile()
 
 		const hasFiles = await Promise.all(
@@ -310,21 +439,29 @@ test.group('Compiler', (group) => {
 			].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file)))
 		)
 
-		assert.deepEqual(hasFiles, [true, false, true, true])
+		assert.deepEqual(hasFiles, [false, false, false, false])
 
-		assert.deepEqual(logger.logs, [
-			'underline(blue(info)) cleaning up build directory dim(yellow(build/dist))',
-			'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build/dist))',
-			'underline(magenta(pending)) compiling typescript source files',
-			'underline(blue(info)) TS emit skipped',
-			'underline(red(error)) typescript compiler errors',
-			'underline(blue(info)) copy .adonisrc.json dim(yellow(build/dist))',
+		assert.deepEqual(ui.testingRenderer.logs, [
+			{
+				message: `${info}  cleaning up build directory dim(yellow((build/dist)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  compiling typescript source files`,
+				stream: 'stdout',
+			},
+			{
+				message: `${warning}  Aborting. Typescript emit skipped`,
+				stream: 'stdout',
+			},
+			{
+				message: `${error}  typescript compiler errors`,
+				stream: 'stderr',
+			},
 		])
 	}).timeout(0)
 
 	test('build for production should copy package files to build folder', async (assert) => {
-		const logger = new Logger({ fake: true })
-
 		await fs.add(
 			'.adonisrc.json',
 			JSON.stringify({
@@ -364,7 +501,7 @@ test.group('Compiler', (group) => {
 			stdio: 'inherit',
 		})
 
-		const compiler = new Compiler(fs.basePath, false, [], logger)
+		const compiler = new Compiler(fs.basePath, ui.logger)
 		await compiler.compileForProduction('npm')
 
 		const hasFiles = await Promise.all(
@@ -377,12 +514,31 @@ test.group('Compiler', (group) => {
 		)
 
 		assert.deepEqual(hasFiles, [true, true, true, true])
-		assert.deepEqual(logger.logs, [
-			'underline(blue(info)) cleaning up build directory dim(yellow(build))',
-			'underline(blue(info)) copy public/**/*.(js|css),ace,package.json,package-lock.json dim(yellow(build))',
-			'underline(magenta(pending)) compiling typescript source files',
-			'underline(green(success)) built successfully',
-			'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+		assert.deepEqual(ui.testingRenderer.logs, [
+			{
+				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  compiling typescript source files`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy public/**/*.(js|css),ace,package.json,package-lock.json dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${success}  built successfully`,
+				stream: 'stdout',
+			},
+			{
+				message: '',
+				stream: 'stdout',
+			},
 		])
 
 		const hasPackageLock = await fs.fsExtra.pathExists(
@@ -392,8 +548,6 @@ test.group('Compiler', (group) => {
 	}).timeout(0)
 
 	test('gracefully log error when ace file writes to stderr', async (assert) => {
-		const logger = new Logger({ fake: true })
-
 		await fs.add(
 			'.adonisrc.json',
 			JSON.stringify({
@@ -416,7 +570,7 @@ test.group('Compiler', (group) => {
 		await fs.add('public/styles/main.css', '')
 		await fs.add('public/scripts/main.js', '')
 
-		const compiler = new Compiler(fs.basePath, false, [], logger)
+		const compiler = new Compiler(fs.basePath, ui.logger)
 		await compiler.compile()
 
 		const hasFiles = await Promise.all(
@@ -429,23 +583,38 @@ test.group('Compiler', (group) => {
 			].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file)))
 		)
 
-		logger.logs.pop()
-
 		assert.deepEqual(hasFiles, [true, true, true, true, true])
-		assert.deepEqual(logger.logs, [
-			'underline(blue(info)) cleaning up build directory dim(yellow(build))',
-			'underline(blue(info)) copy public/**/*.(js|css),ace dim(yellow(build))',
-			'underline(magenta(pending)) compiling typescript source files',
-			'underline(green(success)) built successfully',
-			'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+		assert.deepEqual(ui.testingRenderer.logs, [
+			{
+				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  compiling typescript source files`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${warning}  Unable to generate manifest file. Check the following error stack for more info`,
+				stream: 'stdout',
+			},
+			{
+				message: `${error}  foo`,
+				stream: 'stderr',
+			},
 		])
 
 		assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
 	}).timeout(0)
 
 	test('ignore error when any of the meta file is missing', async (assert) => {
-		const logger = new Logger({ fake: true })
-
 		await fs.add(
 			'.adonisrc.json',
 			JSON.stringify({
@@ -466,7 +635,7 @@ test.group('Compiler', (group) => {
 		await fs.add('public/styles/main.css', '')
 		await fs.add('public/scripts/main.js', '')
 
-		const compiler = new Compiler(fs.basePath, false, [], logger)
+		const compiler = new Compiler(fs.basePath, ui.logger)
 		await compiler.compile()
 
 		const hasFiles = await Promise.all(
@@ -475,15 +644,30 @@ test.group('Compiler', (group) => {
 			)
 		)
 
-		logger.logs.pop()
+		ui.testingRenderer.logs.pop()
 
 		assert.deepEqual(hasFiles, [true, false, true])
-		assert.deepEqual(logger.logs, [
-			'underline(blue(info)) cleaning up build directory dim(yellow(build))',
-			'underline(blue(info)) copy ace dim(yellow(build))',
-			'underline(magenta(pending)) compiling typescript source files',
-			'underline(green(success)) built successfully',
-			'underline(blue(info)) copy .adonisrc.json dim(yellow(build))',
+		assert.deepEqual(ui.testingRenderer.logs, [
+			{
+				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  compiling typescript source files`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy ace dim(yellow((build)))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				stream: 'stdout',
+			},
+			{
+				message: `${warning}  Unable to generate manifest file. Check the following error stack for more info`,
+				stream: 'stdout',
+			},
 		])
 
 		assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)

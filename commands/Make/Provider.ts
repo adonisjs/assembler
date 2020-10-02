@@ -12,7 +12,6 @@ import { join, extname } from 'path'
 import { args, flags } from '@adonisjs/ace'
 
 import { BaseGenerator } from './Base'
-import { ADONIS_ACE_CWD } from '../../config/env'
 
 /**
  * Command to make a new provider
@@ -52,7 +51,7 @@ export default class MakeProvider extends BaseGenerator {
 		return this.application.rcFile.directories.providers || 'providers'
 	}
 
-	public async handle() {
+	public async run() {
 		this.resourceName = this.name
 		const file = await super.generate()
 
@@ -62,7 +61,7 @@ export default class MakeProvider extends BaseGenerator {
 
 		const { files } = await import('@adonisjs/sink')
 		const relativePath = file.toJSON().relativepath
-		const rcFile = new files.AdonisRcFile(ADONIS_ACE_CWD()!)
+		const rcFile = new files.AdonisRcFile(this.application.appRoot)
 
 		if (this.ace) {
 			rcFile.addAceProvider(`./${slash(relativePath).replace(extname(relativePath), '')}`)

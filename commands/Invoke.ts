@@ -8,16 +8,14 @@
  */
 
 import { BaseCommand, args } from '@adonisjs/ace'
-
 import { Manifest } from '../src/Manifest'
-import { ADONIS_ACE_CWD } from '../config/env'
 
 /**
  * Invoke post install instructions
  */
 export default class Invoke extends BaseCommand {
 	public static commandName = 'invoke'
-	public static description = 'Invoke post install instructions on a given AdonisJS package'
+	public static description = 'Run post install instructions for a given AdonisJS package'
 
 	/**
 	 * Use yarn when building for production to install dependencies
@@ -28,22 +26,16 @@ export default class Invoke extends BaseCommand {
 	/**
 	 * Invoked automatically by ace
 	 */
-	public async handle() {
-		const cwd = ADONIS_ACE_CWD()
-
-		/**
-		 * Dis-allow when CWD is missing. It will always be set by `node ace`
-		 * commands
-		 */
-		if (!cwd) {
-			this.logger.error(
-				'Cannot invoke post install instructions. Make sure you running this command as "node ace invoke"'
-			)
-			return
-		}
-
+	public async run() {
 		const { tasks } = await import('@adonisjs/sink')
-		await new tasks.Instructions(this.name, cwd, this.application, true).execute()
-		await new Manifest(cwd, this.logger).generate()
+
+		await new tasks.Instructions(
+			this.name,
+			this.application.appRoot,
+			this.application,
+			true
+		).execute()
+
+		await new Manifest(this.application.appRoot, this.logger).generate()
 	}
 }

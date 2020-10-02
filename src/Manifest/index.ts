@@ -8,7 +8,7 @@
  */
 
 import execa from 'execa'
-import { Logger } from '@poppinss/fancy-logs'
+import { logger as uiLogger } from '@poppinss/cliui'
 
 const WARN_MESSAGE = [
 	'Unable to generate manifest file.',
@@ -23,7 +23,7 @@ export class Manifest {
 	 * The maximum number of times we should attempt to generate
 	 * the manifest file before giving up.
 	 *
-	 * This number make sound too big, but in real world scanerio, we
+	 * This number may sound too big, but in real world scanerio, we
 	 * have seen encountered malformed JSON between 10-12 times.
 	 *
 	 * The JSON gets malformed, when a parallel process (node ace serve --watch)
@@ -32,7 +32,7 @@ export class Manifest {
 	private maxAttempts = 15
 	private attempts = 0
 
-	constructor(private appRoot: string, private logger: Logger) {}
+	constructor(private appRoot: string, private logger: typeof uiLogger) {}
 
 	/**
 	 * Returns a boolean telling if the error message is pointing
@@ -47,7 +47,7 @@ export class Manifest {
 	 * now, since it's a secondary task for us and one should run it
 	 * in seperate process to find the actual errors.
 	 */
-	public async generate() {
+	public async generate(): Promise<boolean> {
 		try {
 			const response = await execa.node('ace', ['generate:manifest'], {
 				buffer: true,
@@ -63,13 +63,12 @@ export class Manifest {
 			if (response.stderr) {
 				if (this.isMalformedJSONError(response.stderr) && this.attempts < this.maxAttempts) {
 					this.attempts++
-					await this.generate()
-					return
+					return this.generate()
 				}
 
-				this.logger.warn(WARN_MESSAGE)
-				console.log(response.stderr)
-				return
+				this.logger.warning(WARN_MESSAGE)
+				this.logger.fatal(response.stderr)
+				return false
 			}
 
 			/**
@@ -78,20 +77,23 @@ export class Manifest {
 			if (response.stdout) {
 				console.log(response.stdout)
 			}
+
+			return true
 		} catch (error) {
 			if (this.isMalformedJSONError(error.stderr) && this.attempts < this.maxAttempts) {
 				this.attempts++
-				await this.generate()
-				return
+				return this.generate()
 			}
 
 			/**
 			 * Print warning on error
 			 */
-			this.logger.warn(WARN_MESSAGE)
+			this.logger.warning(WARN_MESSAGE)
 			if (error.stderr) {
-				console.log(error.stderr)
+				this.logger.fatal(error.stderr)
 			}
+
+			return false
 		}
 	}
 }

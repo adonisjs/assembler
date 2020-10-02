@@ -328,7 +328,7 @@ test.group('Compiler', (group) => {
 			{
 				message: `${error}  unable to parse tsconfig.json`,
 				stream: 'stderr',
-			}
+			},
 		])
 	}).timeout(0)
 

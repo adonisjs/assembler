@@ -9,11 +9,15 @@
 
 import { join } from 'path'
 import { fsReadAll } from '@poppinss/utils'
-import { Manifest } from '@adonisjs/ace'
+import { ManifestGenerator } from '@adonisjs/ace'
 
-new Manifest(join(__dirname, '..')).generate(
+/**
+ * Generates ace-manifest file
+ */
+new ManifestGenerator(
+	join(__dirname, '..'),
 	fsReadAll(
 		join(__dirname, '../commands'),
 		(file) => !file.includes('Base') && file.endsWith('.js')
 	).map((file) => `./commands/${file}`)
-)
+).generate()

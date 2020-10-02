@@ -8,7 +8,6 @@
  */
 
 import getPort from 'get-port'
-import { Chokidar } from '@poppinss/chokidar-ts'
 import { logger as uiLogger } from '@poppinss/cliui'
 
 import { Ts } from '../Ts'
@@ -114,9 +113,19 @@ export class DevServer {
 	 */
 	public async watch(poll = false) {
 		/**
+		 * Parse config to find the files excluded inside
+		 * tsconfig file
+		 */
+		const config = this.ts.parseConfig()
+		if (!config) {
+			this.logger.warning('Cannot start watcher because of errors in the config file')
+			return
+		}
+
+		/**
 		 * Stick file watcher
 		 */
-		const watcher = new Chokidar(this.appRoot)
+		const watcher = this.ts.tsCompiler.watcher(config, 'raw')
 
 		/**
 		 * Watcher is ready after first compile
@@ -232,16 +241,6 @@ export class DevServer {
 				this.httpServer.restart()
 			}
 		})
-
-		/**
-		 * Parse config to find the files excluded inside
-		 * tsconfig file
-		 */
-		const config = this.ts.parseConfig()
-		if (!config) {
-			this.logger.warning('Cannot start watcher because of errors in the config file')
-			return
-		}
 
 		/**
 		 * Start the watcher

@@ -9,21 +9,22 @@
 
 import { join } from 'path'
 import { readFile } from 'fs-extra'
-import { env } from '@adonisjs/env/build/standalone'
+import { EnvParser as Parser } from '@adonisjs/env'
 
 /**
- * Parses the env file inside the project root or the build
- * root directory.
+ * Parses the env file inside the project root.
  */
 export class EnvParser {
 	private envContents: any = {}
+
+	private parser = new Parser(false)
 
 	/**
 	 * Parse .env file contents
 	 */
 	public async parse(rootDir: string) {
 		try {
-			this.envContents = env.parse(await readFile(join(rootDir, '.env'), 'utf-8'))
+			this.envContents = this.parser.parse(await readFile(join(rootDir, '.env'), 'utf-8'))
 		} catch {}
 	}
 

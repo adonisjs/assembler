@@ -8,4 +8,4 @@
  */
 
 import register from './src/requireHook'
-register(process.cwd())
+register(process.env.ADONIS_ACE_CWD || process.cwd())

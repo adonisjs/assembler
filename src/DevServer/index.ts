@@ -9,6 +9,7 @@
 
 import getPort from 'get-port'
 import { logger as uiLogger } from '@poppinss/cliui'
+import { getWatcherHelpers } from '@adonisjs/require-ts'
 
 import { Ts } from '../Ts'
 import { RcFile } from '../RcFile'
@@ -38,6 +39,11 @@ export class DevServer {
 	 * Manifest instance to generate ace manifest file
 	 */
 	private manifest = new Manifest(this.appRoot, this.logger)
+
+	/**
+	 * Require-ts watch helpers
+	 */
+	private watchHelpers = getWatcherHelpers(this.appRoot)
 
 	constructor(
 		private appRoot: string,
@@ -94,6 +100,13 @@ export class DevServer {
 	 * changes
 	 */
 	public async start() {
+		this.logger.info('Building project')
+
+		/**
+		 * Clear require-ts cache
+		 */
+		this.watchHelpers.clear()
+
 		/**
 		 * Start the HTTP server right away
 		 */
@@ -112,6 +125,8 @@ export class DevServer {
 	 * Build and watch for file changes
 	 */
 	public async watch(poll = false) {
+		await this.start()
+
 		/**
 		 * Parse config to find the files excluded inside
 		 * tsconfig file
@@ -137,14 +152,15 @@ export class DevServer {
 		/**
 		 * Source file removed
 		 */
-		watcher.on('source:unlink', async (filePath) => {
+		watcher.on('source:unlink', async ({ absPath, relativePath }) => {
 			this.clearScreen()
-			this.logger.action('delete').succeeded(filePath)
+			this.watchHelpers.clear(absPath)
+			this.logger.action('delete').succeeded(relativePath)
 
 			/**
 			 * Generate manifest when filePath is a commands path
 			 */
-			if (this.rcFile.isCommandsPath(filePath)) {
+			if (this.rcFile.isCommandsPath(relativePath)) {
 				this.manifest.generate()
 			}
 
@@ -154,14 +170,15 @@ export class DevServer {
 		/**
 		 * Source file added
 		 */
-		watcher.on('source:add', async (filePath) => {
+		watcher.on('source:add', async ({ absPath, relativePath }) => {
 			this.clearScreen()
-			this.logger.action('add').succeeded(filePath)
+			this.watchHelpers.clear(absPath)
+			this.logger.action('add').succeeded(relativePath)
 
 			/**
-			 * Generate manifest when filePath is a commands path
+			 * Generate manifest when filePath if file is in commands path
 			 */
-			if (this.rcFile.isCommandsPath(filePath)) {
+			if (this.rcFile.isCommandsPath(relativePath)) {
 				this.manifest.generate()
 			}
 
@@ -171,14 +188,15 @@ export class DevServer {
 		/**
 		 * Source file changed
 		 */
-		watcher.on('source:change', async (filePath) => {
+		watcher.on('source:change', async ({ absPath, relativePath }) => {
 			this.clearScreen()
-			this.logger.action('update').succeeded(filePath)
+			this.watchHelpers.clear(absPath)
+			this.logger.action('update').succeeded(relativePath)
 
 			/**
 			 * Generate manifest when filePath is a commands path
 			 */
-			if (this.rcFile.isCommandsPath(filePath)) {
+			if (this.rcFile.isCommandsPath(relativePath)) {
 				this.manifest.generate()
 			}
 
@@ -188,15 +206,15 @@ export class DevServer {
 		/**
 		 * New file added
 		 */
-		watcher.on('add', async (filePath) => {
-			const metaData = this.rcFile.getMetaData(filePath)
+		watcher.on('add', async ({ relativePath }) => {
+			const metaData = this.rcFile.getMetaData(relativePath)
 			if (!metaData.metaFile) {
 				return
 			}
 
 			this.clearScreen()
 
-			this.logger.action('create').succeeded(filePath)
+			this.logger.action('create').succeeded(relativePath)
 			if (metaData.reload) {
 				this.httpServer.restart()
 			}
@@ -205,14 +223,14 @@ export class DevServer {
 		/**
 		 * File changed
 		 */
-		watcher.on('change', async (filePath) => {
-			const metaData = this.rcFile.getMetaData(filePath)
+		watcher.on('change', async ({ relativePath }) => {
+			const metaData = this.rcFile.getMetaData(relativePath)
 			if (!metaData.metaFile) {
 				return
 			}
 
 			this.clearScreen()
-			this.logger.action('update').succeeded(filePath)
+			this.logger.action('update').succeeded(relativePath)
 
 			if (metaData.reload || metaData.rcFile) {
 				this.httpServer.restart()
@@ -222,8 +240,8 @@ export class DevServer {
 		/**
 		 * File removed
 		 */
-		watcher.on('unlink', async (filePath) => {
-			const metaData = this.rcFile.getMetaData(filePath)
+		watcher.on('unlink', async ({ relativePath }) => {
+			const metaData = this.rcFile.getMetaData(relativePath)
 			if (!metaData.metaFile) {
 				return
 			}
@@ -236,7 +254,7 @@ export class DevServer {
 				return
 			}
 
-			this.logger.action('delete').succeeded(filePath)
+			this.logger.action('delete').succeeded(relativePath)
 			if (metaData.reload) {
 				this.httpServer.restart()
 			}
@@ -246,7 +264,6 @@ export class DevServer {
 		 * Start the watcher
 		 */
 		watcher.watch(['.'], {
-			ignored: config.raw.exclude,
 			usePolling: poll,
 		})
 	}

@@ -53,7 +53,7 @@ export class HttpServer extends Emittery {
 				FORCE_COLOR: 'true',
 				...this.env,
 			},
-			nodeOptions: this.nodeArgs,
+			nodeOptions: ['-r', '@adonisjs/assembler/build/register'].concat(this.nodeArgs),
 		})
 
 		this.childProcess.on('close', (code, signal) => this.emit('close', { code, signal }))

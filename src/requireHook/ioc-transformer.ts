@@ -9,6 +9,7 @@
 
 import { join } from 'path'
 import type tsStatic from 'typescript'
+import { rcParser } from '@adonisjs/application'
 import { iocTransformer } from '@adonisjs/ioc-transformer'
 
 /**
@@ -16,5 +17,5 @@ import { iocTransformer } from '@adonisjs/ioc-transformer'
  * statements
  */
 export default function (ts: typeof tsStatic, appRoot: string) {
-	return iocTransformer(ts, require(join(appRoot, '.adonisrc.json')))
+	return iocTransformer(ts, rcParser.parse(require(join(appRoot, '.adonisrc.json'))))
 }

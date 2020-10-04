@@ -1,6 +1,6 @@
 {
   "name": "@adonisjs/assembler",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Core commands to compiler and build AdonisJs project",
   "main": "build/ace-manifest.json",
   "files": [

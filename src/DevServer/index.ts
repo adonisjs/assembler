@@ -339,18 +339,18 @@ export class DevServer {
 		})
 
 		/**
+		 * Start the watcher
+		 */
+		watcher.watch(['.'], {
+			usePolling: poll,
+		})
+
+		/**
 		 * Kill when watcher recieves an error
 		 */
 		watcher.chokidar.on('error', (error) => {
 			this.logger.fatal(error)
 			this.kill()
-		})
-
-		/**
-		 * Start the watcher
-		 */
-		watcher.watch(['.'], {
-			usePolling: poll,
 		})
 	}
 }

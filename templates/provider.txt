@@ -5,7 +5,7 @@ import { IocContract } from '@adonisjs/fold'
 | Provider
 |--------------------------------------------------------------------------
 |
-| Your application is not ready, when this file is loaded by the framework.
+| Your application is not ready when this file is loaded by the framework.
 | Hence, the level imports relying on the IoC container will not work.
 | You must import them inside the life-cycle methods defined inside
 | the provider class.

@@ -1,11 +1,11 @@
-import { Exception } from '@poppinss/utils'
+import { Exception } from '@adonisjs/core'
 
 /*
 |--------------------------------------------------------------------------
 | Exception
 |--------------------------------------------------------------------------
 |
-| The Exception class imported from `@poppinss/utils` allows defining
+| The Exception class imported from `@adonisjs/core` allows defining
 | a status code and error code for every exception.
 |
 | @example

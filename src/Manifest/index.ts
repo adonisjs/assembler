@@ -12,7 +12,7 @@ import { logger as uiLogger } from '@poppinss/cliui'
 
 const WARN_MESSAGE = [
 	'Unable to generate manifest file.',
-	'Check the following error stack for more info',
+	'Check the following error for more info',
 ].join(' ')
 
 /**
@@ -67,7 +67,7 @@ export class Manifest {
 				}
 
 				this.logger.warning(WARN_MESSAGE)
-				this.logger.fatal(response.stderr)
+				this.logger.logError(response.stderr)
 				return false
 			}
 
@@ -75,7 +75,7 @@ export class Manifest {
 			 * Log success
 			 */
 			if (response.stdout) {
-				console.log(response.stdout)
+				this.logger.log(response.stdout)
 			}
 
 			return true
@@ -90,7 +90,7 @@ export class Manifest {
 			 */
 			this.logger.warning(WARN_MESSAGE)
 			if (error.stderr) {
-				this.logger.fatal(error.stderr)
+				this.logger.logError(error.stderr)
 			}
 
 			return false

@@ -44,7 +44,8 @@ export class HttpServer extends Emittery {
 			throw new Error('Http server is already connected. Call restart instead')
 		}
 
-		this.logger.info(this.childProcess ? 're-starting http server' : 'starting http server')
+		this.logger.info(this.childProcess ? 're-starting http server...' : 'starting http server...')
+
 		this.childProcess = execa.node(this.sourceFile, [], {
 			buffer: false,
 			stdio: 'inherit',
@@ -56,6 +57,14 @@ export class HttpServer extends Emittery {
 			nodeOptions: ['-r', '@adonisjs/assembler/build/register'].concat(this.nodeArgs),
 		})
 
+		/**
+		 * Notify about server events
+		 */
+		this.childProcess.on('message', (message) => {
+			if (message && message['origin'] === 'adonis-http-server') {
+				this.emit('ready', message)
+			}
+		})
 		this.childProcess.on('close', (code, signal) => this.emit('close', { code, signal }))
 		this.childProcess.on('exit', (code, signal) => this.emit('exit', { code, signal }))
 	}

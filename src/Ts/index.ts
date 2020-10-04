@@ -34,7 +34,7 @@ export class Ts {
 	 * Render ts diagnostics
 	 */
 	public renderDiagnostics(diagnostics: tsStatic.Diagnostic[], host: tsStatic.CompilerHost) {
-		console.log(this.tsCompiler.ts.formatDiagnosticsWithColorAndContext(diagnostics, host))
+		console.error(this.tsCompiler.ts.formatDiagnosticsWithColorAndContext(diagnostics, host))
 	}
 
 	/**

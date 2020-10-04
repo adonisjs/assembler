@@ -8,8 +8,8 @@
  */
 
 import getPort from 'get-port'
-import { logger as uiLogger } from '@poppinss/cliui'
 import { getWatcherHelpers } from '@adonisjs/require-ts'
+import { logger as uiLogger, sticker } from '@poppinss/cliui'
 
 import { Ts } from '../Ts'
 import { RcFile } from '../RcFile'
@@ -24,6 +24,26 @@ import { SERVER_ENTRY_FILE } from '../../config/paths'
  */
 export class DevServer {
 	private httpServer: HttpServer
+
+	/**
+	 * HTTP server port
+	 */
+	private serverPort?: number
+
+	/**
+	 * HTTP server host
+	 */
+	private serverHost?: string
+
+	/**
+	 * A boolean to know if we are watching for filesystem
+	 */
+	private watchingFileSystem: boolean = false
+
+	/**
+	 * Watcher state
+	 */
+	private watcherState: 'pending' | 'error' | 'ready' = 'pending'
 
 	/**
 	 * Reference to the typescript compiler
@@ -52,6 +72,14 @@ export class DevServer {
 	) {}
 
 	/**
+	 * Kill current process
+	 */
+	private kill() {
+		this.logger.info('shutting down')
+		process.exit()
+	}
+
+	/**
 	 * Create the http server
 	 */
 	private async createHttpServer() {
@@ -62,7 +90,9 @@ export class DevServer {
 		const envParser = new EnvParser()
 		await envParser.parse(this.appRoot)
 
-		const envOptions = envParser.asEnvObject(['PORT', 'TZ'])
+		const envOptions = envParser.asEnvObject(['PORT', 'TZ', 'HOST'])
+		const HOST = process.env.HOST || envOptions.HOST || '0.0.0.0'
+		let PORT = process.env.PORT || envOptions.PORT || '3333'
 
 		/**
 		 * Obtains a random port by giving preference to the one defined inside
@@ -70,22 +100,18 @@ export class DevServer {
 		 * without manually changing ports inside the `.env` file when
 		 * original port is in use.
 		 */
-		if (envOptions.PORT) {
-			envOptions.PORT = String(
-				await getPort({
-					port: [Number(envOptions.PORT)],
-					host: envParser.get('HOST'),
-				})
-			)
-		}
-
-		this.httpServer = new HttpServer(
-			SERVER_ENTRY_FILE,
-			this.appRoot,
-			this.nodeArgs,
-			this.logger,
-			envOptions
+		PORT = String(
+			await getPort({
+				port: [Number(PORT)],
+				host: HOST,
+			})
 		)
+
+		this.httpServer = new HttpServer(SERVER_ENTRY_FILE, this.appRoot, this.nodeArgs, this.logger, {
+			PORT,
+			HOST,
+			TZ: envOptions.TZ,
+		})
 	}
 
 	/**
@@ -96,16 +122,42 @@ export class DevServer {
 	}
 
 	/**
+	 * Renders box to notify about the server state
+	 */
+	private renderSeverIsReady() {
+		if (!this.serverHost || !this.serverPort) {
+			return
+		}
+
+		if (this.watchingFileSystem && this.watcherState === 'pending') {
+			return
+		}
+
+		sticker()
+			.add(
+				`Server address: ${this.logger.colors.cyan(
+					`http://${this.serverHost === '0.0.0.0' ? '127.0.0.1' : this.serverHost}:${
+						this.serverPort
+					}`
+				)}`
+			)
+			.add(
+				`Watching filesystem for changes: ${this.logger.colors.cyan(
+					this.watchingFileSystem ? 'YES' : 'NO'
+				)}`
+			)
+			.render()
+	}
+
+	/**
 	 * Start the dev server. Use [[watch]] to also watch for file
 	 * changes
 	 */
 	public async start() {
-		this.logger.info('Building project')
-
 		/**
-		 * Clear require-ts cache
+		 * Log getting ready
 		 */
-		this.watchHelpers.clear()
+		this.logger.info('building project...')
 
 		/**
 		 * Start the HTTP server right away
@@ -118,6 +170,17 @@ export class DevServer {
 		 */
 		this.httpServer.on('exit', ({ code }) => {
 			this.logger.warning(`Underlying HTTP server died with "${code} code"`)
+			process.exitCode = code
+			this.kill()
+		})
+
+		/**
+		 * Notify that the http server is running
+		 */
+		this.httpServer.on('ready', ({ port, host }) => {
+			this.serverPort = port
+			this.serverHost = host
+			this.renderSeverIsReady()
 		})
 	}
 
@@ -125,6 +188,16 @@ export class DevServer {
 	 * Build and watch for file changes
 	 */
 	public async watch(poll = false) {
+		this.watchingFileSystem = true
+
+		/**
+		 * Clear require-ts cache
+		 */
+		this.watchHelpers.clear()
+
+		/**
+		 * Start HTTP server
+		 */
 		await this.start()
 
 		/**
@@ -134,6 +207,8 @@ export class DevServer {
 		const config = this.ts.parseConfig()
 		if (!config) {
 			this.logger.warning('Cannot start watcher because of errors in the config file')
+			this.watcherState = 'error'
+			this.renderSeverIsReady()
 			return
 		}
 
@@ -147,6 +222,8 @@ export class DevServer {
 		 */
 		watcher.on('watcher:ready', () => {
 			this.logger.info('watching file system for changes')
+			this.watcherState = 'ready'
+			this.renderSeverIsReady()
 		})
 
 		/**
@@ -251,6 +328,7 @@ export class DevServer {
 			if (metaData.rcFile) {
 				this.logger.info('cannot continue after deletion of .adonisrc.json file')
 				watcher.chokidar.close()
+				this.kill()
 				return
 			}
 
@@ -258,6 +336,14 @@ export class DevServer {
 			if (metaData.reload) {
 				this.httpServer.restart()
 			}
+		})
+
+		/**
+		 * Kill when watcher recieves an error
+		 */
+		watcher.chokidar.on('error', (error) => {
+			this.logger.fatal(error)
+			this.kill()
 		})
 
 		/**

@@ -17,6 +17,10 @@ export default class Serve extends BaseCommand {
 	public static commandName = 'serve'
 	public static description = 'Start the AdonisJS HTTP server. Optionally watch for file changes'
 
+	public static settings = {
+		stayAlive: true,
+	}
+
 	/**
 	 * Allows watching for file changes
 	 */

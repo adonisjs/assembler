@@ -14,7 +14,6 @@ import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application'
 
 import Invoke from '../commands/Invoke'
-// import { testingRenderer } from '@poppinss/cliui'
 
 const fs = new Filesystem(join(__dirname, '__app'))
 

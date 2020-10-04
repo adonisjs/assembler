@@ -35,11 +35,6 @@ export class Compiler {
 	 */
 	private rcFile = new RcFile(this.appRoot)
 
-	/**
-	 * Manifest instance to generate ace manifest file
-	 */
-	private manifest = new Manifest(this.appRoot, this.logger)
-
 	constructor(public appRoot: string, private logger: typeof uiLogger = uiLogger) {
 		this.ts.tsCompiler.use(() => {
 			return iocTransformer(this.ts.tsCompiler.ts, this.rcFile.application.rcFile)
@@ -112,7 +107,7 @@ export class Compiler {
 		const { skipped, diagnostics } = builder.build()
 
 		if (skipped) {
-			this.logger.warning('Aborting. Typescript emit skipped')
+			this.logger.warning('typescript emit skipped')
 		}
 
 		if (diagnostics.length) {
@@ -159,7 +154,12 @@ export class Compiler {
 		/**
 		 * Generate commands manifest
 		 */
-		const created = await this.manifest.generate()
+
+		/**
+		 * Manifest instance to generate ace manifest file
+		 */
+		const manifest = new Manifest(config.options.outDir!, this.logger)
+		const created = await manifest.generate()
 
 		/**
 		 * Do not continue when unable to generate the manifest file as commands
@@ -211,7 +211,8 @@ export class Compiler {
 		/**
 		 * Generate commands manifest
 		 */
-		const created = await this.manifest.generate()
+		const manifest = new Manifest(config.options.outDir!, this.logger)
+		const created = await manifest.generate()
 
 		/**
 		 * Do not continue when unable to generate the manifest file as commands

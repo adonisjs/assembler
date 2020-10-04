@@ -451,7 +451,7 @@ test.group('Compiler', (group) => {
 				stream: 'stdout',
 			},
 			{
-				message: `${warning}  Aborting. Typescript emit skipped`,
+				message: `${warning}  typescript emit skipped`,
 				stream: 'stdout',
 			},
 			{
@@ -602,11 +602,11 @@ test.group('Compiler', (group) => {
 				stream: 'stdout',
 			},
 			{
-				message: `${warning}  Unable to generate manifest file. Check the following error stack for more info`,
+				message: `${warning}  Unable to generate manifest file. Check the following error for more info`,
 				stream: 'stdout',
 			},
 			{
-				message: `${error}  foo`,
+				message: 'foo',
 				stream: 'stderr',
 			},
 		])
@@ -665,7 +665,7 @@ test.group('Compiler', (group) => {
 				stream: 'stdout',
 			},
 			{
-				message: `${warning}  Unable to generate manifest file. Check the following error stack for more info`,
+				message: `${warning}  Unable to generate manifest file. Check the following error for more info`,
 				stream: 'stdout',
 			},
 		])

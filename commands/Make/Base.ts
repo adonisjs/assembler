@@ -9,8 +9,7 @@
 
 import { join } from 'path'
 import { pathExists } from 'fs-extra'
-import { BaseCommand } from '@adonisjs/ace'
-import { GeneratorFile } from '@adonisjs/ace/build/src/Generator/File'
+import { BaseCommand } from '@adonisjs/core/build/standalone'
 
 /**
  * Base class to generate framework entities
@@ -49,7 +48,7 @@ export abstract class BaseGenerator extends BaseCommand {
 	/**
 	 * Handle command
 	 */
-	public async generate(): Promise<GeneratorFile | undefined> {
+	public async generate() {
 		const hasRcFile = await this.hasRcFile(this.application.appRoot)
 
 		/**

@@ -43,7 +43,8 @@
   },
   "homepage": "https://github.com/adonisjs/assembler#readme",
   "devDependencies": {
-    "@adonisjs/ace": "^7.1.1",
+    "@adonisjs/ace": "^7.1.2",
+    "@adonisjs/core": "file:../../core/core",
     "@adonisjs/mrm-preset": "^2.4.0",
     "@poppinss/dev-utils": "^1.0.10",
     "@types/node": "^14.11.2",
@@ -89,7 +90,7 @@
     "anyBranch": false
   },
   "dependencies": {
-    "@adonisjs/application": "^3.0.12",
+    "@adonisjs/application": "^3.0.14",
     "@adonisjs/env": "^2.0.2",
     "@adonisjs/ioc-transformer": "^2.0.1",
     "@adonisjs/require-ts": "^1.0.4",
@@ -106,6 +107,9 @@
     "import-fresh": "^3.2.1",
     "picomatch": "^2.2.2",
     "slash": "^3.0.0"
+  },
+  "peerDependencies": {
+    "@adonisjs/core": "^5.0.0-preview-rc"
   },
   "publishConfig": {
     "access": "public",

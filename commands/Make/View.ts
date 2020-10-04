@@ -8,7 +8,7 @@
  */
 
 import { join } from 'path'
-import { args } from '@adonisjs/ace'
+import { args } from '@adonisjs/core/build/standalone'
 import { BaseGenerator } from './Base'
 
 /**

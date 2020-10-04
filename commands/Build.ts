@@ -8,7 +8,7 @@
  */
 
 import hasYarn from 'has-yarn'
-import { BaseCommand, flags } from '@adonisjs/ace'
+import { BaseCommand, flags } from '@adonisjs/core/build/standalone'
 
 /**
  * Compile typescript project Javascript

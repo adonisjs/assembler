@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import { BaseCommand, args } from '@adonisjs/ace'
+import { BaseCommand, args } from '@adonisjs/core/build/standalone'
 import { Manifest } from '../src/Manifest'
 
 /**

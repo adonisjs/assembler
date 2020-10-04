@@ -64,6 +64,7 @@
     "np": "^6.5.0",
     "npm-audit-html": "^1.4.3",
     "prettier": "^2.1.2",
+    "ts-node": "^9.0.0",
     "typescript": "^4.0.3"
   },
   "nyc": {

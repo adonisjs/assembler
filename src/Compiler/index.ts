@@ -163,10 +163,6 @@ export class Compiler {
 		await this.copyAdonisRcFile(config.options.outDir!)
 
 		/**
-		 * Generate commands manifest
-		 */
-
-		/**
 		 * Manifest instance to generate ace manifest file
 		 */
 		const manifest = new Manifest(config.options.outDir!, this.logger)

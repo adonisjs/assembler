@@ -69,9 +69,10 @@ test.group('Compiler', (group) => {
 		)
 
 		assert.deepEqual(hasFiles, [true, true, true, true, true])
+
 		assert.deepEqual(ui.testingRenderer.logs, [
 			{
-				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				message: `${info}  cleaning up dim(yellow("./build")) directory`,
 				stream: 'stdout',
 			},
 			{
@@ -79,11 +80,11 @@ test.group('Compiler', (group) => {
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build)))`,
+				message: `${info}  copy { dim(yellow(public/**/*.(js|css),ace => build)) }`,
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				message: `${info}  copy { dim(yellow(.adonisrc.json => build)) }`,
 				stream: 'stdout',
 			},
 			{
@@ -135,7 +136,7 @@ test.group('Compiler', (group) => {
 		assert.deepEqual(hasFiles, [true, true, true, true])
 		assert.deepEqual(ui.testingRenderer.logs, [
 			{
-				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				message: `${info}  cleaning up dim(yellow("./build")) directory`,
 				stream: 'stdout',
 			},
 			{
@@ -143,11 +144,11 @@ test.group('Compiler', (group) => {
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build)))`,
+				message: `${info}  copy { dim(yellow(public/**/*.(js|css),ace => build)) }`,
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				message: `${info}  copy { dim(yellow(.adonisrc.json => build)) }`,
 				stream: 'stdout',
 			},
 			{
@@ -198,7 +199,7 @@ test.group('Compiler', (group) => {
 		assert.deepEqual(hasFiles, [true, true, true, true])
 		assert.deepEqual(ui.testingRenderer.logs, [
 			{
-				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				message: `${info}  cleaning up dim(yellow("./build")) directory`,
 				stream: 'stdout',
 			},
 			{
@@ -206,11 +207,11 @@ test.group('Compiler', (group) => {
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build)))`,
+				message: `${info}  copy { dim(yellow(public/**/*.(js|css),ace => build)) }`,
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				message: `${info}  copy { dim(yellow(.adonisrc.json => build)) }`,
 				stream: 'stdout',
 			},
 			{
@@ -261,7 +262,7 @@ test.group('Compiler', (group) => {
 		assert.deepEqual(hasFiles, [true, true, true, true])
 		assert.deepEqual(ui.testingRenderer.logs, [
 			{
-				message: `${info}  cleaning up build directory dim(yellow((build/dist)))`,
+				message: `${info}  cleaning up dim(yellow("./build/dist")) directory`,
 				stream: 'stdout',
 			},
 			{
@@ -269,11 +270,11 @@ test.group('Compiler', (group) => {
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build/dist)))`,
+				message: `${info}  copy { dim(yellow(public/**/*.(js|css),ace => build/dist)) }`,
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy (yellow(.adonisrc.json => build/dist))`,
+				message: `${info}  copy { dim(yellow(.adonisrc.json => build/dist)) }`,
 				stream: 'stdout',
 			},
 			{
@@ -374,7 +375,7 @@ test.group('Compiler', (group) => {
 
 		assert.deepEqual(ui.testingRenderer.logs, [
 			{
-				message: `${info}  cleaning up build directory dim(yellow((build/dist)))`,
+				message: `${info}  cleaning up dim(yellow("./build/dist")) directory`,
 				stream: 'stdout',
 			},
 			{
@@ -386,11 +387,11 @@ test.group('Compiler', (group) => {
 				stream: 'stderr',
 			},
 			{
-				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build/dist)))`,
+				message: `${info}  copy { dim(yellow(public/**/*.(js|css),ace => build/dist)) }`,
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy (yellow(.adonisrc.json => build/dist))`,
+				message: `${info}  copy { dim(yellow(.adonisrc.json => build/dist)) }`,
 				stream: 'stdout',
 			},
 			{
@@ -443,7 +444,7 @@ test.group('Compiler', (group) => {
 
 		assert.deepEqual(ui.testingRenderer.logs, [
 			{
-				message: `${info}  cleaning up build directory dim(yellow((build/dist)))`,
+				message: `${info}  cleaning up dim(yellow("./build/dist")) directory`,
 				stream: 'stdout',
 			},
 			{
@@ -516,7 +517,7 @@ test.group('Compiler', (group) => {
 		assert.deepEqual(hasFiles, [true, true, true, true])
 		assert.deepEqual(ui.testingRenderer.logs, [
 			{
-				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				message: `${info}  cleaning up dim(yellow("./build")) directory`,
 				stream: 'stdout',
 			},
 			{
@@ -524,11 +525,11 @@ test.group('Compiler', (group) => {
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy public/**/*.(js|css),ace,package.json,package-lock.json dim(yellow((build)))`,
+				message: `${info}  copy { dim(yellow(public/**/*.(js|css),ace,package.json,package-lock.json => build)) }`,
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				message: `${info}  copy { dim(yellow(.adonisrc.json => build)) }`,
 				stream: 'stdout',
 			},
 			{
@@ -586,7 +587,7 @@ test.group('Compiler', (group) => {
 		assert.deepEqual(hasFiles, [true, true, true, true, true])
 		assert.deepEqual(ui.testingRenderer.logs, [
 			{
-				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				message: `${info}  cleaning up dim(yellow("./build")) directory`,
 				stream: 'stdout',
 			},
 			{
@@ -594,11 +595,11 @@ test.group('Compiler', (group) => {
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy public/**/*.(js|css),ace dim(yellow((build)))`,
+				message: `${info}  copy { dim(yellow(public/**/*.(js|css),ace => build)) }`,
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				message: `${info}  copy { dim(yellow(.adonisrc.json => build)) }`,
 				stream: 'stdout',
 			},
 			{
@@ -649,7 +650,7 @@ test.group('Compiler', (group) => {
 		assert.deepEqual(hasFiles, [true, false, true])
 		assert.deepEqual(ui.testingRenderer.logs, [
 			{
-				message: `${info}  cleaning up build directory dim(yellow((build)))`,
+				message: `${info}  cleaning up dim(yellow("./build")) directory`,
 				stream: 'stdout',
 			},
 			{
@@ -657,11 +658,11 @@ test.group('Compiler', (group) => {
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy ace dim(yellow((build)))`,
+				message: `${info}  copy { dim(yellow(ace => build)) }`,
 				stream: 'stdout',
 			},
 			{
-				message: `${info}  copy (yellow(.adonisrc.json => build))`,
+				message: `${info}  copy { dim(yellow(.adonisrc.json => build)) }`,
 				stream: 'stdout',
 			},
 			{

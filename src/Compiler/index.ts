@@ -53,7 +53,12 @@ export class Compiler {
 	 * Cleans up the build directory
 	 */
 	private async cleanupBuildDirectory(outDir: string) {
-		this.logger.info('cleaning up build directory', undefined, this.getRelativeUnixPath(outDir))
+		this.getRelativeUnixPath(outDir)
+		this.logger.info(
+			`cleaning up ${this.logger.colors
+				.dim()
+				.yellow(`"./${this.getRelativeUnixPath(outDir)}"`)} directory`
+		)
 		await remove(outDir)
 	}
 
@@ -62,7 +67,9 @@ export class Compiler {
 	 */
 	private async copyAdonisRcFile(outDir: string) {
 		this.logger.info(
-			`copy (${this.logger.colors.yellow(`${RCFILE_NAME} => ${this.getRelativeUnixPath(outDir)}`)})`
+			`copy { ${this.logger.colors
+				.dim()
+				.yellow(`${RCFILE_NAME} => ${this.getRelativeUnixPath(outDir)}`)} }`
 		)
 
 		await outputJSON(
@@ -80,7 +87,11 @@ export class Compiler {
 	 */
 	private async copyMetaFiles(outDir: string, extraFiles?: string[]) {
 		const metaFiles = this.rcFile.getMetaFilesGlob().concat(extraFiles || [])
-		this.logger.info(`copy ${metaFiles.join(',')}`, undefined, this.getRelativeUnixPath(outDir))
+		this.logger.info(
+			`copy { ${this.logger.colors
+				.dim()
+				.yellow(`${metaFiles.join(',')} => ${this.getRelativeUnixPath(outDir)}`)} }`
+		)
 		await this.copyFiles(metaFiles, outDir)
 	}
 

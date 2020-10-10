@@ -43,24 +43,24 @@
   },
   "homepage": "https://github.com/adonisjs/assembler#readme",
   "devDependencies": {
-    "@adonisjs/ace": "^7.1.2",
+    "@adonisjs/ace": "^7.1.3",
     "@adonisjs/core": "file:../../core/core",
     "@adonisjs/mrm-preset": "^2.4.0",
-    "@poppinss/dev-utils": "^1.0.10",
-    "@types/node": "^14.11.2",
+    "@poppinss/dev-utils": "^1.0.11",
+    "@types/node": "^14.11.8",
     "commitizen": "^4.2.1",
     "copyfiles": "^2.4.0",
     "cz-conventional-changelog": "^3.3.0",
     "del-cli": "^3.0.1",
     "doctoc": "^1.4.0",
-    "eslint": "^7.10.0",
+    "eslint": "^7.11.0",
     "eslint-config-prettier": "^6.12.0",
     "eslint-plugin-adonis": "^1.0.15",
     "eslint-plugin-prettier": "^3.1.4",
     "github-label-sync": "^2.0.0",
     "husky": "^4.3.0",
     "japa": "^3.1.1",
-    "mrm": "^2.5.1",
+    "mrm": "^2.5.2",
     "np": "^6.5.0",
     "npm-audit-html": "^1.4.3",
     "prettier": "^2.1.2",
@@ -90,8 +90,8 @@
     "anyBranch": false
   },
   "dependencies": {
-    "@adonisjs/application": "^3.0.14",
-    "@adonisjs/env": "^2.0.2",
+    "@adonisjs/application": "^3.0.15",
+    "@adonisjs/env": "^2.0.3",
     "@adonisjs/ioc-transformer": "^2.0.1",
     "@adonisjs/require-ts": "^1.0.4",
     "@adonisjs/sink": "^4.0.3",
@@ -109,7 +109,7 @@
     "slash": "^3.0.0"
   },
   "peerDependencies": {
-    "@adonisjs/core": "^5.0.0-preview-rc"
+    "@adonisjs/core": "^5.0.1-beta-rc"
   },
   "publishConfig": {
     "access": "public",

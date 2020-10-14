@@ -1,4 +1,4 @@
-import { IocContract } from '@adonisjs/fold'
+import { ApplicationContract } from '@ioc:Adonis/Core/Application'
 
 /*
 |--------------------------------------------------------------------------
@@ -20,7 +20,7 @@ import { IocContract } from '@adonisjs/fold'
 |
 */
 export default class {{ filename }} {
-  constructor (protected container: IocContract) {
+  constructor (protected application: ApplicationContract) {
   }
 
   public register () {

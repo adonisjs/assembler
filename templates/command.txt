@@ -12,20 +12,6 @@ export default class {{ filename }} extends BaseCommand {
 	 */
   public static description = ''
 
-  public static settings = {
-		/**
-		 * If your command relies on the application code, then you must set the following
-		 * property true.
-		 */
-  	loadApp: false,
-
-		/**
-		 * AdonisJS forcefully kills the process after running the ace command. However, if you
-		 * set the following property to true if your command needs a long running process.
-		 */
-  	stayAlive: false,
-  }
-
   public async run () {
     this.logger.info('Hello world!')
   }

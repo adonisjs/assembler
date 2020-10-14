@@ -100,12 +100,14 @@ export class DevServer {
 		 * without manually changing ports inside the `.env` file when
 		 * original port is in use.
 		 */
-		PORT = String(
-			await getPort({
-				port: [Number(PORT)],
-				host: HOST,
-			})
-		)
+		if (!isNaN(Number(PORT))) {
+			PORT = String(
+				await getPort({
+					port: [Number(PORT)],
+					host: HOST,
+				})
+			)
+		}
 
 		this.httpServer = new HttpServer(SERVER_ENTRY_FILE, this.appRoot, this.nodeArgs, this.logger, {
 			PORT,

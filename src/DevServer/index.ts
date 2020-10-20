@@ -17,7 +17,7 @@ import { Manifest } from '../Manifest'
 import { EnvParser } from '../EnvParser'
 import { HttpServer } from '../HttpServer'
 
-import { SERVER_ENTRY_FILE } from '../../config/paths'
+import { ENV_FILES, SERVER_ENTRY_FILE } from '../../config/paths'
 
 /**
  * Exposes the API to watch project for compilition changes.
@@ -284,6 +284,12 @@ export class DevServer {
 		 * New file added
 		 */
 		watcher.on('add', async ({ relativePath }) => {
+			if (ENV_FILES.includes(relativePath)) {
+				this.logger.action('create').succeeded(relativePath)
+				this.httpServer.restart()
+				return
+			}
+
 			const metaData = this.rcFile.getMetaData(relativePath)
 			if (!metaData.metaFile) {
 				return
@@ -301,6 +307,12 @@ export class DevServer {
 		 * File changed
 		 */
 		watcher.on('change', async ({ relativePath }) => {
+			if (ENV_FILES.includes(relativePath)) {
+				this.logger.action('update').succeeded(relativePath)
+				this.httpServer.restart()
+				return
+			}
+
 			const metaData = this.rcFile.getMetaData(relativePath)
 			if (!metaData.metaFile) {
 				return
@@ -318,6 +330,12 @@ export class DevServer {
 		 * File removed
 		 */
 		watcher.on('unlink', async ({ relativePath }) => {
+			if (ENV_FILES.includes(relativePath)) {
+				this.logger.action('delete').succeeded(relativePath)
+				this.httpServer.restart()
+				return
+			}
+
 			const metaData = this.rcFile.getMetaData(relativePath)
 			if (!metaData.metaFile) {
 				return

@@ -172,8 +172,6 @@ export class DevServer {
 		 */
 		this.httpServer.on('exit', ({ code }) => {
 			this.logger.warning(`Underlying HTTP server died with "${code} code"`)
-			process.exitCode = code
-			this.kill()
 		})
 
 		/**

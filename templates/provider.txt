@@ -20,6 +20,7 @@ import { ApplicationContract } from '@ioc:Adonis/Core/Application'
 |
 */
 export default class {{ filename }} {
+  public static needsApplication = true
   constructor (protected application: ApplicationContract) {
   }
 

@@ -25,7 +25,7 @@ export default class MakePreloadFile extends BaseGenerator {
 	/**
 	 * List of allowed environments
 	 */
-	private allowedEnvironments = ['console', 'web', 'test']
+	private allowedEnvironments = ['console', 'web', 'repl']
 
 	/**
 	 * Command name
@@ -42,7 +42,7 @@ export default class MakePreloadFile extends BaseGenerator {
 	public name: string
 
 	@flags.string({
-		description: 'Explicitly define the environment in which you want to load this file',
+		description: 'Define the environment in which you want to load this file',
 		async defaultValue(command: MakePreloadFile) {
 			return command.prompt.multiple(
 				'Select the environment(s) in which you want to load this file',
@@ -50,6 +50,10 @@ export default class MakePreloadFile extends BaseGenerator {
 					{
 						name: 'console',
 						message: 'During ace commands',
+					},
+					{
+						name: 'repl',
+						message: 'During repl session',
 					},
 					{
 						name: 'web',
@@ -64,7 +68,7 @@ export default class MakePreloadFile extends BaseGenerator {
 			)
 		},
 	})
-	public environment: ('console' | 'web')[]
+	public environment: ('console' | 'web' | 'repl')[]
 
 	/**
 	 * Validates environments to ensure they are allowed. Especially when
@@ -72,7 +76,7 @@ export default class MakePreloadFile extends BaseGenerator {
 	 */
 	private validateEnvironments(
 		environments: string[]
-	): environments is ('console' | 'web' | 'test')[] {
+	): environments is ('console' | 'web' | 'repl')[] {
 		return !environments.find((environment) => !this.allowedEnvironments.includes(environment))
 	}
 

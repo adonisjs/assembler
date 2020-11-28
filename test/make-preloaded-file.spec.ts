@@ -130,7 +130,10 @@ test.group('Make Preloaded File', (group) => {
 			question.select(1)
 		})
 
-		await preloadFile.kernel.runCommand(preloadFile, ['make:prldfile', 'repl'])
+		preloadFile.name = 'repl'
+		preloadFile.environment = ['repl']
+
+		await preloadFile.exec()
 
 		const replFile = await fs.get('start/repl.ts')
 		const preloadTemplate = await templates.get('preload-file.txt')

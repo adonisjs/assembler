@@ -6,7 +6,7 @@ import { ApplicationContract } from '@ioc:Adonis/Core/Application'
 |--------------------------------------------------------------------------
 |
 | Your application is not ready when this file is loaded by the framework.
-| Hence, the level imports relying on the IoC container will not work.
+| Hence, the top level imports relying on the IoC container will not work.
 | You must import them inside the life-cycle methods defined inside
 | the provider class.
 |

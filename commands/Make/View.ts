@@ -20,7 +20,6 @@ export default class MakeView extends BaseGenerator {
 	 */
 	protected suffix = ''
 	protected extname = '.edge'
-	protected form = 'singular' as const
 	protected pattern = 'snakecase' as const
 	protected resourceName: string
 

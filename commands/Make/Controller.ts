@@ -26,7 +26,15 @@ export default class MakeController extends BaseGenerator {
 	/**
 	 * Do not pluralize following controller names
 	 */
-	protected formIgnoreList = ['Home', 'Auth', 'Login', 'Authentication', 'Adonis', 'Dashboard']
+	protected formIgnoreList = [
+		'Home',
+		'Auth',
+		'Login',
+		'Authentication',
+		'Adonis',
+		'Dashboard',
+		'Signup',
+	]
 
 	/**
 	 * Command meta data

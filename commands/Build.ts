@@ -15,7 +15,7 @@ import { BaseCommand, flags } from '@adonisjs/core/build/standalone'
  */
 export default class Build extends BaseCommand {
 	public static commandName = 'build'
-	public static description = 'Compile typescript code to Javascript.'
+	public static description = 'Compile typescript code to Javascript'
 
 	/**
 	 * Build for production

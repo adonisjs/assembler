@@ -52,7 +52,6 @@
     "copyfiles": "^2.4.1",
     "cz-conventional-changelog": "^3.3.0",
     "del-cli": "^3.0.1",
-    "doctoc": "^2.0.0",
     "eslint": "^7.20.0",
     "eslint-config-prettier": "^7.2.0",
     "eslint-plugin-adonis": "^1.2.0",
@@ -111,6 +110,6 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "alpha"
+    "tag": "next"
   }
 }

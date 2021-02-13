@@ -17,5 +17,5 @@ import { iocTransformer } from '@adonisjs/ioc-transformer'
  * statements
  */
 export default function (ts: typeof tsStatic, appRoot: string) {
-	return iocTransformer(ts, rcParser.parse(require(join(appRoot, '.adonisrc.json'))))
+  return iocTransformer(ts, rcParser.parse(require(join(appRoot, '.adonisrc.json'))))
 }

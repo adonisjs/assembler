@@ -21,33 +21,33 @@ const fs = new Filesystem(join(__dirname, '__app'))
 const templates = new Filesystem(join(__dirname, '..', 'templates'))
 
 test.group('Make Middleware', (group) => {
-	group.before(() => {
-		process.env.ADONIS_ACE_CWD = fs.basePath
-	})
+  group.before(() => {
+    process.env.ADONIS_ACE_CWD = fs.basePath
+  })
 
-	group.after(() => {
-		delete process.env.ADONIS_ACE_CWD
-	})
+  group.after(() => {
+    delete process.env.ADONIS_ACE_CWD
+  })
 
-	group.afterEach(async () => {
-		await fs.cleanup()
-	})
+  group.afterEach(async () => {
+    await fs.cleanup()
+  })
 
-	test('make a middleware inside the default directory', async (assert) => {
-		await fs.add('.adonisrc.json', JSON.stringify({}))
+  test('make a middleware inside the default directory', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const middleware = new MakeMiddleware(app, new Kernel(app))
-		middleware.name = 'spoof_accept'
-		await middleware.run()
+    const middleware = new MakeMiddleware(app, new Kernel(app))
+    middleware.name = 'spoof_accept'
+    await middleware.run()
 
-		const SpoofMiddleware = await fs.get('app/Middleware/SpoofAccept.ts')
-		const MiddlewareTemplate = await templates.get('middleware.txt')
-		assert.deepEqual(
-			toNewlineArray(SpoofMiddleware),
-			toNewlineArray(MiddlewareTemplate.replace('{{ filename }}', 'SpoofAccept'))
-		)
-	})
+    const SpoofMiddleware = await fs.get('app/Middleware/SpoofAccept.ts')
+    const MiddlewareTemplate = await templates.get('middleware.txt')
+    assert.deepEqual(
+      toNewlineArray(SpoofMiddleware),
+      toNewlineArray(MiddlewareTemplate.replace('{{ filename }}', 'SpoofAccept'))
+    )
+  })
 })

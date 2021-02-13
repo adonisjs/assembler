@@ -15,9 +15,9 @@ import { fsReadAll } from '@poppinss/utils/build/helpers'
  * Generates ace-manifest file
  */
 new ManifestGenerator(
-	join(__dirname, '..'),
-	fsReadAll(
-		join(__dirname, '../commands'),
-		(file) => !file.includes('Base') && file.endsWith('.js')
-	).map((file) => `./commands/${file}`)
+  join(__dirname, '..'),
+  fsReadAll(
+    join(__dirname, '../commands'),
+    (file) => !file.includes('Base') && file.endsWith('.js')
+  ).map((file) => `./commands/${file}`)
 ).generate()

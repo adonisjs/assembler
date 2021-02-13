@@ -8,7 +8,7 @@
  */
 
 export function toNewlineArray(contents: string): string[] {
-	return contents.split(/\r?\n/)
+  return contents.split(/\r?\n/)
 }
 
 export const info = process.env.CI ? '[ info ]' : '[ blue(info) ]'

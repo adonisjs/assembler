@@ -21,61 +21,61 @@ const fs = new Filesystem(join(__dirname, '__app'))
 const templates = new Filesystem(join(__dirname, '..', 'templates'))
 
 test.group('Make Listener', (group) => {
-	group.before(() => {
-		process.env.ADONIS_ACE_CWD = fs.basePath
-	})
+  group.before(() => {
+    process.env.ADONIS_ACE_CWD = fs.basePath
+  })
 
-	group.after(() => {
-		delete process.env.ADONIS_ACE_CWD
-	})
+  group.after(() => {
+    delete process.env.ADONIS_ACE_CWD
+  })
 
-	group.afterEach(async () => {
-		await fs.cleanup()
-	})
+  group.afterEach(async () => {
+    await fs.cleanup()
+  })
 
-	test('make a listener inside the default directory', async (assert) => {
-		await fs.add('.adonisrc.json', JSON.stringify({}))
+  test('make a listener inside the default directory', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const listener = new MakeListener(app, new Kernel(app))
-		listener.name = 'user'
-		await listener.run()
+    const listener = new MakeListener(app, new Kernel(app))
+    listener.name = 'user'
+    await listener.run()
 
-		const UserListener = await fs.get('app/Listeners/User.ts')
-		const ListenerTemplate = await templates.get('event-listener.txt')
-		assert.deepEqual(
-			toNewlineArray(UserListener),
-			toNewlineArray(ListenerTemplate.replace('{{ filename }}', 'User'))
-		)
-	})
+    const UserListener = await fs.get('app/Listeners/User.ts')
+    const ListenerTemplate = await templates.get('event-listener.txt')
+    assert.deepEqual(
+      toNewlineArray(UserListener),
+      toNewlineArray(ListenerTemplate.replace('{{ filename }}', 'User'))
+    )
+  })
 
-	test('make a listener inside a custom directory', async (assert) => {
-		await fs.add(
-			'.adonisrc.json',
-			JSON.stringify({
-				namespaces: {
-					eventListeners: 'App/Events/Listeners',
-				},
-				aliases: {
-					App: './app',
-				},
-			})
-		)
+  test('make a listener inside a custom directory', async (assert) => {
+    await fs.add(
+      '.adonisrc.json',
+      JSON.stringify({
+        namespaces: {
+          eventListeners: 'App/Events/Listeners',
+        },
+        aliases: {
+          App: './app',
+        },
+      })
+    )
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const listener = new MakeListener(app, new Kernel(app))
-		listener.name = 'user'
-		await listener.run()
+    const listener = new MakeListener(app, new Kernel(app))
+    listener.name = 'user'
+    await listener.run()
 
-		const UserListener = await fs.get('app/Events/Listeners/User.ts')
-		const ListenerTemplate = await templates.get('event-listener.txt')
-		assert.deepEqual(
-			toNewlineArray(UserListener),
-			toNewlineArray(ListenerTemplate.replace('{{ filename }}', 'User'))
-		)
-	})
+    const UserListener = await fs.get('app/Events/Listeners/User.ts')
+    const ListenerTemplate = await templates.get('event-listener.txt')
+    assert.deepEqual(
+      toNewlineArray(UserListener),
+      toNewlineArray(ListenerTemplate.replace('{{ filename }}', 'User'))
+    )
+  })
 })

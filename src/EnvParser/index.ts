@@ -15,36 +15,36 @@ import { EnvParser as Parser } from '@adonisjs/env'
  * Parses the env file inside the project root.
  */
 export class EnvParser {
-	private envContents: any = {}
+  private envContents: any = {}
 
-	private parser = new Parser(false)
+  private parser = new Parser(false)
 
-	/**
-	 * Parse .env file contents
-	 */
-	public async parse(rootDir: string) {
-		try {
-			this.envContents = this.parser.parse(await readFile(join(rootDir, '.env'), 'utf-8'))
-		} catch {}
-	}
+  /**
+   * Parse .env file contents
+   */
+  public async parse(rootDir: string) {
+    try {
+      this.envContents = this.parser.parse(await readFile(join(rootDir, '.env'), 'utf-8'))
+    } catch {}
+  }
 
-	/**
-	 * Returns value for a key inside the `.env` file
-	 */
-	public get(key: string): string | undefined {
-		return this.envContents[key]
-	}
+  /**
+   * Returns value for a key inside the `.env` file
+   */
+  public get(key: string): string | undefined {
+    return this.envContents[key]
+  }
 
-	/**
-	 * Returns an env object for the keys that has defined values
-	 */
-	public asEnvObject(keys: string[]): { [key: string]: string } {
-		return keys.reduce((result, key) => {
-			const value = this.get(key)
-			if (value !== undefined) {
-				result[key] = value
-			}
-			return result
-		}, {})
-	}
+  /**
+   * Returns an env object for the keys that has defined values
+   */
+  public asEnvObject(keys: string[]): { [key: string]: string } {
+    return keys.reduce((result, key) => {
+      const value = this.get(key)
+      if (value !== undefined) {
+        result[key] = value
+      }
+      return result
+    }, {})
+  }
 }

@@ -21,132 +21,132 @@ const fs = new Filesystem(join(__dirname, '__app'))
 const templates = new Filesystem(join(__dirname, '..', 'templates'))
 
 test.group('Make Preloaded File', (group) => {
-	group.before(() => {
-		process.env.ADONIS_ACE_CWD = fs.basePath
-	})
+  group.before(() => {
+    process.env.ADONIS_ACE_CWD = fs.basePath
+  })
 
-	group.after(() => {
-		delete process.env.ADONIS_ACE_CWD
-	})
+  group.after(() => {
+    delete process.env.ADONIS_ACE_CWD
+  })
 
-	group.afterEach(async () => {
-		await fs.cleanup()
-	})
+  group.afterEach(async () => {
+    await fs.cleanup()
+  })
 
-	test('make a preload file inside the start directory', async (assert) => {
-		await fs.add('.adonisrc.json', JSON.stringify({}))
+  test('make a preload file inside the start directory', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const preloadFile = new PreloadFile(app, new Kernel(app))
-		preloadFile.name = 'viewGlobals'
-		preloadFile.environment = 'console,web' as any
-		await preloadFile.run()
+    const preloadFile = new PreloadFile(app, new Kernel(app))
+    preloadFile.name = 'viewGlobals'
+    preloadFile.environment = 'console,web' as any
+    await preloadFile.run()
 
-		const viewGlobals = await fs.get('start/viewGlobals.ts')
-		const preloadTemplate = await templates.get('preload-file.txt')
-		assert.deepEqual(toNewlineArray(viewGlobals), toNewlineArray(preloadTemplate))
+    const viewGlobals = await fs.get('start/viewGlobals.ts')
+    const preloadTemplate = await templates.get('preload-file.txt')
+    assert.deepEqual(toNewlineArray(viewGlobals), toNewlineArray(preloadTemplate))
 
-		const rcRawContents = await fs.get('.adonisrc.json')
-		assert.deepEqual(JSON.parse(rcRawContents), {
-			preloads: [
-				{
-					file: './start/viewGlobals',
-					environment: ['console', 'web'],
-				},
-			],
-		})
-	})
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
+      preloads: [
+        {
+          file: './start/viewGlobals',
+          environment: ['console', 'web'],
+        },
+      ],
+    })
+  })
 
-	test('make a preload file inside custom directory', async (assert) => {
-		await fs.add(
-			'.adonisrc.json',
-			JSON.stringify({
-				directories: {
-					start: 'foo',
-				},
-			})
-		)
+  test('make a preload file inside custom directory', async (assert) => {
+    await fs.add(
+      '.adonisrc.json',
+      JSON.stringify({
+        directories: {
+          start: 'foo',
+        },
+      })
+    )
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const preloadFile = new PreloadFile(app, new Kernel(app))
-		preloadFile.name = 'viewGlobals'
-		preloadFile.environment = ['console', 'web']
-		await preloadFile.run()
+    const preloadFile = new PreloadFile(app, new Kernel(app))
+    preloadFile.name = 'viewGlobals'
+    preloadFile.environment = ['console', 'web']
+    await preloadFile.run()
 
-		const viewGlobals = await fs.get('foo/viewGlobals.ts')
-		const preloadTemplate = await templates.get('preload-file.txt')
-		assert.deepEqual(toNewlineArray(viewGlobals), toNewlineArray(preloadTemplate))
+    const viewGlobals = await fs.get('foo/viewGlobals.ts')
+    const preloadTemplate = await templates.get('preload-file.txt')
+    assert.deepEqual(toNewlineArray(viewGlobals), toNewlineArray(preloadTemplate))
 
-		const rcRawContents = await fs.get('.adonisrc.json')
-		assert.deepEqual(JSON.parse(rcRawContents), {
-			directories: { start: 'foo' },
-			preloads: [
-				{
-					file: './foo/viewGlobals',
-					environment: ['console', 'web'],
-				},
-			],
-		})
-	})
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
+      directories: { start: 'foo' },
+      preloads: [
+        {
+          file: './foo/viewGlobals',
+          environment: ['console', 'web'],
+        },
+      ],
+    })
+  })
 
-	test('select environment as repl', async (assert) => {
-		await fs.add('.adonisrc.json', JSON.stringify({}))
+  test('select environment as repl', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const preloadFile = new PreloadFile(app, new Kernel(app))
-		preloadFile.name = 'repl'
-		preloadFile.environment = ['repl']
-		await preloadFile.run()
+    const preloadFile = new PreloadFile(app, new Kernel(app))
+    preloadFile.name = 'repl'
+    preloadFile.environment = ['repl']
+    await preloadFile.run()
 
-		const replFile = await fs.get('start/repl.ts')
-		const preloadTemplate = await templates.get('preload-file.txt')
-		assert.deepEqual(toNewlineArray(replFile), toNewlineArray(preloadTemplate))
+    const replFile = await fs.get('start/repl.ts')
+    const preloadTemplate = await templates.get('preload-file.txt')
+    assert.deepEqual(toNewlineArray(replFile), toNewlineArray(preloadTemplate))
 
-		const rcRawContents = await fs.get('.adonisrc.json')
-		assert.deepEqual(JSON.parse(rcRawContents), {
-			preloads: [
-				{
-					file: './start/repl',
-					environment: ['repl'],
-				},
-			],
-		})
-	})
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
+      preloads: [
+        {
+          file: './start/repl',
+          environment: ['repl'],
+        },
+      ],
+    })
+  })
 
-	test('prompt for environment when not explicitly defined', async (assert) => {
-		await fs.add('.adonisrc.json', JSON.stringify({}))
+  test('prompt for environment when not explicitly defined', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const preloadFile = new PreloadFile(app, new Kernel(app))
-		preloadFile.prompt.on('prompt', (question) => {
-			question.select(1)
-		})
+    const preloadFile = new PreloadFile(app, new Kernel(app))
+    preloadFile.prompt.on('prompt', (question) => {
+      question.select(1)
+    })
 
-		preloadFile.name = 'repl'
-		preloadFile.environment = ['repl']
+    preloadFile.name = 'repl'
+    preloadFile.environment = ['repl']
 
-		await preloadFile.exec()
+    await preloadFile.exec()
 
-		const replFile = await fs.get('start/repl.ts')
-		const preloadTemplate = await templates.get('preload-file.txt')
-		assert.deepEqual(toNewlineArray(replFile), toNewlineArray(preloadTemplate))
+    const replFile = await fs.get('start/repl.ts')
+    const preloadTemplate = await templates.get('preload-file.txt')
+    assert.deepEqual(toNewlineArray(replFile), toNewlineArray(preloadTemplate))
 
-		const rcRawContents = await fs.get('.adonisrc.json')
-		assert.deepEqual(JSON.parse(rcRawContents), {
-			preloads: [
-				{
-					file: './start/repl',
-					environment: ['repl'],
-				},
-			],
-		})
-	})
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
+      preloads: [
+        {
+          file: './start/repl',
+          environment: ['repl'],
+        },
+      ],
+    })
+  })
 })

@@ -14,14 +14,14 @@ import { register } from '@adonisjs/require-ts'
  * for AdonisJS applications
  */
 export default function registerForAdonis(appRoot: string) {
-	return register(appRoot, {
-		cache: true,
-		transformers: {
-			after: [
-				{
-					transform: '@adonisjs/assembler/build/src/requireHook/ioc-transformer',
-				},
-			],
-		},
-	})
+  return register(appRoot, {
+    cache: true,
+    transformers: {
+      after: [
+        {
+          transform: '@adonisjs/assembler/build/src/requireHook/ioc-transformer',
+        },
+      ],
+    },
+  })
 }

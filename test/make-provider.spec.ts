@@ -21,118 +21,118 @@ const fs = new Filesystem(join(__dirname, '__app'))
 const templates = new Filesystem(join(__dirname, '..', 'templates'))
 
 test.group('Make Provider', (group) => {
-	group.before(() => {
-		process.env.ADONIS_ACE_CWD = fs.basePath
-	})
+  group.before(() => {
+    process.env.ADONIS_ACE_CWD = fs.basePath
+  })
 
-	group.after(() => {
-		delete process.env.ADONIS_ACE_CWD
-	})
+  group.after(() => {
+    delete process.env.ADONIS_ACE_CWD
+  })
 
-	group.afterEach(async () => {
-		await fs.cleanup()
-	})
+  group.afterEach(async () => {
+    await fs.cleanup()
+  })
 
-	test('make a provider inside the default directory', async (assert) => {
-		await fs.add('.adonisrc.json', JSON.stringify({}))
+  test('make a provider inside the default directory', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const provider = new MakeProvider(app, new Kernel(app))
-		provider.name = 'app'
-		await provider.run()
+    const provider = new MakeProvider(app, new Kernel(app))
+    provider.name = 'app'
+    await provider.run()
 
-		const AppProvider = await fs.get('providers/AppProvider.ts')
-		const ProviderTemplate = await templates.get('provider.txt')
-		assert.deepEqual(
-			toNewlineArray(AppProvider),
-			toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider'))
-		)
+    const AppProvider = await fs.get('providers/AppProvider.ts')
+    const ProviderTemplate = await templates.get('provider.txt')
+    assert.deepEqual(
+      toNewlineArray(AppProvider),
+      toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider'))
+    )
 
-		const rcRawContents = await fs.get('.adonisrc.json')
-		assert.deepEqual(JSON.parse(rcRawContents), {
-			providers: ['./providers/AppProvider'],
-		})
-	})
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
+      providers: ['./providers/AppProvider'],
+    })
+  })
 
-	test('make a provider inside a custom directory', async (assert) => {
-		await fs.add(
-			'.adonisrc.json',
-			JSON.stringify({
-				directories: {
-					providers: 'foo',
-				},
-			})
-		)
+  test('make a provider inside a custom directory', async (assert) => {
+    await fs.add(
+      '.adonisrc.json',
+      JSON.stringify({
+        directories: {
+          providers: 'foo',
+        },
+      })
+    )
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const provider = new MakeProvider(app, new Kernel(app))
-		provider.name = 'app'
-		await provider.run()
+    const provider = new MakeProvider(app, new Kernel(app))
+    provider.name = 'app'
+    await provider.run()
 
-		const AppProvider = await fs.get('foo/AppProvider.ts')
-		const ProviderTemplate = await templates.get('provider.txt')
-		assert.deepEqual(
-			toNewlineArray(AppProvider),
-			toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider'))
-		)
+    const AppProvider = await fs.get('foo/AppProvider.ts')
+    const ProviderTemplate = await templates.get('provider.txt')
+    assert.deepEqual(
+      toNewlineArray(AppProvider),
+      toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider'))
+    )
 
-		const rcRawContents = await fs.get('.adonisrc.json')
-		assert.deepEqual(JSON.parse(rcRawContents), {
-			directories: {
-				providers: 'foo',
-			},
-			providers: ['./foo/AppProvider'],
-		})
-	})
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
+      directories: {
+        providers: 'foo',
+      },
+      providers: ['./foo/AppProvider'],
+    })
+  })
 
-	test('setup correct path when nested provider is created', async (assert) => {
-		await fs.add('.adonisrc.json', JSON.stringify({}))
+  test('setup correct path when nested provider is created', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const provider = new MakeProvider(app, new Kernel(app))
-		provider.name = 'auth/app'
-		await provider.run()
+    const provider = new MakeProvider(app, new Kernel(app))
+    provider.name = 'auth/app'
+    await provider.run()
 
-		const AppProvider = await fs.get('providers/auth/AppProvider.ts')
-		const ProviderTemplate = await templates.get('provider.txt')
-		assert.deepEqual(
-			toNewlineArray(AppProvider),
-			toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider'))
-		)
+    const AppProvider = await fs.get('providers/auth/AppProvider.ts')
+    const ProviderTemplate = await templates.get('provider.txt')
+    assert.deepEqual(
+      toNewlineArray(AppProvider),
+      toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider'))
+    )
 
-		const rcRawContents = await fs.get('.adonisrc.json')
-		assert.deepEqual(JSON.parse(rcRawContents), {
-			providers: ['./providers/auth/AppProvider'],
-		})
-	})
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
+      providers: ['./providers/auth/AppProvider'],
+    })
+  })
 
-	test('make ace provider', async (assert) => {
-		await fs.add('.adonisrc.json', JSON.stringify({}))
+  test('make ace provider', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
 
-		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
-		const app = new Application(fs.basePath, 'test', rcContents)
+    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const app = new Application(fs.basePath, 'test', rcContents)
 
-		const provider = new MakeProvider(app, new Kernel(app))
-		provider.name = 'app'
-		provider.ace = true
-		await provider.run()
+    const provider = new MakeProvider(app, new Kernel(app))
+    provider.name = 'app'
+    provider.ace = true
+    await provider.run()
 
-		const AppProvider = await fs.get('providers/AppProvider.ts')
-		const ProviderTemplate = await templates.get('provider.txt')
-		assert.deepEqual(
-			toNewlineArray(AppProvider),
-			toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider'))
-		)
+    const AppProvider = await fs.get('providers/AppProvider.ts')
+    const ProviderTemplate = await templates.get('provider.txt')
+    assert.deepEqual(
+      toNewlineArray(AppProvider),
+      toNewlineArray(ProviderTemplate.replace('{{ filename }}', 'AppProvider'))
+    )
 
-		const rcRawContents = await fs.get('.adonisrc.json')
-		assert.deepEqual(JSON.parse(rcRawContents), {
-			aceProviders: ['./providers/AppProvider'],
-		})
-	})
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
+      aceProviders: ['./providers/AppProvider'],
+    })
+  })
 })

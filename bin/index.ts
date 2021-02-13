@@ -8,8 +8,8 @@
  */
 
 import { join } from 'path'
-import { fsReadAll } from '@poppinss/utils'
 import { ManifestGenerator } from '@adonisjs/ace'
+import { fsReadAll } from '@poppinss/utils/build/helpers'
 
 /**
  * Generates ace-manifest file

@@ -33,7 +33,7 @@ test.group('Make Validator', (group) => {
 		await fs.cleanup()
 	})
 
-	test('make a model inside the default directory', async (assert) => {
+	test('make a validator inside the default directory', async (assert) => {
 		await fs.add('.adonisrc.json', JSON.stringify({}))
 
 		const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any

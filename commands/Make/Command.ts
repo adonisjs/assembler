@@ -9,7 +9,7 @@
 
 import { join } from 'path'
 import { args } from '@adonisjs/core/build/standalone'
-import { lodash } from '@poppinss/utils'
+import { string } from '@poppinss/utils/build/helpers'
 
 import { BaseGenerator } from './Base'
 
@@ -54,7 +54,7 @@ export default class MakeCommand extends BaseGenerator {
 		return {
 			toCommandName: () => {
 				return function (filename: string, render: any) {
-					return lodash.snakeCase(render(filename)).replace(/_/, ':')
+					return string.snakeCase(render(filename)).replace(/_/, ':')
 				}
 			},
 		}

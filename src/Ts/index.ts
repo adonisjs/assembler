@@ -9,9 +9,9 @@
 
 import { join } from 'path'
 import tsStatic from 'typescript'
-import { resolveFrom } from '@poppinss/utils'
 import { logger as uiLogger } from '@poppinss/cliui'
 import { TypescriptCompiler } from '@poppinss/chokidar-ts'
+import { resolveFrom } from '@poppinss/utils/build/helpers'
 
 import { TSCONFIG_FILE_NAME, DEFAULT_BUILD_DIR } from '../../config/paths'
 

@@ -11,8 +11,8 @@ import slash from 'slash'
 import picomatch from 'picomatch'
 import { join, relative } from 'path'
 import importFresh from 'import-fresh'
-import { resolveFrom } from '@poppinss/utils'
 import { Application } from '@adonisjs/application'
+import { resolveFrom } from '@poppinss/utils/build/helpers'
 
 import { RCFILE_NAME, ACE_FILE_NAME } from '../../config/paths'
 

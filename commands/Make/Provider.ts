@@ -24,6 +24,7 @@ export default class MakeProvider extends BaseGenerator {
   protected form = 'singular' as const
   protected pattern = 'pascalcase' as const
   protected resourceName: string
+  protected createExact: boolean
 
   /**
    * Command meta data
@@ -36,6 +37,12 @@ export default class MakeProvider extends BaseGenerator {
 
   @flags.boolean({ description: 'Registers provider under the ace providers array' })
   public ace: boolean
+
+  @flags.boolean({
+    description: 'Create the provider with the exact name as provided',
+    alias: 'e',
+  })
+  public exact: boolean
 
   /**
    * Returns the template stub path
@@ -53,6 +60,7 @@ export default class MakeProvider extends BaseGenerator {
 
   public async run() {
     this.resourceName = this.name
+    this.createExact = this.exact
     const file = await super.generate()
 
     if (!file) {

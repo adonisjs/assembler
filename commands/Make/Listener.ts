@@ -8,7 +8,7 @@
  */
 
 import { join } from 'path'
-import { args } from '@adonisjs/core/build/standalone'
+import { args, flags } from '@adonisjs/core/build/standalone'
 import { BaseGenerator } from './Base'
 
 /**
@@ -21,6 +21,7 @@ export default class MakeListener extends BaseGenerator {
   protected form = 'singular' as const
   protected pattern = 'pascalcase' as const
   protected resourceName: string
+  protected createExact: boolean
 
   /**
    * Command meta data
@@ -30,6 +31,12 @@ export default class MakeListener extends BaseGenerator {
 
   @args.string({ description: 'Name of the event listener class' })
   public name: string
+
+  @flags.boolean({
+    description: 'Create the listener with the exact name as provided',
+    alias: 'e',
+  })
+  public exact: boolean
 
   /**
    * Returns the template stub
@@ -48,6 +55,7 @@ export default class MakeListener extends BaseGenerator {
 
   public async run() {
     this.resourceName = this.name
+    this.createExact = this.exact
     await super.generate()
   }
 }

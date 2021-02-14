@@ -8,7 +8,7 @@
  */
 
 import { join } from 'path'
-import { args } from '@adonisjs/core/build/standalone'
+import { args, flags } from '@adonisjs/core/build/standalone'
 import { BaseGenerator } from './Base'
 
 /**
@@ -22,6 +22,7 @@ export default class MakeView extends BaseGenerator {
   protected extname = '.edge'
   protected pattern = 'snakecase' as const
   protected resourceName: string
+  protected createExact: boolean
 
   /**
    * Command meta data
@@ -31,6 +32,12 @@ export default class MakeView extends BaseGenerator {
 
   @args.string({ description: 'Name of the view' })
   public name: string
+
+  @flags.boolean({
+    description: 'Create the template file with the exact name as provided',
+    alias: 'e',
+  })
+  public exact: boolean
 
   /**
    * Returns the template stub path
@@ -48,6 +55,7 @@ export default class MakeView extends BaseGenerator {
 
   public async run() {
     this.resourceName = this.name
+    this.createExact = this.exact
     await super.generate()
   }
 }

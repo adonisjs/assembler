@@ -21,6 +21,7 @@ export default class MakePreloadFile extends BaseGenerator {
    * Required by BaseGenerator
    */
   protected resourceName: string
+  protected createExact = true
 
   /**
    * List of allowed environments

@@ -16,6 +16,7 @@ import { BaseCommand } from '@adonisjs/core/build/standalone'
  */
 export abstract class BaseGenerator extends BaseCommand {
   protected abstract resourceName: string
+  protected abstract createExact: boolean
   protected abstract getStub(): string
   protected abstract getDestinationPath(): string
 
@@ -59,14 +60,20 @@ export abstract class BaseGenerator extends BaseCommand {
       return
     }
 
+    const transformations = this.createExact
+      ? {
+          extname: this.extname,
+        }
+      : {
+          form: this.form,
+          suffix: this.suffix,
+          formIgnoreList: this.formIgnoreList,
+          pattern: this.pattern,
+          extname: this.extname,
+        }
+
     const file = this.generator
-      .addFile(this.resourceName, {
-        form: this.form,
-        suffix: this.suffix,
-        formIgnoreList: this.formIgnoreList,
-        pattern: this.pattern,
-        extname: this.extname,
-      })
+      .addFile(this.resourceName, transformations)
       .stub(this.getStub())
       .useMustache()
       .destinationDir(this.getDestinationPath())

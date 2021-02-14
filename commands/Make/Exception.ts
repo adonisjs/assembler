@@ -22,6 +22,7 @@ export default class MakeException extends BaseGenerator {
   protected pattern = 'pascalcase' as const
   protected resourceName: string
   protected suffix = 'Exception'
+  protected createExact: boolean
 
   /**
    * Command meta data
@@ -34,6 +35,12 @@ export default class MakeException extends BaseGenerator {
 
   @flags.boolean({ description: 'Add handle method to self handle the exception' })
   public selfHandle: boolean
+
+  @flags.boolean({
+    description: 'Create the exception with the exact name as provided',
+    alias: 'e',
+  })
+  public exact: boolean
 
   /**
    * Returns the template stub
@@ -58,6 +65,7 @@ export default class MakeException extends BaseGenerator {
 
   public async run() {
     this.resourceName = this.name
+    this.createExact = this.exact
     await super.generate()
   }
 }

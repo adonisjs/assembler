@@ -22,6 +22,7 @@ export default class MakeController extends BaseGenerator {
   protected form = 'plural' as const
   protected pattern = 'pascalcase' as const
   protected resourceName: string
+  protected createExact: boolean
 
   /**
    * Do not pluralize following controller names
@@ -48,6 +49,12 @@ export default class MakeController extends BaseGenerator {
   @flags.boolean({ description: 'Adds resourceful methods to the controller class', alias: 'r' })
   public resource: boolean
 
+  @flags.boolean({
+    description: 'Create the controller with the exact name as provided',
+    alias: 'e',
+  })
+  public exact: boolean
+
   /**
    * Returns the template stub based upon the `--resource`
    * flag value
@@ -72,6 +79,7 @@ export default class MakeController extends BaseGenerator {
 
   public async run() {
     this.resourceName = this.name
+    this.createExact = this.exact
     await super.generate()
   }
 }

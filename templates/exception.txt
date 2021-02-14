@@ -1,4 +1,4 @@
-import { Exception } from '@adonisjs/core'
+import { Exception } from '@adonisjs/core/build/standalone'
 
 /*
 |--------------------------------------------------------------------------

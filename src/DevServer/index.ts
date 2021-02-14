@@ -300,6 +300,8 @@ export class DevServer {
       this.logger.action('create').succeeded(relativePath)
       if (metaData.reload) {
         this.httpServer.restart()
+      } else {
+        this.renderSeverIsReady()
       }
     })
 
@@ -323,6 +325,8 @@ export class DevServer {
 
       if (metaData.reload || metaData.rcFile) {
         this.httpServer.restart()
+      } else {
+        this.renderSeverIsReady()
       }
     })
 
@@ -353,6 +357,8 @@ export class DevServer {
       this.logger.action('delete').succeeded(relativePath)
       if (metaData.reload) {
         this.httpServer.restart()
+      } else {
+        this.renderSeverIsReady()
       }
     })
 

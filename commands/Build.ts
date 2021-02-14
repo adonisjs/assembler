@@ -23,6 +23,12 @@ export default class Build extends BaseCommand {
   @flags.boolean({ description: 'Build for production', alias: 'prod' })
   public production: boolean
 
+  @flags.boolean({
+    description: 'Ignore typescript errors and complete the build process',
+    alias: 'prod',
+  })
+  public ignoreTsErrors: boolean
+
   /**
    * Select the client for deciding the lock file to copy to the
    * build folder
@@ -47,11 +53,19 @@ export default class Build extends BaseCommand {
       return
     }
 
+    /**
+     * Stop on error when "ignoreTsErrors" is not set
+     */
+    const stopOnError = !this.ignoreTsErrors
+
     try {
       if (this.production) {
-        await new Compiler(this.application.appRoot, this.logger).compileForProduction(this.client)
+        await new Compiler(this.application.appRoot, this.logger).compileForProduction(
+          stopOnError,
+          this.client
+        )
       } else {
-        await new Compiler(this.application.appRoot, this.logger).compile()
+        await new Compiler(this.application.appRoot, this.logger).compile(stopOnError)
       }
     } catch (error) {
       this.logger.fatal(error)

@@ -111,7 +111,12 @@ export class Compiler {
   /**
    * Build typescript source files
    */
-  private buildTypescriptSource(config: tsStatic.ParsedCommandLine): boolean {
+  private buildTypescriptSource(
+    config: tsStatic.ParsedCommandLine
+  ): {
+    skipped: boolean
+    hasErrors: boolean
+  } {
     this.logger.info('compiling typescript source files')
 
     const builder = this.ts.tsCompiler.builder(config)
@@ -126,14 +131,17 @@ export class Compiler {
       this.ts.renderDiagnostics(diagnostics, builder.host)
     }
 
-    return !skipped
+    return {
+      skipped,
+      hasErrors: diagnostics.length > 0,
+    }
   }
 
   /**
    * Compile project. See [[Compiler.compileForProduction]] for
    * production build
    */
-  public async compile(extraFiles?: string[]): Promise<boolean> {
+  public async compile(stopOnError: boolean = true, extraFiles?: string[]): Promise<boolean> {
     const config = this.ts.parseConfig()
     if (!config) {
       return false
@@ -147,8 +155,19 @@ export class Compiler {
     /**
      * Build typescript source
      */
-    const emitOutput = this.buildTypescriptSource(config)
-    if (!emitOutput) {
+    const { skipped, hasErrors } = this.buildTypescriptSource(config)
+
+    /**
+     * Do not continue when output was skipped
+     */
+    if (skipped) {
+      return false
+    }
+
+    /**
+     * Do not continue when has errors and "stopOnError" is true
+     */
+    if (stopOnError && hasErrors) {
       return false
     }
 
@@ -183,7 +202,10 @@ export class Compiler {
   /**
    * Compile project. See [[Compiler.compile]] for development build
    */
-  public async compileForProduction(client: 'npm' | 'yarn'): Promise<boolean> {
+  public async compileForProduction(
+    stopOnError: boolean = true,
+    client: 'npm' | 'yarn'
+  ): Promise<boolean> {
     const config = this.ts.parseConfig()
     if (!config) {
       return false
@@ -200,8 +222,19 @@ export class Compiler {
     /**
      * Build typescript source
      */
-    const emitOutput = this.buildTypescriptSource(config)
-    if (!emitOutput) {
+    const { skipped, hasErrors } = this.buildTypescriptSource(config)
+
+    /**
+     * Do not continue when output was skipped
+     */
+    if (skipped) {
+      return false
+    }
+
+    /**
+     * Do not continue when has errors and "stopOnError" is true
+     */
+    if (stopOnError && hasErrors) {
       return false
     }
 

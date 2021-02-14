@@ -360,7 +360,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/scripts/main.js', '')
 
     const compiler = new Compiler(fs.basePath, ui.logger)
-    await compiler.compile()
+    await compiler.compile(false)
 
     const hasFiles = await Promise.all(
       [
@@ -397,6 +397,62 @@ test.group('Compiler', (group) => {
       {
         message: `${success}  built successfully`,
         stream: 'stdout',
+      },
+    ])
+  }).timeout(0)
+
+  test('do not continue on error', async (assert) => {
+    await fs.add(
+      '.adonisrc.json',
+      JSON.stringify({
+        typescript: true,
+        metaFiles: ['public/**/*.(js|css)'],
+      })
+    )
+
+    await fs.add(
+      'tsconfig.json',
+      JSON.stringify({
+        include: ['**/*'],
+        exclude: ['build'],
+        compilerOptions: {
+          rootDir: './',
+          outDir: 'build/dist',
+        },
+      })
+    )
+
+    await fs.add('ace', '')
+    await fs.add('src/foo.ts', "import path from 'path'")
+    await fs.add('public/styles/main.css', '')
+    await fs.add('public/scripts/main.js', '')
+
+    const compiler = new Compiler(fs.basePath, ui.logger)
+    await compiler.compile(true)
+
+    const hasFiles = await Promise.all(
+      [
+        'build/dist/.adonisrc.json',
+        'build/dist/src/foo.js',
+        'build/dist/public/styles/main.css',
+        'build/dist/public/scripts/main.js',
+      ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file)))
+    )
+
+    assert.deepEqual(hasFiles, [false, true, false, false])
+
+    assert.deepEqual(ui.testingRenderer.logs, [
+      {
+        message: `${info}  cleaning up ${dimYellow('"./build/dist"')} directory`,
+        stream: 'stdout',
+      },
+      {
+        message: `${info}  compiling typescript source files`,
+        stream: 'stdout',
+      },
+      {
+        message: `${error}  typescript compiler errors`,
+        stream: 'stderr',
       },
     ])
   }).timeout(0)
@@ -503,7 +559,7 @@ test.group('Compiler', (group) => {
     })
 
     const compiler = new Compiler(fs.basePath, ui.logger)
-    await compiler.compileForProduction('npm')
+    await compiler.compileForProduction(false, 'npm')
 
     const hasFiles = await Promise.all(
       [

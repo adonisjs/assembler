@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/adonisjs/assembler#readme",
   "devDependencies": {
-    "@adonisjs/ace": "^9.0.4",
+    "@adonisjs/ace": "^9.0.5",
     "@adonisjs/core": "^5.0.5-canary-rc-1",
     "@adonisjs/mrm-preset": "^3.0.0",
     "@poppinss/dev-utils": "^1.1.0",
@@ -54,7 +54,7 @@
     "del-cli": "^3.0.1",
     "eslint": "^7.20.0",
     "eslint-config-prettier": "^7.2.0",
-    "eslint-plugin-adonis": "^1.2.0",
+    "eslint-plugin-adonis": "^1.2.1",
     "eslint-plugin-prettier": "^3.3.1",
     "github-label-sync": "^2.0.0",
     "husky": "^5.0.9",

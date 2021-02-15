@@ -15,7 +15,8 @@ import { BaseCommand, flags } from '@adonisjs/core/build/standalone'
  */
 export default class Build extends BaseCommand {
   public static commandName = 'build'
-  public static description = 'Compile Typescript code to JavaScript'
+  public static description =
+    'Compile project from Typescript to Javascript. Also compiles the frontend assets if using webpack encore'
 
   /**
    * Build for production
@@ -27,7 +28,8 @@ export default class Build extends BaseCommand {
    * Bundle frontend assets. Defaults to true
    */
   @flags.boolean({
-    description: 'Bundle frontend assets when encore is installed. Use --no-assets to disable',
+    description:
+      'Build frontend assets when webpack encore is installed. Use --no-assets to disable',
     default: true,
   })
   public assets: boolean

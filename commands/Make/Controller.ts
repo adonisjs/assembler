@@ -46,7 +46,7 @@ export default class MakeController extends BaseGenerator {
   @args.string({ description: 'Name of the controller class' })
   public name: string
 
-  @flags.boolean({ description: 'Adds resourceful methods to the controller class', alias: 'r' })
+  @flags.boolean({ description: 'Add resourceful methods to the controller class', alias: 'r' })
   public resource: boolean
 
   @flags.boolean({

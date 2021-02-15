@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/adonisjs/assembler#readme",
   "devDependencies": {
-    "@adonisjs/ace": "^9.0.3",
+    "@adonisjs/ace": "^9.0.4",
     "@adonisjs/core": "^5.0.5-canary-rc-1",
     "@adonisjs/mrm-preset": "^3.0.0",
     "@poppinss/dev-utils": "^1.1.0",

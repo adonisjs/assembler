@@ -28,16 +28,16 @@ export default class MakeException extends BaseGenerator {
    * Command meta data
    */
   public static commandName = 'make:exception'
-  public static description = 'Make a new exception handle'
+  public static description = 'Make a new custom exception class'
 
   @args.string({ description: 'Name of the exception class' })
   public name: string
 
-  @flags.boolean({ description: 'Add handle method to self handle the exception' })
+  @flags.boolean({ description: 'Add the handle method to self handle the exception' })
   public selfHandle: boolean
 
   @flags.boolean({
-    description: 'Create the exception with the exact name as provided',
+    description: 'Create the exception class with the exact name as provided',
     alias: 'e',
   })
   public exact: boolean

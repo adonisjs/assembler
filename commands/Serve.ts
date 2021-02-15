@@ -15,7 +15,8 @@ import { BaseCommand, flags } from '@adonisjs/core/build/standalone'
  */
 export default class Serve extends BaseCommand {
   public static commandName = 'serve'
-  public static description = 'Start the AdonisJS HTTP server. Optionally watch for file changes'
+  public static description =
+    'Start the AdonisJS HTTP server, along with the file watcher. Also starts the webpack dev server when webpack encore is installed'
 
   public static settings = {
     stayAlive: true,
@@ -25,7 +26,7 @@ export default class Serve extends BaseCommand {
    * Bundle frontend assets. Defaults to true
    */
   @flags.boolean({
-    description: 'Start webpack dev server when encore is installed. Use --no-assets to disable',
+    description: 'Start webpack dev server when encore is installed. Use "--no-assets" to disable',
     default: true,
   })
   public assets: boolean
@@ -33,7 +34,10 @@ export default class Serve extends BaseCommand {
   /**
    * Allows watching for file changes
    */
-  @flags.boolean({ description: 'Watch for file changes and re-start the HTTP server', alias: 'w' })
+  @flags.boolean({
+    description: 'Watch for file changes and re-start the HTTP server on change',
+    alias: 'w',
+  })
   public watch: boolean
 
   /**

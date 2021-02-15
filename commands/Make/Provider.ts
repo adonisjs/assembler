@@ -30,12 +30,12 @@ export default class MakeProvider extends BaseGenerator {
    * Command meta data
    */
   public static commandName = 'make:provider'
-  public static description = 'Make a new IoC container provider'
+  public static description = 'Make a new provider class'
 
   @args.string({ description: 'Name of the provider class' })
   public name: string
 
-  @flags.boolean({ description: 'Registers provider under the ace providers array' })
+  @flags.boolean({ description: 'Register provider under the ace providers array' })
   public ace: boolean
 
   @flags.boolean({

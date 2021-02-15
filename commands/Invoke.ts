@@ -11,18 +11,18 @@ import { BaseCommand, args } from '@adonisjs/core/build/standalone'
 import { Manifest } from '../src/Manifest'
 
 /**
- * Invoke post install instructions
+ * Configure a package
  */
-export default class Invoke extends BaseCommand {
-  public static commandName = 'invoke'
-  public static description = 'Run post install instructions for a given AdonisJS package'
-  public static aliases = ['configure']
+export default class Configure extends BaseCommand {
+  public static commandName = 'configure'
+  public static description = 'Configure a given AdonisJS package'
+  public static aliases = ['invoke']
 
   /**
    * Use yarn when building for production to install dependencies
    */
   @args.string({
-    description: 'Name of the package for which to invoke the post install instructions',
+    description: 'Name of the package you want to configure',
   })
   public name: string
 

@@ -36,8 +36,7 @@ export default class MakePreloadFile extends BaseGenerator {
   /**
    * Command description
    */
-  public static description =
-    'Make a new preload file. Preloaded files are loaded automatically on boot'
+  public static description = 'Make a new preload file'
 
   @args.string({ description: 'Name of the file' })
   public name: string

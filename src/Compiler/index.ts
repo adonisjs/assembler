@@ -19,6 +19,7 @@ import { Ts } from '../Ts'
 import { RcFile } from '../RcFile'
 import { Manifest } from '../Manifest'
 import { RCFILE_NAME } from '../../config/paths'
+import { AssetsBundler } from '../AssetsBundler'
 
 /**
  * Exposes the API to build the AdonisJs project for development or
@@ -35,7 +36,12 @@ export class Compiler {
    */
   private rcFile = new RcFile(this.appRoot)
 
-  constructor(public appRoot: string, private logger: typeof uiLogger = uiLogger) {
+  constructor(
+    public appRoot: string,
+    private encoreArgs: string[],
+    private buildAssets: boolean,
+    private logger: typeof uiLogger = uiLogger
+  ) {
     this.ts.tsCompiler.use(() => {
       return iocTransformer(this.ts.tsCompiler.ts, this.rcFile.application.rcFile)
     }, 'after')
@@ -148,6 +154,23 @@ export class Compiler {
     }
 
     /**
+     * Bundle frontend assets when encore is installed
+     */
+    const encore = await new AssetsBundler(
+      this.appRoot,
+      this.encoreArgs,
+      this.buildAssets,
+      this.logger
+    ).build()
+
+    /**
+     * Skipped, coz of frontend errors
+     */
+    if (encore.hasErrors) {
+      return false
+    }
+
+    /**
      * Always cleanup the out directory
      */
     await this.cleanupBuildDirectory(config.options.outDir!)
@@ -155,19 +178,19 @@ export class Compiler {
     /**
      * Build typescript source
      */
-    const { skipped, hasErrors } = this.buildTypescriptSource(config)
+    const ts = this.buildTypescriptSource(config)
 
     /**
      * Do not continue when output was skipped
      */
-    if (skipped) {
+    if (ts.skipped) {
       return false
     }
 
     /**
      * Do not continue when has errors and "stopOnError" is true
      */
-    if (stopOnError && hasErrors) {
+    if (stopOnError && ts.hasErrors) {
       return false
     }
 
@@ -208,6 +231,23 @@ export class Compiler {
   ): Promise<boolean> {
     const config = this.ts.parseConfig()
     if (!config) {
+      return false
+    }
+
+    /**
+     * Bundle frontend assets when encore is installed
+     */
+    const encore = await new AssetsBundler(
+      this.appRoot,
+      this.encoreArgs,
+      this.buildAssets,
+      this.logger
+    ).buildForProduction()
+
+    /**
+     * Skipped, coz of frontend errors
+     */
+    if (encore.hasErrors) {
       return false
     }
 

@@ -55,7 +55,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile()
 
     const hasFiles = await Promise.all(
@@ -121,7 +121,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile()
 
     const hasFiles = await Promise.all(
@@ -184,7 +184,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile()
 
     const hasFiles = await Promise.all(
@@ -247,7 +247,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile()
 
     const hasFiles = await Promise.all(
@@ -311,7 +311,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile()
 
     const hasFiles = await Promise.all(
@@ -359,7 +359,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile(false)
 
     const hasFiles = await Promise.all(
@@ -427,7 +427,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile(true)
 
     const hasFiles = await Promise.all(
@@ -484,7 +484,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile()
 
     const hasFiles = await Promise.all(
@@ -558,7 +558,7 @@ test.group('Compiler', (group) => {
       stdio: 'inherit',
     })
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compileForProduction(false, 'npm')
 
     const hasFiles = await Promise.all(
@@ -629,7 +629,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile()
 
     const hasFiles = await Promise.all(
@@ -694,7 +694,7 @@ test.group('Compiler', (group) => {
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')
 
-    const compiler = new Compiler(fs.basePath, ui.logger)
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile()
 
     const hasFiles = await Promise.all(

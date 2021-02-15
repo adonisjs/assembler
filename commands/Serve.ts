@@ -22,6 +22,15 @@ export default class Serve extends BaseCommand {
   }
 
   /**
+   * Bundle frontend assets. Defaults to true
+   */
+  @flags.boolean({
+    description: 'Start webpack dev server when encore is installed. Use --no-assets to disable',
+    default: true,
+  })
+  public assets: boolean
+
+  /**
    * Allows watching for file changes
    */
   @flags.boolean({ description: 'Watch for file changes and re-start the HTTP server', alias: 'w' })
@@ -42,14 +51,32 @@ export default class Serve extends BaseCommand {
   @flags.array({ description: 'CLI options to pass to the node command line' })
   public nodeArgs: string[] = []
 
+  /**
+   * Arguments to pass to the `encore` binary
+   */
+  @flags.array({ description: 'CLI options to pass to the encore command line' })
+  public encoreArgs: string[] = []
+
   public async run() {
     const { DevServer } = await import('../src/DevServer')
 
     try {
       if (this.watch) {
-        await new DevServer(this.application.appRoot, this.nodeArgs, this.logger).watch(this.poll)
+        await new DevServer(
+          this.application.appRoot,
+          this.nodeArgs,
+          this.encoreArgs,
+          this.assets,
+          this.logger
+        ).watch(this.poll)
       } else {
-        await new DevServer(this.application.appRoot, this.nodeArgs, this.logger).start()
+        await new DevServer(
+          this.application.appRoot,
+          this.nodeArgs,
+          this.encoreArgs,
+          this.assets,
+          this.logger
+        ).start()
       }
     } catch (error) {
       this.logger.fatal(error)

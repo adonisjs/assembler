@@ -18,6 +18,7 @@ import { EnvParser } from '../EnvParser'
 import { HttpServer } from '../HttpServer'
 
 import { ENV_FILES, SERVER_ENTRY_FILE } from '../../config/paths'
+import { AssetsBundler } from '../AssetsBundler'
 
 /**
  * Exposes the API to watch project for compilition changes.
@@ -34,6 +35,11 @@ export class DevServer {
    * HTTP server host
    */
   private serverHost?: string
+
+  /**
+   * Encore dev server host
+   */
+  private encoreDevServerState: 'not-installed' | 'no-assets' | 'running'
 
   /**
    * A boolean to know if we are watching for filesystem
@@ -68,6 +74,8 @@ export class DevServer {
   constructor(
     private appRoot: string,
     private nodeArgs: string[] = [],
+    private encoreArgs: string[],
+    private buildAssets: boolean,
     private logger: typeof uiLogger = uiLogger
   ) {}
 
@@ -135,7 +143,9 @@ export class DevServer {
       return
     }
 
-    sticker()
+    const stickerInstance = sticker()
+
+    stickerInstance
       .add(
         `Server address: ${this.logger.colors.cyan(
           `http://${this.serverHost === '0.0.0.0' ? '127.0.0.1' : this.serverHost}:${
@@ -148,7 +158,19 @@ export class DevServer {
           this.watchingFileSystem ? 'YES' : 'NO'
         )}`
       )
-      .render()
+
+    /**
+     * Running the encore dev server
+     */
+    if (this.encoreDevServerState !== 'not-installed') {
+      stickerInstance.add(
+        `Running encore dev server: ${this.logger.colors.cyan(
+          this.encoreDevServerState === 'running' ? 'YES' : 'NO'
+        )}`
+      )
+    }
+
+    stickerInstance.render()
   }
 
   /**
@@ -182,6 +204,14 @@ export class DevServer {
       this.serverHost = host
       this.renderSeverIsReady()
     })
+
+    const encore = new AssetsBundler(this.appRoot, this.encoreArgs, this.buildAssets, this.logger)
+    encore.on('exit', ({ code }) => {
+      this.logger.warning(`Underlying encore dev server died with "${code} code"`)
+    })
+
+    const { state } = encore.startDevServer()
+    this.encoreDevServerState = state
   }
 
   /**

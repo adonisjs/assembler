@@ -23,11 +23,28 @@ export default class Build extends BaseCommand {
   @flags.boolean({ description: 'Build for production', alias: 'prod' })
   public production: boolean
 
+  /**
+   * Bundle frontend assets. Defaults to true
+   */
+  @flags.boolean({
+    description: 'Bundle frontend assets when encore is installed. Use --no-assets to disable',
+    default: true,
+  })
+  public assets: boolean
+
+  /**
+   * Ignore ts errors and complete the build process. Defaults to false
+   */
   @flags.boolean({
     description: 'Ignore typescript errors and complete the build process',
-    alias: 'prod',
   })
   public ignoreTsErrors: boolean
+
+  /**
+   * Arguments to pass to the `encore` binary
+   */
+  @flags.array({ description: 'CLI options to pass to the encore command line' })
+  public encoreArgs: string[] = []
 
   /**
    * Select the client for deciding the lock file to copy to the
@@ -50,6 +67,7 @@ export default class Build extends BaseCommand {
     this.client = this.client || hasYarn(this.application.appRoot) ? 'yarn' : 'npm'
     if (this.client !== 'npm' && this.client !== 'yarn') {
       this.logger.warning('--client must be set to "npm" or "yarn"')
+      this.exitCode = 1
       return
     }
 
@@ -60,15 +78,23 @@ export default class Build extends BaseCommand {
 
     try {
       if (this.production) {
-        await new Compiler(this.application.appRoot, this.logger).compileForProduction(
-          stopOnError,
-          this.client
-        )
+        await new Compiler(
+          this.application.appRoot,
+          this.encoreArgs,
+          this.assets,
+          this.logger
+        ).compileForProduction(stopOnError, this.client)
       } else {
-        await new Compiler(this.application.appRoot, this.logger).compile(stopOnError)
+        await new Compiler(
+          this.application.appRoot,
+          this.encoreArgs,
+          this.assets,
+          this.logger
+        ).compile(stopOnError)
       }
     } catch (error) {
       this.logger.fatal(error)
+      this.exitCode = 1
     }
   }
 }

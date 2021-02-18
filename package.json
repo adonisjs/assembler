@@ -101,7 +101,6 @@
     "fs-extra": "^9.1.0",
     "get-port": "^5.1.1",
     "has-yarn": "^2.1.0",
-    "import-fresh": "^3.3.0",
     "picomatch": "^2.2.2",
     "slash": "^3.0.0"
   },

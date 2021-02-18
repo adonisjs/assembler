@@ -10,7 +10,7 @@
 import slash from 'slash'
 import picomatch from 'picomatch'
 import { join, relative } from 'path'
-import importFresh from 'import-fresh'
+import { readJSONSync } from 'fs-extra'
 import { Application } from '@adonisjs/application'
 import { resolveFrom } from '@poppinss/utils/build/helpers'
 
@@ -100,10 +100,10 @@ export class RcFile {
   }
 
   /**
-   * Reloads the rcfile.json bypassing the require cache
+   * Reloads the rcfile.json
    */
   public getDiskContents(): any {
-    return importFresh(this.rcFilePath) as any
+    return readJSONSync(this.rcFilePath)
   }
 
   /**

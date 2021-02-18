@@ -9,7 +9,7 @@
 
 import test from 'japa'
 import { join } from 'path'
-import importFresh from 'import-fresh'
+import { readJSONSync } from 'fs-extra'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application'
@@ -36,7 +36,7 @@ test.group('Make Listener', (group) => {
   test('make a listener inside the default directory', async (assert) => {
     await fs.add('.adonisrc.json', JSON.stringify({}))
 
-    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
     const listener = new MakeListener(app, new Kernel(app))
@@ -64,7 +64,7 @@ test.group('Make Listener', (group) => {
       })
     )
 
-    const rcContents = importFresh(join(fs.basePath, '.adonisrc.json')) as any
+    const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
     const listener = new MakeListener(app, new Kernel(app))

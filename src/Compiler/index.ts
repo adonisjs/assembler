@@ -29,7 +29,7 @@ export class Compiler {
   /**
    * Reference to typescript compiler
    */
-  private ts = new Ts(this.appRoot, this.logger)
+  private ts: Ts
 
   /**
    * Reference to rc File
@@ -40,8 +40,10 @@ export class Compiler {
     public appRoot: string,
     private encoreArgs: string[],
     private buildAssets: boolean,
-    private logger: typeof uiLogger = uiLogger
+    private logger: typeof uiLogger = uiLogger,
+    tsconfig?: string
   ) {
+    this.ts = new Ts(this.appRoot, this.logger, tsconfig)
     this.ts.tsCompiler.use(() => {
       return iocTransformer(this.ts.tsCompiler.ts, this.rcFile.application.rcFile)
     }, 'after')

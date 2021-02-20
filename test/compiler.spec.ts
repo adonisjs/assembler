@@ -731,4 +731,55 @@ test.group('Compiler', (group) => {
 
     assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
   }).timeout(0)
+
+  test('build should support custom tsconfig file', async (assert) => {
+    await fs.add(
+      '.adonisrc.json',
+      JSON.stringify({
+        typescript: true,
+      })
+    )
+
+    await fs.add(
+      'package.json',
+      JSON.stringify({
+        name: 'my-dummy-app',
+        dependencies: {},
+      })
+    )
+
+    await fs.add(
+      'tsconfig.json',
+      JSON.stringify({
+        include: ['**/*'],
+        exclude: ['build'],
+        compilerOptions: {
+          outDir: 'build',
+        },
+      })
+    )
+
+    await fs.add(
+      'tsconfig.production.json',
+      JSON.stringify({
+        extends: './tsconfig.json',
+        exclude: ['build', 'src/ignored.ts'],
+      })
+    )
+
+    await fs.add('ace', '')
+    await fs.add('src/foo.ts', '')
+    await fs.add('src/ignored.ts', '')
+
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger, 'tsconfig.production.json')
+    await compiler.compileForProduction(false, 'npm')
+
+    const hasFiles = await Promise.all(
+      ['build/.adonisrc.json', 'build/src/foo.js', 'build/src/ignored.js'].map((file) =>
+        fs.fsExtra.pathExists(join(fs.basePath, file))
+      )
+    )
+
+    assert.deepEqual(hasFiles, [true, true, false])
+  }).timeout(0)
 })

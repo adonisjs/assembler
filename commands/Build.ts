@@ -9,6 +9,7 @@
 
 import hasYarn from 'has-yarn'
 import { BaseCommand, flags } from '@adonisjs/core/build/standalone'
+import { TSCONFIG_FILE_NAME } from '../config/paths'
 
 /**
  * Compile typescript project Javascript
@@ -41,6 +42,15 @@ export default class Build extends BaseCommand {
     description: 'Ignore typescript errors and complete the build process',
   })
   public ignoreTsErrors: boolean
+
+  /**
+   * Path to the TypeScript project configuration file. Defaults to "tsconfig.json"
+   */
+  @flags.string({
+    description: 'Path to the TypeScript project configuration file',
+    default: TSCONFIG_FILE_NAME,
+  })
+  public tsconfig: string
 
   /**
    * Arguments to pass to the `encore` binary
@@ -84,14 +94,16 @@ export default class Build extends BaseCommand {
           this.application.appRoot,
           this.encoreArgs,
           this.assets,
-          this.logger
+          this.logger,
+          this.tsconfig
         ).compileForProduction(stopOnError, this.client)
       } else {
         await new Compiler(
           this.application.appRoot,
           this.encoreArgs,
           this.assets,
-          this.logger
+          this.logger,
+          this.tsconfig
         ).compile(stopOnError)
       }
     } catch (error) {

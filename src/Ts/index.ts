@@ -24,11 +24,15 @@ export class Ts {
    */
   public tsCompiler = new TypescriptCompiler(
     this.appRoot,
-    TSCONFIG_FILE_NAME,
+    this.tsconfig,
     require(resolveFrom(this.appRoot, 'typescript/lib/typescript'))
   )
 
-  constructor(private appRoot: string, private logger: typeof uiLogger) {}
+  constructor(
+    private appRoot: string,
+    private logger: typeof uiLogger,
+    private tsconfig = TSCONFIG_FILE_NAME
+  ) {}
 
   /**
    * Render ts diagnostics
@@ -44,13 +48,13 @@ export class Ts {
     const { error, config } = this.tsCompiler.configParser().parse()
 
     if (error) {
-      this.logger.error(`unable to parse ${TSCONFIG_FILE_NAME}`)
+      this.logger.error(`unable to parse ${this.tsconfig}`)
       this.renderDiagnostics([error], this.tsCompiler.ts.createCompilerHost({}))
       return
     }
 
     if (config && config.errors.length) {
-      this.logger.error(`unable to parse ${TSCONFIG_FILE_NAME}`)
+      this.logger.error(`unable to parse ${this.tsconfig}`)
       this.renderDiagnostics(config.errors, this.tsCompiler.ts.createCompilerHost(config.options))
       return
     }

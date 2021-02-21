@@ -606,7 +606,7 @@ test.group('Compiler', (group) => {
     assert.isTrue(hasPackageLock)
   }).timeout(0)
 
-  test('gracefully log error when ace file writes to stderr', async (assert) => {
+  test('gracefully log error when ace file finishes with non-zero exit code', async (assert) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -624,7 +624,7 @@ test.group('Compiler', (group) => {
       })
     )
 
-    await fs.add('ace', "console.error('foo')")
+    await fs.add('ace', "console.error('foo');process.exit(1)")
     await fs.add('src/foo.ts', '')
     await fs.add('public/styles/main.css', '')
     await fs.add('public/scripts/main.js', '')

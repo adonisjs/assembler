@@ -59,20 +59,6 @@ export class Manifest {
       })
 
       /**
-       * Print warning when `stderr` exists
-       */
-      if (response.stderr) {
-        if (this.isMalformedJSONError(response.stderr) && this.attempts < this.maxAttempts) {
-          this.attempts++
-          return this.generate()
-        }
-
-        this.logger.warning(WARN_MESSAGE)
-        this.logger.logError(response.stderr)
-        return false
-      }
-
-      /**
        * Log success
        */
       if (response.stdout) {

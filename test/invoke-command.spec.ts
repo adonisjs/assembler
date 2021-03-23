@@ -45,6 +45,6 @@ test.group('Invoke', (group) => {
     const envExampleFile = await fs.fsExtra.readFile(join(fs.basePath, '.env.example'), 'utf-8')
 
     assert.equal(envFile.trim(), 'PORT=3333')
-    assert.equal(envExampleFile.trim(), 'PORT=')
+    assert.equal(envExampleFile.trim(), 'PORT=3333')
   })
 })

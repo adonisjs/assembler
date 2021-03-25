@@ -44,7 +44,7 @@
   "homepage": "https://github.com/adonisjs/assembler#readme",
   "devDependencies": {
     "@adonisjs/ace": "^10.0.1",
-    "@adonisjs/core": "^5.1.2",
+    "@adonisjs/core": "^5.1.4",
     "@adonisjs/mrm-preset": "^3.0.0",
     "@poppinss/dev-utils": "^1.1.1",
     "@types/node": "^14.14.35",

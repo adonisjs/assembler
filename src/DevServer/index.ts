@@ -125,13 +125,6 @@ export class DevServer {
   }
 
   /**
-   * Clear stdout
-   */
-  private clearScreen() {
-    process.stdout.write('\x1B[2J\x1B[3J\x1B[H\x1Bc')
-  }
-
-  /**
    * Renders box to notify about the server state
    */
   private renderSeverIsReady() {
@@ -260,7 +253,6 @@ export class DevServer {
      * Source file removed
      */
     watcher.on('source:unlink', async ({ absPath, relativePath }) => {
-      this.clearScreen()
       this.watchHelpers.clear(absPath)
       this.logger.action('delete').succeeded(relativePath)
 
@@ -278,7 +270,6 @@ export class DevServer {
      * Source file added
      */
     watcher.on('source:add', async ({ absPath, relativePath }) => {
-      this.clearScreen()
       this.watchHelpers.clear(absPath)
       this.logger.action('add').succeeded(relativePath)
 
@@ -296,7 +287,6 @@ export class DevServer {
      * Source file changed
      */
     watcher.on('source:change', async ({ absPath, relativePath }) => {
-      this.clearScreen()
       this.watchHelpers.clear(absPath)
       this.logger.action('update').succeeded(relativePath)
 
@@ -325,13 +315,9 @@ export class DevServer {
         return
       }
 
-      this.clearScreen()
-
       this.logger.action('create').succeeded(relativePath)
       if (metaData.reload) {
         this.httpServer.restart()
-      } else {
-        this.renderSeverIsReady()
       }
     })
 
@@ -350,13 +336,10 @@ export class DevServer {
         return
       }
 
-      this.clearScreen()
       this.logger.action('update').succeeded(relativePath)
 
       if (metaData.reload || metaData.rcFile) {
         this.httpServer.restart()
-      } else {
-        this.renderSeverIsReady()
       }
     })
 
@@ -375,8 +358,6 @@ export class DevServer {
         return
       }
 
-      this.clearScreen()
-
       if (metaData.rcFile) {
         this.logger.info('cannot continue after deletion of .adonisrc.json file')
         watcher.chokidar.close()
@@ -387,8 +368,6 @@ export class DevServer {
       this.logger.action('delete').succeeded(relativePath)
       if (metaData.reload) {
         this.httpServer.restart()
-      } else {
-        this.renderSeverIsReady()
       }
     })
 

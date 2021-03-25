@@ -127,7 +127,7 @@ export class DevServer {
   /**
    * Renders box to notify about the server state
    */
-  private renderSeverIsReady() {
+  private renderServerIsReady() {
     if (!this.serverHost || !this.serverPort) {
       return
     }
@@ -195,7 +195,7 @@ export class DevServer {
     this.httpServer.on('ready', ({ port, host }) => {
       this.serverPort = port
       this.serverHost = host
-      this.renderSeverIsReady()
+      this.renderServerIsReady()
     })
 
     const encore = new AssetsBundler(this.appRoot, this.encoreArgs, this.buildAssets, this.logger)
@@ -231,7 +231,7 @@ export class DevServer {
     if (!config) {
       this.logger.warning('Cannot start watcher because of errors in the config file')
       this.watcherState = 'error'
-      this.renderSeverIsReady()
+      this.renderServerIsReady()
       return
     }
 
@@ -246,7 +246,7 @@ export class DevServer {
     watcher.on('watcher:ready', () => {
       this.logger.info('watching file system for changes')
       this.watcherState = 'ready'
-      this.renderSeverIsReady()
+      this.renderServerIsReady()
     })
 
     /**

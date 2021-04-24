@@ -3,12 +3,12 @@ import { BaseCommand } from '@adonisjs/core/build/standalone'
 export default class {{ filename }} extends BaseCommand {
 
   /**
-   * Command Name is used to run the command
+   * Command name is used to run the command
    */
   public static commandName = '{{#toCommandName}}{{ filename }}{{/toCommandName}}'
 
   /**
-   * Command Name is displayed in the "help" output
+   * Command description is displayed in the "help" output
    */
   public static description = ''
 

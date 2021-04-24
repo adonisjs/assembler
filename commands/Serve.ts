@@ -27,9 +27,8 @@ export default class Serve extends BaseCommand {
    */
   @flags.boolean({
     description: 'Start webpack dev server when encore is installed. Use "--no-assets" to disable',
-    default: true,
   })
-  public assets: boolean
+  public assets: boolean = true
 
   /**
    * Allows watching for file changes

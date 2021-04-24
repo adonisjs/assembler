@@ -31,9 +31,8 @@ export default class Build extends BaseCommand {
   @flags.boolean({
     description:
       'Build frontend assets when webpack encore is installed. Use --no-assets to disable',
-    default: true,
   })
-  public assets: boolean
+  public assets: boolean = true
 
   /**
    * Ignore ts errors and complete the build process. Defaults to false
@@ -48,9 +47,8 @@ export default class Build extends BaseCommand {
    */
   @flags.string({
     description: 'Path to the TypeScript project configuration file',
-    default: TSCONFIG_FILE_NAME,
   })
-  public tsconfig: string
+  public tsconfig: string = TSCONFIG_FILE_NAME
 
   /**
    * Arguments to pass to the `encore` binary

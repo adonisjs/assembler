@@ -43,30 +43,6 @@ export default class MakePreloadFile extends BaseGenerator {
 
   @flags.string({
     description: 'Define the environment in which you want to load this file',
-    async defaultValue(command: MakePreloadFile) {
-      return command.prompt.multiple(
-        'Select the environment(s) in which you want to load this file',
-        [
-          {
-            name: 'console',
-            message: 'During ace commands',
-          },
-          {
-            name: 'repl',
-            message: 'During repl session',
-          },
-          {
-            name: 'web',
-            message: 'During HTTP server',
-          },
-        ],
-        {
-          validate(choices) {
-            return choices && choices.length ? true : 'Use space to select the environment'
-          },
-        }
-      )
-    },
   })
   public environment: ('console' | 'web' | 'repl')[]
 
@@ -92,6 +68,31 @@ export default class MakePreloadFile extends BaseGenerator {
    */
   protected getDestinationPath(): string {
     return this.application.rcFile.directories.start || 'start'
+  }
+
+  public async prepare() {
+    this.environment = await this.prompt.multiple(
+      'Select the environment(s) in which you want to load this file',
+      [
+        {
+          name: 'console',
+          message: 'During ace commands',
+        },
+        {
+          name: 'repl',
+          message: 'During repl session',
+        },
+        {
+          name: 'web',
+          message: 'During HTTP server',
+        },
+      ],
+      {
+        validate(choices) {
+          return choices && choices.length ? true : 'Use space to select the environment'
+        },
+      }
+    )
   }
 
   /**

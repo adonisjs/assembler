@@ -21,6 +21,8 @@ export class AssetsBundler extends Emittery {
    */
   private binaryName = 'encore'
 
+  private encoreArgs: string[] = []
+
   /**
    * Options passed to spawn a child process
    */
@@ -38,12 +40,16 @@ export class AssetsBundler extends Emittery {
 
   constructor(
     private projectRoot: string,
-    private encoreArgs: string[] = [],
+    encoreArgs: string[] = [],
     private buildAssets: boolean = true,
     private logger: typeof uiLogger,
     private env: { [key: string]: string } = {}
   ) {
     super()
+    this.encoreArgs = encoreArgs.reduce((result, arg) => {
+      result = result.concat(arg.split(' '))
+      return result
+    }, [] as string[])
   }
 
   /**

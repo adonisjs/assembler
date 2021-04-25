@@ -18,15 +18,20 @@ import { logger as uiLogger } from '@poppinss/cliui'
  */
 export class HttpServer extends Emittery {
   private childProcess: execa.ExecaChildProcess
+  private nodeArgs: string[] = []
 
   constructor(
     private sourceFile: string,
     private projectRoot: string,
-    private nodeArgs: string[] = [],
+    nodeArgs: string[] = [],
     private logger: typeof uiLogger,
     private env: { [key: string]: string } = {}
   ) {
     super()
+    this.nodeArgs = nodeArgs.reduce((result, arg) => {
+      result = result.concat(arg.split(' '))
+      return result
+    }, [] as string[])
   }
 
   /**

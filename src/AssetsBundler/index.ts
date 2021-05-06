@@ -32,6 +32,7 @@ export class AssetsBundler extends Emittery {
     stdio: 'pipe' as const,
     localDir: this.projectRoot,
     cwd: this.projectRoot,
+    windowsHide: false,
     env: {
       FORCE_COLOR: 'true',
       ...this.env,

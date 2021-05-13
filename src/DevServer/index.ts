@@ -18,7 +18,7 @@ import { EnvParser } from '../EnvParser'
 import { HttpServer } from '../HttpServer'
 
 import { ENV_FILES, SERVER_ENTRY_FILE } from '../../config/paths'
-import { AssetsBundler } from '../AssetsBundler'
+import { AssetsBundler, DevServerResponse } from '../AssetsBundler'
 
 /**
  * Exposes the API to watch project for compilition changes.
@@ -39,7 +39,7 @@ export class DevServer {
   /**
    * Encore dev server host
    */
-  private encoreDevServerState: 'not-installed' | 'no-assets' | 'running'
+  private encoreDevServerResponse: DevServerResponse
 
   /**
    * A boolean to know if we are watching for filesystem
@@ -155,10 +155,10 @@ export class DevServer {
     /**
      * Running the encore dev server
      */
-    if (this.encoreDevServerState !== 'not-installed') {
+    if (this.encoreDevServerResponse.state === 'running') {
       stickerInstance.add(
-        `Running encore dev server: ${this.logger.colors.cyan(
-          this.encoreDevServerState === 'running' ? 'YES' : 'NO'
+        `Encore server address: ${this.logger.colors.cyan(
+          `http://${this.encoreDevServerResponse.host}:${this.encoreDevServerResponse.port}`
         )}`
       )
     }
@@ -203,8 +203,7 @@ export class DevServer {
       this.logger.warning(`Underlying encore dev server died with "${code} code"`)
     })
 
-    const { state } = encore.startDevServer()
-    this.encoreDevServerState = state
+    this.encoreDevServerResponse = await encore.startDevServer()
   }
 
   /**

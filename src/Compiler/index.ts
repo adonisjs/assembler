@@ -144,6 +144,18 @@ export class Compiler {
   }
 
   /**
+   * Log the message that ts build and failed
+   */
+  private logTsBuildFailed() {
+    this.logger.logError('')
+    this.logger.logError(
+      this.logger.colors.bgRed(
+        `Cannot complete the build process as there are typescript errors. Use "--ignore-ts-error" flag to ignore Typescript errors`
+      )
+    )
+  }
+
+  /**
    * Compile project. See [[Compiler.compileForProduction]] for
    * production build
    */
@@ -191,6 +203,8 @@ export class Compiler {
      * Do not continue when has errors and "stopOnError" is true
      */
     if (stopOnError && ts.hasErrors) {
+      this.logTsBuildFailed()
+      await this.cleanupBuildDirectory(config.options.outDir!)
       return false
     }
 
@@ -215,6 +229,7 @@ export class Compiler {
      * won't be available
      */
     if (!created) {
+      await this.cleanupBuildDirectory(config.options.outDir!)
       return false
     }
 
@@ -272,9 +287,12 @@ export class Compiler {
     }
 
     /**
-     * Do not continue when has errors and "stopOnError" is true
+     * Do not continue when has errors and "stopOnError" is true and cleanup
+     * the build directory
      */
     if (stopOnError && hasErrors) {
+      this.logTsBuildFailed()
+      await this.cleanupBuildDirectory(config.options.outDir!)
       return false
     }
 
@@ -299,6 +317,7 @@ export class Compiler {
      * won't be available
      */
     if (!created) {
+      await this.cleanupBuildDirectory(config.options.outDir!)
       return false
     }
 

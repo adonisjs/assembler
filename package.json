@@ -15,7 +15,7 @@
   "scripts": {
     "mrm": "mrm --preset=@adonisjs/mrm-preset",
     "pretest": "npm run lint",
-    "test": "node japaFile.js",
+    "test": "FORCE_COLOR=true node japaFile.js",
     "lint": "eslint . --ext=.ts",
     "clean": "del build",
     "compile": "npm run lint && npm run clean && tsc",

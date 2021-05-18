@@ -15,7 +15,7 @@
 
 <div align="center">
 
-[![circleci-image]][circleci-url] [![npm-image]][npm-url] [![synk-image]][synk-url]
+[![gh-workflow-image]][gh-workflow-url] [![npm-image]][npm-url] [![synk-image]][synk-url]
 
 </div>
 
@@ -39,8 +39,8 @@
   <sub>Built with ❤︎ by <a href="https://twitter.com/AmanVirk1">Harminder Virk</a>
 </div>
 
-[circleci-image]: https://img.shields.io/circleci/project/github/adonisjs/assembler/master.svg?style=for-the-badge&logo=circleci
-[circleci-url]: https://circleci.com/gh/adonisjs/aseembler "circleci"
+[gh-workflow-image]: https://img.shields.io/github/workflow/status/adonisjs/assembler/test?style=for-the-badge
+[gh-workflow-url]: https://github.com/adonisjs/assembler/actions/workflows/test.yml "Github action"
 
 [npm-image]: https://img.shields.io/npm/v/@adonisjs/assembler/latest.svg?style=for-the-badge&logo=npm
 [npm-url]: https://npmjs.org/package/@adonisjs/assembler/v/latest "npm"

@@ -119,9 +119,7 @@ export class Compiler {
   /**
    * Build typescript source files
    */
-  private buildTypescriptSource(
-    config: tsStatic.ParsedCommandLine
-  ): {
+  private buildTypescriptSource(config: tsStatic.ParsedCommandLine): {
     skipped: boolean
     hasErrors: boolean
   } {

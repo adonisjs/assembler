@@ -11,8 +11,8 @@ export function toNewlineArray(contents: string): string[] {
   return contents.split(/\r?\n/)
 }
 
-export const info = process.env.CI ? '[ info ]' : '[ blue(info) ]'
-export const success = process.env.CI ? '[ success ]' : '[ green(success) ]'
-export const error = process.env.CI ? '[ error ]' : '[ red(error) ]'
-export const warning = process.env.CI ? '[ warn ]' : '[ yellow(warn) ]'
-export const dimYellow = (value: string) => (process.env.CI ? value : `dim(yellow(${value}))`)
+export const info = '[ blue(info) ]'
+export const success = '[ green(success) ]'
+export const error = '[ red(error) ]'
+export const warning = '[ yellow(warn) ]'
+export const dimYellow = (value: string) => `dim(yellow(${value}))`

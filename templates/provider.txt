@@ -13,15 +13,14 @@ import { ApplicationContract } from '@ioc:Adonis/Core/Application'
 | @example:
 |
 | public async ready () {
-|   const Database = (await import('@ioc:Adonis/Lucid/Database')).default
-|   const Event = (await import('@ioc:Adonis/Core/Event')).default
+|   const Database = this.app.container.resolveBinding('Adonis/Lucid/Database')
+|   const Event = this.app.container.resolveBinding('Adonis/Core/Event')
 |   Event.on('db:query', Database.prettyPrint)
 | }
 |
 */
 export default class {{ filename }} {
-  public static needsApplication = true
-  constructor (protected application: ApplicationContract) {
+  constructor (protected app: ApplicationContract) {
   }
 
   public register () {

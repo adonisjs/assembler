@@ -17,7 +17,7 @@ import { logger as uiLogger } from '@poppinss/cliui'
  * dies.
  */
 export class HttpServer extends Emittery {
-  private childProcess: execa.ExecaChildProcess
+  private childProcess?: execa.ExecaChildProcess
   private nodeArgs: string[] = []
 
   constructor(

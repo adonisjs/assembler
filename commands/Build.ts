@@ -87,22 +87,23 @@ export default class Build extends BaseCommand {
     const stopOnError = !this.ignoreTsErrors
 
     try {
-      if (this.production) {
-        await new Compiler(
-          this.application.appRoot,
-          this.encoreArgs,
-          this.assets,
-          this.logger,
-          this.tsconfig
-        ).compileForProduction(stopOnError, this.client)
-      } else {
-        await new Compiler(
-          this.application.appRoot,
-          this.encoreArgs,
-          this.assets,
-          this.logger,
-          this.tsconfig
-        ).compile(stopOnError)
+      const compiler = new Compiler(
+        this.application.appRoot,
+        this.encoreArgs,
+        this.assets,
+        this.logger,
+        this.tsconfig
+      )
+
+      const compiled = this.production
+        ? await compiler.compileForProduction(stopOnError, this.client)
+        : await compiler.compile(stopOnError)
+
+      /**
+       * Set exitCode based upon the compiled status
+       */
+      if (!compiled) {
+        this.exitCode = 1
       }
     } catch (error) {
       this.logger.fatal(error)

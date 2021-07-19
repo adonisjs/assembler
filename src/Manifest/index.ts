@@ -49,9 +49,8 @@ export class Manifest {
    */
   public async generate(): Promise<boolean> {
     try {
-      const response = await execa.node('ace', ['generate:manifest'], {
+      const response = await execa('node', ['ace', 'generate:manifest'], {
         buffer: true,
-        nodeOptions: [],
         cwd: this.appRoot,
         env: {
           FORCE_COLOR: 'true',

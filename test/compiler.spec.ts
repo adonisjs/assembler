@@ -459,7 +459,7 @@ test.group('Compiler', (group) => {
         stream: 'stderr',
       },
       {
-        message: `bgRed(Cannot complete the build process as there are typescript errors. Use "--ignore-ts-error" flag to ignore Typescript errors)`,
+        message: `bgRed(Cannot complete the build process as there are typescript errors. Use "--ignore-ts-errors" flag to ignore Typescript errors)`,
         stream: 'stderr',
       },
       {

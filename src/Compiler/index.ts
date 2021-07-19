@@ -150,7 +150,7 @@ export class Compiler {
     this.logger.logError('')
     this.logger.logError(
       this.logger.colors.bgRed(
-        `Cannot complete the build process as there are typescript errors. Use "--ignore-ts-error" flag to ignore Typescript errors`
+        `Cannot complete the build process as there are typescript errors. Use "--ignore-ts-errors" flag to ignore Typescript errors`
       )
     )
   }

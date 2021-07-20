@@ -52,8 +52,8 @@ export class HttpServer extends Emittery {
     this.logger.info(this.childProcess ? 're-starting http server...' : 'starting http server...')
 
     this.childProcess = execa(
-      'node',
-      [this.sourceFile, '-r', '@adonisjs/assembler/build/register'].concat(this.nodeArgs),
+      process.execPath,
+      ['-r', '@adonisjs/assembler/build/register'].concat(this.nodeArgs).concat([this.sourceFile]),
       {
         buffer: false,
         stdio: 'inherit',

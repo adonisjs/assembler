@@ -18,6 +18,7 @@ export default class MakeListener extends BaseGenerator {
   /**
    * Required by BaseGenerator
    */
+  protected suffix = 'Listener'
   protected form = 'singular' as const
   protected pattern = 'pascalcase' as const
   protected resourceName: string

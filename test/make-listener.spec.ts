@@ -43,11 +43,11 @@ test.group('Make Listener', (group) => {
     listener.name = 'user'
     await listener.run()
 
-    const UserListener = await fs.get('app/Listeners/User.ts')
+    const UserListener = await fs.get('app/Listeners/UserListener.ts')
     const ListenerTemplate = await templates.get('event-listener.txt')
     assert.deepEqual(
       toNewlineArray(UserListener),
-      toNewlineArray(ListenerTemplate.replace('{{ filename }}', 'User'))
+      toNewlineArray(ListenerTemplate.replace('{{ filename }}', 'UserListener'))
     )
   })
 
@@ -71,11 +71,11 @@ test.group('Make Listener', (group) => {
     listener.name = 'user'
     await listener.run()
 
-    const UserListener = await fs.get('app/Events/Listeners/User.ts')
+    const UserListener = await fs.get('app/Events/Listeners/UserListener.ts')
     const ListenerTemplate = await templates.get('event-listener.txt')
     assert.deepEqual(
       toNewlineArray(UserListener),
-      toNewlineArray(ListenerTemplate.replace('{{ filename }}', 'User'))
+      toNewlineArray(ListenerTemplate.replace('{{ filename }}', 'UserListener'))
     )
   })
 })

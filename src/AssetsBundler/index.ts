@@ -233,7 +233,7 @@ export class AssetsBundler extends Emittery {
      */
     let customPort = this.findCustomPort()
     if (!customPort) {
-      const randomPort = await getPort({ port: 8080 })
+      const randomPort = await getPort({ port: 8080, host: 'localhost' })
       customPort = String(randomPort)
       this.encoreArgs.push('--port', customPort)
     }

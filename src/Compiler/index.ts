@@ -156,6 +156,31 @@ export class Compiler {
   }
 
   /**
+   * Typecheck the project without emit
+   */
+  public async typeCheck(): Promise<boolean> {
+    const config = this.ts.parseConfig()
+    if (!config) {
+      return false
+    }
+
+    this.logger.info('type checking typescript source files')
+
+    config.options.noEmit = true
+    const builder = this.ts.tsCompiler.builder(config)
+    const { diagnostics } = builder.build()
+
+    if (diagnostics.length) {
+      this.logger.error('typescript compiler errors')
+      this.ts.renderDiagnostics(diagnostics, builder.host)
+      return false
+    }
+
+    this.logger.success('built successfully')
+    return true
+  }
+
+  /**
    * Compile project. See [[Compiler.compileForProduction]] for
    * production build
    */

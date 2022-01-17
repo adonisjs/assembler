@@ -794,4 +794,110 @@ test.group('Compiler', (group) => {
 
     assert.deepEqual(hasFiles, [true, true, false])
   }).timeout(0)
+
+  test('typecheck and report typescript errors', async (assert) => {
+    await fs.add(
+      '.adonisrc.json',
+      JSON.stringify({
+        typescript: true,
+        metaFiles: ['public/**/*.(js|css)'],
+      })
+    )
+
+    await fs.add(
+      'tsconfig.json',
+      JSON.stringify({
+        include: ['**/*'],
+        exclude: ['build'],
+        compilerOptions: {
+          rootDir: './',
+          outDir: 'build/dist',
+        },
+      })
+    )
+
+    await fs.add('ace', '')
+    await fs.add('src/foo.ts', "import path from 'path'")
+    await fs.add('public/styles/main.css', '')
+    await fs.add('public/scripts/main.js', '')
+
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
+    const isValid = await compiler.typeCheck()
+
+    assert.isFalse(isValid)
+    const hasFiles = await Promise.all(
+      [
+        'build/dist/.adonisrc.json',
+        'build/dist/src/foo.js',
+        'build/dist/public/styles/main.css',
+        'build/dist/public/scripts/main.js',
+      ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file)))
+    )
+
+    assert.deepEqual(hasFiles, [false, false, false, false])
+
+    assert.deepEqual(ui.testingRenderer.logs, [
+      {
+        message: `${info}  type checking typescript source files`,
+        stream: 'stdout',
+      },
+      {
+        message: `${error}  typescript compiler errors`,
+        stream: 'stderr',
+      },
+    ])
+  }).timeout(0)
+
+  test('complete successfully when typechecking has no errors', async (assert) => {
+    await fs.add(
+      '.adonisrc.json',
+      JSON.stringify({
+        typescript: true,
+        metaFiles: ['public/**/*.(js|css)'],
+      })
+    )
+
+    await fs.add(
+      'tsconfig.json',
+      JSON.stringify({
+        include: ['**/*'],
+        exclude: ['build'],
+        compilerOptions: {
+          rootDir: './',
+          outDir: 'build/dist',
+        },
+      })
+    )
+
+    await fs.add('ace', '')
+    await fs.add('src/foo.ts', "import 'path'")
+    await fs.add('public/styles/main.css', '')
+    await fs.add('public/scripts/main.js', '')
+
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
+    const isValid = await compiler.typeCheck()
+
+    assert.isTrue(isValid)
+    const hasFiles = await Promise.all(
+      [
+        'build/dist/.adonisrc.json',
+        'build/dist/src/foo.js',
+        'build/dist/public/styles/main.css',
+        'build/dist/public/scripts/main.js',
+      ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file)))
+    )
+
+    assert.deepEqual(hasFiles, [false, false, false, false])
+
+    assert.deepEqual(ui.testingRenderer.logs, [
+      {
+        message: `${info}  type checking typescript source files`,
+        stream: 'stdout',
+      },
+      {
+        message: `${success}  built successfully`,
+        stream: 'stdout',
+      },
+    ])
+  }).timeout(0)
 })

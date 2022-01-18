@@ -35,6 +35,7 @@ export default class MakeController extends BaseGenerator {
     'Adonis',
     'Dashboard',
     'Signup',
+    'Api',
   ]
 
   /**

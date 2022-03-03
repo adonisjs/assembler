@@ -66,7 +66,7 @@ export class HttpServer extends Emittery {
      * Notify about server events
      */
     this.childProcess.on('message', (message) => {
-      if (message && message['origin'] === 'adonis-http-server') {
+      if (message && message['isAdonisJS'] && message['environment'] === 'web') {
         this.emit('ready', message)
       }
     })

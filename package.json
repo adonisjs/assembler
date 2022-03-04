@@ -111,7 +111,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "latest"
+    "tag": "next"
   },
   "mrmConfig": {
     "core": true,

@@ -39,7 +39,7 @@ test.group('Make Validator', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const validator = new MakeValidator(app, new Kernel(app))
+    const validator = new MakeValidator(app, new Kernel(app).mockConsoleOutput())
     validator.name = 'user'
     await validator.run()
 
@@ -69,7 +69,7 @@ test.group('Make Validator', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const validator = new MakeValidator(app, new Kernel(app))
+    const validator = new MakeValidator(app, new Kernel(app).mockConsoleOutput())
     validator.name = 'user'
     await validator.run()
 

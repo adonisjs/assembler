@@ -39,7 +39,7 @@ test.group('Make Controller', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const controller = new MakeController(app, new Kernel(app))
+    const controller = new MakeController(app, new Kernel(app).mockConsoleOutput())
     controller.name = 'user'
     await controller.run()
 
@@ -57,7 +57,7 @@ test.group('Make Controller', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const controller = new MakeController(app, new Kernel(app))
+    const controller = new MakeController(app, new Kernel(app).mockConsoleOutput())
     controller.name = 'user'
     controller.resource = true
     await controller.run()
@@ -86,7 +86,7 @@ test.group('Make Controller', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const controller = new MakeController(app, new Kernel(app))
+    const controller = new MakeController(app, new Kernel(app).mockConsoleOutput())
     controller.name = 'user'
     await controller.run()
 

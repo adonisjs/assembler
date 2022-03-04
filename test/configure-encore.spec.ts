@@ -34,7 +34,7 @@ test.group('Configure Encore', (group) => {
       await fs.ensureRoot()
       const app = new Application(fs.basePath, 'test', {})
 
-      const invoke = new Invoke(app, new Kernel(app))
+      const invoke = new Invoke(app, new Kernel(app).mockConsoleOutput())
       invoke.name = 'encore'
       await invoke.run()
 

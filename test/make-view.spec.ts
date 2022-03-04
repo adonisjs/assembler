@@ -37,7 +37,7 @@ test.group('Make Command', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const view = new MakeView(app, new Kernel(app))
+    const view = new MakeView(app, new Kernel(app).mockConsoleOutput())
     view.name = 'welcome'
     await view.run()
 
@@ -58,7 +58,7 @@ test.group('Make Command', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const view = new MakeView(app, new Kernel(app))
+    const view = new MakeView(app, new Kernel(app).mockConsoleOutput())
     view.name = 'welcome'
     await view.run()
 

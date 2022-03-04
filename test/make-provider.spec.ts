@@ -39,7 +39,7 @@ test.group('Make Provider', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const provider = new MakeProvider(app, new Kernel(app))
+    const provider = new MakeProvider(app, new Kernel(app).mockConsoleOutput())
     provider.name = 'app'
     await provider.run()
 
@@ -69,7 +69,7 @@ test.group('Make Provider', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const provider = new MakeProvider(app, new Kernel(app))
+    const provider = new MakeProvider(app, new Kernel(app).mockConsoleOutput())
     provider.name = 'app'
     await provider.run()
 
@@ -95,7 +95,7 @@ test.group('Make Provider', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const provider = new MakeProvider(app, new Kernel(app))
+    const provider = new MakeProvider(app, new Kernel(app).mockConsoleOutput())
     provider.name = 'auth/app'
     await provider.run()
 
@@ -118,7 +118,7 @@ test.group('Make Provider', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const provider = new MakeProvider(app, new Kernel(app))
+    const provider = new MakeProvider(app, new Kernel(app).mockConsoleOutput())
     provider.name = 'app'
     provider.ace = true
     await provider.run()

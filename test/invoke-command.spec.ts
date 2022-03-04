@@ -37,7 +37,7 @@ test.group('Invoke', (group) => {
 
     const app = new Application(fs.basePath, 'test', {})
 
-    const invoke = new Invoke(app, new Kernel(app))
+    const invoke = new Invoke(app, new Kernel(app).mockConsoleOutput())
     invoke.name = '@adonisjs/sample'
     await invoke.run()
 

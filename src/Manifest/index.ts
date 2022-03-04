@@ -79,6 +79,10 @@ export class Manifest {
         this.logger.logError(error.stderr)
       }
 
+      if (error.stdout) {
+        this.logger.logError(error.stdout)
+      }
+
       return false
     }
   }

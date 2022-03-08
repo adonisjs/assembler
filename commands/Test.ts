@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import { BaseCommand, flags } from '@adonisjs/core/build/standalone'
+import { BaseCommand, flags, args } from '@adonisjs/core/build/standalone'
 import { JapaFlags } from '../src/Contracts'
 
 /**
@@ -19,6 +19,9 @@ export default class Test extends BaseCommand {
   public static settings = {
     stayAlive: true,
   }
+
+  @args.spread({ description: 'Run tests for only the specified suites', required: false })
+  public suites: string[]
 
   /**
    * Allows watching for file changes
@@ -44,24 +47,27 @@ export default class Test extends BaseCommand {
   @flags.array({ description: 'CLI options to pass to the node command line' })
   public nodeArgs: string[] = []
 
-  @flags.array({ description: 'Run tests for only specified tags' })
+  /**
+   * Filter by tags
+   */
+  @flags.array({ description: 'Filter tests by tags' })
   public tags: string[]
 
-  @flags.array({ description: 'Run all the tests except the tests using specified tags' })
+  /**
+   * Filter by tags
+   */
+  @flags.array({ description: 'Filter tests by ignoring tags' })
   public ignoreTags: string[]
 
-  @flags.number({ description: 'Define timeout for tests' })
+  /**
+   * Customize tests timeout
+   */
+  @flags.number({ description: 'Customize tests timeout' })
   public timeout: number
 
-  @flags.array({ description: 'Run tests for only the specified suites' })
-  public suites: string[]
-
-  @flags.array({ description: 'Run tests for only the specified groups' })
-  public groups: string[]
-
-  @flags.array({ description: 'Run tests with the specified titles' })
-  public tests: string[]
-
+  /**
+   * Force exit the tests runner
+   */
   @flags.boolean({ description: 'Force exit the tests runner process' })
   public forceExit: boolean
 
@@ -78,20 +84,12 @@ export default class Test extends BaseCommand {
       filters['--timeout'] = this.timeout
     }
 
-    if (this.tests) {
-      filters['--tests'] = this.tests
-    }
-
-    if (this.groups) {
-      filters['--groups'] = this.groups
+    if (this.tags) {
+      filters['--tags'] = this.tags
     }
 
     if (this.suites) {
-      filters['--suites'] = this.suites
-    }
-
-    if (this.tags) {
-      filters['--tags'] = this.tags
+      filters._ = this.suites
     }
 
     if (this.ignoreTags) {

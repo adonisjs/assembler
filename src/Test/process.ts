@@ -26,10 +26,10 @@ export class TestProcess {
     private logger: typeof uiLogger,
     private env: { [key: string]: string } = {}
   ) {
-    this.nodeArgs = nodeArgs.reduce((result, arg) => {
+    this.nodeArgs = nodeArgs.reduce<string[]>((result, arg) => {
       result = result.concat(arg.split(' '))
       return result
-    }, [] as string[])
+    }, [])
   }
 
   /**
@@ -37,10 +37,13 @@ export class TestProcess {
    */
   public async run() {
     this.logger.info('running tests...')
-    const filters = Object.keys(this.filters).reduce((result, filter) => {
+    const filters = Object.keys(this.filters).reduce<string[]>((result, filter) => {
       const value = this.filters[filter]
 
-      result.push(filter)
+      if (filter !== '_') {
+        result.push(filter)
+      }
+
       if (Array.isArray(value)) {
         result.push(...value)
       } else {
@@ -48,7 +51,7 @@ export class TestProcess {
       }
 
       return result
-    }, [] as string[])
+    }, [])
 
     try {
       await execa.node(this.sourceFile, filters, {

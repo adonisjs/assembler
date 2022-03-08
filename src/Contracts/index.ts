@@ -8,12 +8,10 @@
  */
 
 export type JapaFlags = Partial<{
-  '--tests': string[]
+  '_': string[]
   '--tags': string[]
-  '--groups': string[]
   '--ignore-tags': string[]
   '--files': string[]
   '--timeout': number
-  '--suites': string[]
   '--force-exit': boolean
 }>

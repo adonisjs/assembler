@@ -306,9 +306,7 @@ export class TestsServer {
       }
 
       this.logger.action('create').succeeded(relativePath)
-      if (metaData.reload) {
-        await this.run()
-      }
+      await this.run()
     })
 
     /**
@@ -331,9 +329,7 @@ export class TestsServer {
       }
 
       this.logger.action('update').succeeded(relativePath)
-      if (metaData.reload || metaData.rcFile) {
-        await this.run()
-      }
+      await this.run()
     })
 
     /**
@@ -363,9 +359,7 @@ export class TestsServer {
       }
 
       this.logger.action('delete').succeeded(relativePath)
-      if (metaData.reload) {
-        await this.run()
-      }
+      await this.run()
     })
 
     /**

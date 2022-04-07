@@ -26,6 +26,14 @@ export default class Test extends BaseCommand {
   /**
    * Allows watching for file changes
    */
+  @flags.array({
+    description: 'Run tests for the mentioned files only',
+  })
+  public files: string[]
+
+  /**
+   * Allows watching for file changes
+   */
   @flags.boolean({
     description: 'Watch for file changes and re-run tests on file change',
     alias: 'w',
@@ -78,6 +86,10 @@ export default class Test extends BaseCommand {
     const filters: JapaFlags = {}
     if (this.forceExit) {
       filters['--force-exit'] = true
+    }
+
+    if (this.files) {
+      filters['--files'] = this.files
     }
 
     if (this.timeout !== undefined) {

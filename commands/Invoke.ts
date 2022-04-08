@@ -21,6 +21,8 @@ export default class Configure extends BaseCommand {
   public static description = 'Configure one or more AdonisJS packages'
   public static aliases = ['invoke']
 
+  private appType = process.env['ADONIS_CREATE_APP_BOILERPLATE'] || 'web'
+
   /**
    * Use yarn when building for production to install dependencies
    */
@@ -110,7 +112,7 @@ export default class Configure extends BaseCommand {
     const helloWorldTestFile = new files.MustacheFile(
       this.application.appRoot,
       'tests/functional/hello_world.spec.ts',
-      join(__dirname, '..', 'templates/tests/functional/hello_world.spec.txt')
+      join(__dirname, '..', `templates/tests/functional/hello_world_${this.appType}.spec.txt`)
     )
     if (!helloWorldTestFile.exists()) {
       helloWorldTestFile.apply({}).commit()
@@ -146,6 +148,23 @@ export default class Configure extends BaseCommand {
 
     rcFile.commit()
     logger.action('update').succeeded('.adonisrc.json')
+
+    /**
+     * Create ".env.test" file
+     */
+    const testEnvFile = new files.NewLineFile(this.application.appRoot, '.env.test')
+    if (!testEnvFile.exists()) {
+      testEnvFile.add('NODE_ENV=test')
+
+      /**
+       * Set additional .env variables for "web" boilerplate
+       */
+      if (this.appType === 'web') {
+        testEnvFile.add(['ASSETS_DRIVER=fake', 'SESSION_DRIVER=memory'])
+      }
+
+      logger.action('create').succeeded('.env.test')
+    }
 
     /**
      * Install required dependencies

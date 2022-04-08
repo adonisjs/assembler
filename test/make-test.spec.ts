@@ -72,7 +72,7 @@ test.group('Make Test', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const makeTest = new MakeTest(app, new Kernel(app).mockConsoleOutput())
+    const makeTest = new MakeTest(app, new Kernel(app))
     makeTest.suite = 'functional'
     makeTest.name = 'Users/index'
     await makeTest.run()

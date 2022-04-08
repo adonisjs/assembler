@@ -19,6 +19,8 @@ import { TestProcess } from './process'
 import { JapaFlags } from '../Contracts'
 
 import { ENV_FILES, TESTS_ENTRY_FILE } from '../../config/paths'
+import { EnvParser } from '../EnvParser'
+import getPort from 'get-port'
 
 /**
  * Exposes the API to watch project for compilition changes and
@@ -116,6 +118,30 @@ export class TestsServer {
   }
 
   /**
+   * Returns the HOST and the PORT environment variables
+   * for the HTTP server
+   */
+  private async getEnvironmentVariables() {
+    const envParser = new EnvParser('.env.test')
+    await envParser.parse(this.appRoot)
+
+    const envOptions = envParser.asEnvObject(['PORT', 'TZ', 'HOST'])
+    const HOST = process.env.HOST || envOptions.HOST || '0.0.0.0'
+    let PORT = Number(process.env.PORT || envOptions.PORT)
+
+    /**
+     * Use the port defined inside ".env.test" file or use
+     * a random port
+     */
+    PORT = await getPort({
+      port: !isNaN(PORT) ? [PORT] : [],
+      host: HOST,
+    })
+
+    return { HOST, PORT: String(PORT) }
+  }
+
+  /**
    * Run tests. Use [[watch]] to also watch for file
    * changes
    */
@@ -141,7 +167,7 @@ export class TestsServer {
       filters,
       this.nodeArgs,
       this.logger,
-      {}
+      await this.getEnvironmentVariables()
     ).run()
 
     this.busy = false

@@ -19,12 +19,14 @@ export class EnvParser {
 
   private parser = new Parser(false)
 
+  constructor(private envFileName: string = '.env') {}
+
   /**
    * Parse .env file contents
    */
   public async parse(rootDir: string) {
     try {
-      this.envContents = this.parser.parse(await readFile(join(rootDir, '.env'), 'utf-8'))
+      this.envContents = this.parser.parse(await readFile(join(rootDir, this.envFileName), 'utf-8'))
     } catch {}
   }
 

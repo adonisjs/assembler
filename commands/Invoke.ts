@@ -163,6 +163,7 @@ export default class Configure extends BaseCommand {
         testEnvFile.add(['ASSETS_DRIVER=fake', 'SESSION_DRIVER=memory'])
       }
 
+      testEnvFile.commit()
       logger.action('create').succeeded('.env.test')
     }
 

@@ -17,13 +17,13 @@ import Invoke from '../commands/Invoke'
 
 const fs = new Filesystem(join(__dirname, '__app'))
 
-test.group('Configure Encore', (group) => {
+test.group('Configure Tests', (group) => {
   group.afterEach(async () => {
     await fs.cleanup()
   })
 
   test
-    .skipInCI('setup encore', async (assert) => {
+    .skipInCI('setup tests', async (assert) => {
       await fs.add(
         'package.json',
         JSON.stringify({
@@ -35,17 +35,15 @@ test.group('Configure Encore', (group) => {
       const app = new Application(fs.basePath, 'test', {})
 
       const invoke = new Invoke(app, new Kernel(app).mockConsoleOutput())
-      invoke.packages = ['encore']
+      invoke.packages = ['tests']
       await invoke.run()
 
-      const envFile = await fs.fsExtra.pathExists(join(fs.basePath, 'webpack.config.js'))
-      const envExampleFile = await fs.fsExtra.readFile(
-        join(fs.basePath, 'resources/js/app.js'),
-        'utf-8'
+      assert.isTrue(await fs.fsExtra.pathExists(join(fs.basePath, 'test.ts')))
+      assert.isTrue(await fs.fsExtra.pathExists(join(fs.basePath, 'tests/bootstrap.ts')))
+      assert.isTrue(
+        await fs.fsExtra.pathExists(join(fs.basePath, 'tests/functional/hello_world.spec.ts'))
       )
-
-      assert.isTrue(envFile)
-      assert.equal(envExampleFile.trim(), '// app entrypoint')
+      assert.isTrue(await fs.fsExtra.pathExists(join(fs.basePath, 'contracts/tests.ts')))
     })
     .timeout(0)
 })

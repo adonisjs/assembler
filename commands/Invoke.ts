@@ -66,8 +66,10 @@ export default class Configure extends BaseCommand {
     try {
       await pkgFile.commitAsync()
       spinner.update('Installed')
+      spinner.stop()
     } catch (error) {
       spinner.update('Unable to install the package')
+      spinner.stop()
       logger.fatal(error)
     }
   }
@@ -103,16 +105,16 @@ export default class Configure extends BaseCommand {
     }
 
     /**
-     * Create "tests/functional/hello-world.spec.ts" file
+     * Create "tests/functional/hello_world.spec.ts" file
      */
     const helloWorldTestFile = new files.MustacheFile(
       this.application.appRoot,
-      'tests/functional/hello-world.spec.ts',
-      join(__dirname, '..', 'templates/tests/functional/hello-world.spec.txt')
+      'tests/functional/hello_world.spec.ts',
+      join(__dirname, '..', 'templates/tests/functional/hello_world.spec.txt')
     )
     if (!helloWorldTestFile.exists()) {
       helloWorldTestFile.apply({}).commit()
-      logger.action('create').succeeded('tests/functional/hello-world.spec.ts')
+      logger.action('create').succeeded('tests/functional/hello_world.spec.ts')
     }
 
     /**
@@ -157,8 +159,10 @@ export default class Configure extends BaseCommand {
     try {
       await pkgFile.commitAsync()
       spinner.update('Installed')
+      spinner.stop()
     } catch (error) {
       spinner.update('Unable to install packages')
+      spinner.stop()
       logger.fatal(error)
     }
   }

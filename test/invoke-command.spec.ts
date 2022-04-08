@@ -38,7 +38,7 @@ test.group('Invoke', (group) => {
     const app = new Application(fs.basePath, 'test', {})
 
     const invoke = new Invoke(app, new Kernel(app).mockConsoleOutput())
-    invoke.name = '@adonisjs/sample'
+    invoke.packages = ['@adonisjs/sample']
     await invoke.run()
 
     const envFile = await fs.fsExtra.readFile(join(fs.basePath, '.env'), 'utf-8')

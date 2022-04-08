@@ -45,6 +45,20 @@ test.group('Make Command', (group) => {
     assert.deepEqual(welcomeView.trim(), '')
   })
 
+  test('make a view inside a nested directory', async (assert) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
+
+    const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
+    const app = new Application(fs.basePath, 'test', rcContents)
+
+    const view = new MakeView(app, new Kernel(app).mockConsoleOutput())
+    view.name = 'users/welcome'
+    await view.run()
+
+    const welcomeView = await fs.get('resources/views/users/welcome.edge')
+    assert.deepEqual(welcomeView.trim(), '')
+  })
+
   test('make an empty view inside custom directory', async (assert) => {
     await fs.add(
       '.adonisrc.json',

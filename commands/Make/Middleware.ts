@@ -57,6 +57,27 @@ export default class MakeMiddleware extends BaseGenerator {
   public async run() {
     this.resourceName = this.name
     this.createExact = this.exact
-    await super.generate()
+    const middlewareNamespace = this.application.rcFile.namespaces.middleware || 'App/Middleware'
+
+    const file = await super.generate()
+    if (!file) {
+      return
+    }
+
+    const fileJSON = file.toJSON()
+
+    if (fileJSON.state === 'persisted') {
+      this.ui
+        .instructions()
+        .heading('Register middleware')
+        .add(`Open ${this.colors.cyan('start/kernel.ts')} file`)
+        .add(`Register the following function as a global or a named middleware`)
+        .add(
+          this.colors
+            .cyan()
+            .underline(`() => import('${middlewareNamespace}/${fileJSON.filename}')`)
+        )
+        .render()
+    }
   }
 }

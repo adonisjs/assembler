@@ -39,7 +39,7 @@ test.group('Make Middleware', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const middleware = new MakeMiddleware(app, new Kernel(app))
+    const middleware = new MakeMiddleware(app, new Kernel(app).mockConsoleOutput())
     middleware.name = 'spoof_accept'
     await middleware.run()
 

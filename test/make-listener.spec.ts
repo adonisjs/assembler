@@ -39,7 +39,7 @@ test.group('Make Listener', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const listener = new MakeListener(app, new Kernel(app))
+    const listener = new MakeListener(app, new Kernel(app).mockConsoleOutput())
     listener.name = 'user'
     await listener.run()
 
@@ -67,7 +67,7 @@ test.group('Make Listener', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const listener = new MakeListener(app, new Kernel(app))
+    const listener = new MakeListener(app, new Kernel(app).mockConsoleOutput())
     listener.name = 'user'
     await listener.run()
 

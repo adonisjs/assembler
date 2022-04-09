@@ -39,7 +39,7 @@ test.group('Make Command', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const command = new MakeCommand(app, new Kernel(app))
+    const command = new MakeCommand(app, new Kernel(app).mockConsoleOutput())
     command.name = 'greet'
     await command.run()
 
@@ -69,7 +69,7 @@ test.group('Make Command', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const command = new MakeCommand(app, new Kernel(app))
+    const command = new MakeCommand(app, new Kernel(app).mockConsoleOutput())
     command.name = 'greet'
     await command.run()
 
@@ -99,7 +99,7 @@ test.group('Make Command', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const command = new MakeCommand(app, new Kernel(app))
+    const command = new MakeCommand(app, new Kernel(app).mockConsoleOutput())
     command.name = 'RunInstructions'
     await command.run()
 

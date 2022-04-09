@@ -39,7 +39,7 @@ test.group('Make Preloaded File', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const preloadFile = new PreloadFile(app, new Kernel(app))
+    const preloadFile = new PreloadFile(app, new Kernel(app).mockConsoleOutput())
     preloadFile.name = 'viewGlobals'
     preloadFile.environment = 'console,web' as any
     await preloadFile.run()
@@ -72,7 +72,7 @@ test.group('Make Preloaded File', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const preloadFile = new PreloadFile(app, new Kernel(app))
+    const preloadFile = new PreloadFile(app, new Kernel(app).mockConsoleOutput())
     preloadFile.name = 'viewGlobals'
     preloadFile.environment = ['console', 'web']
     await preloadFile.run()
@@ -99,7 +99,7 @@ test.group('Make Preloaded File', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const preloadFile = new PreloadFile(app, new Kernel(app))
+    const preloadFile = new PreloadFile(app, new Kernel(app).mockConsoleOutput())
     preloadFile.name = 'repl'
     preloadFile.environment = ['repl']
     await preloadFile.run()
@@ -125,7 +125,7 @@ test.group('Make Preloaded File', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const preloadFile = new PreloadFile(app, new Kernel(app))
+    const preloadFile = new PreloadFile(app, new Kernel(app).mockConsoleOutput())
     preloadFile.prompt.on('prompt', (question) => {
       question.select(1)
     })

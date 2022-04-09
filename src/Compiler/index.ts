@@ -119,9 +119,7 @@ export class Compiler {
   /**
    * Build typescript source files
    */
-  private buildTypescriptSource(
-    config: tsStatic.ParsedCommandLine
-  ): {
+  private buildTypescriptSource(config: tsStatic.ParsedCommandLine): {
     skipped: boolean
     hasErrors: boolean
   } {
@@ -143,6 +141,43 @@ export class Compiler {
       skipped,
       hasErrors: diagnostics.length > 0,
     }
+  }
+
+  /**
+   * Log the message that ts build and failed
+   */
+  private logTsBuildFailed() {
+    this.logger.logError('')
+    this.logger.logError(
+      this.logger.colors.bgRed(
+        `Cannot complete the build process as there are typescript errors. Use "--ignore-ts-errors" flag to ignore Typescript errors`
+      )
+    )
+  }
+
+  /**
+   * Typecheck the project without emit
+   */
+  public async typeCheck(): Promise<boolean> {
+    const config = this.ts.parseConfig()
+    if (!config) {
+      return false
+    }
+
+    this.logger.info('type checking typescript source files')
+
+    config.options.noEmit = true
+    const builder = this.ts.tsCompiler.builder(config)
+    const { diagnostics } = builder.build()
+
+    if (diagnostics.length) {
+      this.logger.error('typescript compiler errors')
+      this.ts.renderDiagnostics(diagnostics, builder.host)
+      return false
+    }
+
+    this.logger.success('built successfully')
+    return true
   }
 
   /**
@@ -193,6 +228,8 @@ export class Compiler {
      * Do not continue when has errors and "stopOnError" is true
      */
     if (stopOnError && ts.hasErrors) {
+      this.logTsBuildFailed()
+      await this.cleanupBuildDirectory(config.options.outDir!)
       return false
     }
 
@@ -217,6 +254,7 @@ export class Compiler {
      * won't be available
      */
     if (!created) {
+      await this.cleanupBuildDirectory(config.options.outDir!)
       return false
     }
 
@@ -274,9 +312,12 @@ export class Compiler {
     }
 
     /**
-     * Do not continue when has errors and "stopOnError" is true
+     * Do not continue when has errors and "stopOnError" is true and cleanup
+     * the build directory
      */
     if (stopOnError && hasErrors) {
+      this.logTsBuildFailed()
+      await this.cleanupBuildDirectory(config.options.outDir!)
       return false
     }
 
@@ -301,6 +342,7 @@ export class Compiler {
      * won't be available
      */
     if (!created) {
+      await this.cleanupBuildDirectory(config.options.outDir!)
       return false
     }
 

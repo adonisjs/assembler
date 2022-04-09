@@ -1,4 +1,4 @@
-import { ApplicationContract } from '@ioc:Adonis/Core/Application'
+import type { ApplicationContract } from '@ioc:Adonis/Core/Application'
 
 /*
 |--------------------------------------------------------------------------
@@ -13,30 +13,28 @@ import { ApplicationContract } from '@ioc:Adonis/Core/Application'
 | @example:
 |
 | public async ready () {
-|   const Database = (await import('@ioc:Adonis/Lucid/Database')).default
-|   const Event = (await import('@ioc:Adonis/Core/Event')).default
+|   const Database = this.app.container.resolveBinding('Adonis/Lucid/Database')
+|   const Event = this.app.container.resolveBinding('Adonis/Core/Event')
 |   Event.on('db:query', Database.prettyPrint)
 | }
 |
 */
 export default class {{ filename }} {
-  public static needsApplication = true
-  constructor (protected application: ApplicationContract) {
-  }
+  constructor(protected app: ApplicationContract) {}
 
-  public register () {
+  public register() {
     // Register your own bindings
   }
 
-  public async boot () {
+  public async boot() {
     // All bindings are ready, feel free to use them
   }
 
-  public async ready () {
+  public async ready() {
     // App is ready
   }
 
-  public async shutdown () {
+  public async shutdown() {
     // Cleanup, since app is going down
   }
 }

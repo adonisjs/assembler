@@ -12,5 +12,4 @@ import { Exception } from '@adonisjs/core/build/standalone'
 | new {{ filename }}('message', 500, 'E_RUNTIME_EXCEPTION')
 |
 */
-export default class {{ filename }} extends Exception {
-}
+export default class {{ filename }} extends Exception {}

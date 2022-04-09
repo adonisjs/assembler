@@ -439,7 +439,7 @@ test.group('Compiler', (group) => {
       ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file)))
     )
 
-    assert.deepEqual(hasFiles, [false, true, false, false])
+    assert.deepEqual(hasFiles, [false, false, false, false])
 
     assert.deepEqual(ui.testingRenderer.logs, [
       {
@@ -453,6 +453,18 @@ test.group('Compiler', (group) => {
       {
         message: `${error}  typescript compiler errors`,
         stream: 'stderr',
+      },
+      {
+        message: '',
+        stream: 'stderr',
+      },
+      {
+        message: `bgRed(Cannot complete the build process as there are typescript errors. Use "--ignore-ts-errors" flag to ignore Typescript errors)`,
+        stream: 'stderr',
+      },
+      {
+        message: `${info}  cleaning up ${dimYellow('"./build/dist"')} directory`,
+        stream: 'stdout',
       },
     ])
   }).timeout(0)
@@ -635,14 +647,14 @@ test.group('Compiler', (group) => {
     const hasFiles = await Promise.all(
       [
         'build/.adonisrc.json',
-        'ace',
+        'build/ace',
         'build/src/foo.js',
         'build/public/styles/main.css',
         'build/public/scripts/main.js',
       ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file)))
     )
 
-    assert.deepEqual(hasFiles, [true, true, true, true, true])
+    assert.deepEqual(hasFiles, [false, false, false, false, false])
     assert.deepEqual(ui.testingRenderer.logs, [
       {
         message: `${info}  cleaning up ${dimYellow('"./build"')} directory`,
@@ -668,6 +680,10 @@ test.group('Compiler', (group) => {
         message: 'foo',
         stream: 'stderr',
       },
+      {
+        message: `${info}  cleaning up ${dimYellow('"./build"')} directory`,
+        stream: 'stdout',
+      },
     ])
 
     assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
@@ -678,6 +694,7 @@ test.group('Compiler', (group) => {
       '.adonisrc.json',
       JSON.stringify({
         typescript: true,
+        metaFiles: ['public/css/app.js'],
       })
     )
 
@@ -691,21 +708,20 @@ test.group('Compiler', (group) => {
     )
 
     await fs.add('src/foo.ts', '')
-    await fs.add('public/styles/main.css', '')
-    await fs.add('public/scripts/main.js', '')
+    await fs.add('ace', '')
 
     const compiler = new Compiler(fs.basePath, [], false, ui.logger)
     await compiler.compile()
 
     const hasFiles = await Promise.all(
-      ['build/.adonisrc.json', 'build/ace', 'build/src/foo.js'].map((file) =>
-        fs.fsExtra.pathExists(join(fs.basePath, file))
+      ['build/.adonisrc.json', 'build/ace', 'build/src/foo.js', 'build/public/css/app.js'].map(
+        (file) => fs.fsExtra.pathExists(join(fs.basePath, file))
       )
     )
 
     ui.testingRenderer.logs.pop()
 
-    assert.deepEqual(hasFiles, [true, false, true])
+    assert.deepEqual(hasFiles, [true, true, true, false])
     assert.deepEqual(ui.testingRenderer.logs, [
       {
         message: `${info}  cleaning up ${dimYellow('"./build"')} directory`,
@@ -716,15 +732,11 @@ test.group('Compiler', (group) => {
         stream: 'stdout',
       },
       {
-        message: `${info}  copy { ${dimYellow('ace => build')} }`,
+        message: `${info}  copy { ${dimYellow('public/css/app.js,ace => build')} }`,
         stream: 'stdout',
       },
       {
         message: `${info}  copy { ${dimYellow('.adonisrc.json => build')} }`,
-        stream: 'stdout',
-      },
-      {
-        message: `${warning}  Unable to generate manifest file. Check the following error for more info`,
         stream: 'stdout',
       },
     ])
@@ -781,5 +793,111 @@ test.group('Compiler', (group) => {
     )
 
     assert.deepEqual(hasFiles, [true, true, false])
+  }).timeout(0)
+
+  test('typecheck and report typescript errors', async (assert) => {
+    await fs.add(
+      '.adonisrc.json',
+      JSON.stringify({
+        typescript: true,
+        metaFiles: ['public/**/*.(js|css)'],
+      })
+    )
+
+    await fs.add(
+      'tsconfig.json',
+      JSON.stringify({
+        include: ['**/*'],
+        exclude: ['build'],
+        compilerOptions: {
+          rootDir: './',
+          outDir: 'build/dist',
+        },
+      })
+    )
+
+    await fs.add('ace', '')
+    await fs.add('src/foo.ts', "import path from 'path'")
+    await fs.add('public/styles/main.css', '')
+    await fs.add('public/scripts/main.js', '')
+
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
+    const isValid = await compiler.typeCheck()
+
+    assert.isFalse(isValid)
+    const hasFiles = await Promise.all(
+      [
+        'build/dist/.adonisrc.json',
+        'build/dist/src/foo.js',
+        'build/dist/public/styles/main.css',
+        'build/dist/public/scripts/main.js',
+      ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file)))
+    )
+
+    assert.deepEqual(hasFiles, [false, false, false, false])
+
+    assert.deepEqual(ui.testingRenderer.logs, [
+      {
+        message: `${info}  type checking typescript source files`,
+        stream: 'stdout',
+      },
+      {
+        message: `${error}  typescript compiler errors`,
+        stream: 'stderr',
+      },
+    ])
+  }).timeout(0)
+
+  test('complete successfully when typechecking has no errors', async (assert) => {
+    await fs.add(
+      '.adonisrc.json',
+      JSON.stringify({
+        typescript: true,
+        metaFiles: ['public/**/*.(js|css)'],
+      })
+    )
+
+    await fs.add(
+      'tsconfig.json',
+      JSON.stringify({
+        include: ['**/*'],
+        exclude: ['build'],
+        compilerOptions: {
+          rootDir: './',
+          outDir: 'build/dist',
+        },
+      })
+    )
+
+    await fs.add('ace', '')
+    await fs.add('src/foo.ts', "import 'path'")
+    await fs.add('public/styles/main.css', '')
+    await fs.add('public/scripts/main.js', '')
+
+    const compiler = new Compiler(fs.basePath, [], false, ui.logger)
+    const isValid = await compiler.typeCheck()
+
+    assert.isTrue(isValid)
+    const hasFiles = await Promise.all(
+      [
+        'build/dist/.adonisrc.json',
+        'build/dist/src/foo.js',
+        'build/dist/public/styles/main.css',
+        'build/dist/public/scripts/main.js',
+      ].map((file) => fs.fsExtra.pathExists(join(fs.basePath, file)))
+    )
+
+    assert.deepEqual(hasFiles, [false, false, false, false])
+
+    assert.deepEqual(ui.testingRenderer.logs, [
+      {
+        message: `${info}  type checking typescript source files`,
+        stream: 'stdout',
+      },
+      {
+        message: `${success}  built successfully`,
+        stream: 'stdout',
+      },
+    ])
   }).timeout(0)
 })

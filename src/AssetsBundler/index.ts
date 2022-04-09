@@ -8,9 +8,20 @@
  */
 
 import execa from 'execa'
+import getPort from 'get-port'
 import Emittery from 'emittery'
 import { logger as uiLogger } from '@poppinss/cliui'
 import { resolveDir } from '@poppinss/utils/build/helpers'
+
+export type DevServerResponse =
+  | {
+      state: 'not-installed' | 'no-assets'
+    }
+  | {
+      state: 'running'
+      port: string
+      host: string
+    }
 
 /**
  * Assets bundler uses webpack encore to build frontend dependencies
@@ -21,6 +32,8 @@ export class AssetsBundler extends Emittery {
    */
   private binaryName = 'encore'
 
+  private encoreArgs: string[] = []
+
   /**
    * Options passed to spawn a child process
    */
@@ -30,6 +43,7 @@ export class AssetsBundler extends Emittery {
     stdio: 'pipe' as const,
     localDir: this.projectRoot,
     cwd: this.projectRoot,
+    windowsHide: false,
     env: {
       FORCE_COLOR: 'true',
       ...this.env,
@@ -38,12 +52,16 @@ export class AssetsBundler extends Emittery {
 
   constructor(
     private projectRoot: string,
-    private encoreArgs: string[] = [],
+    encoreArgs: string[] = [],
     private buildAssets: boolean = true,
     private logger: typeof uiLogger,
     private env: { [key: string]: string } = {}
   ) {
     super()
+    this.encoreArgs = encoreArgs.reduce((result, arg) => {
+      result = result.concat(arg.split(' '))
+      return result
+    }, [] as string[])
   }
 
   /**
@@ -90,6 +108,40 @@ export class AssetsBundler extends Emittery {
       return
     }
     console.error(`[ ${this.logger.colors.cyan('encore')} ] ${line}`)
+  }
+
+  /**
+   * Returns the custom port defined using the `--port` flag in encore
+   * flags
+   */
+  private findCustomPort(): undefined | string {
+    let portIndex = this.encoreArgs.findIndex((arg) => arg === '--port')
+    if (portIndex > -1) {
+      return this.encoreArgs[portIndex + 1]
+    }
+
+    portIndex = this.encoreArgs.findIndex((arg) => arg.includes('--port'))
+    if (portIndex > -1) {
+      const tokens = this.encoreArgs[portIndex].split('=')
+      return tokens[1] && tokens[1].trim()
+    }
+  }
+
+  /**
+   * Returns the custom host defined using the `--host` flag in encore
+   * flags
+   */
+  private findCustomHost(): undefined | string {
+    let hostIndex = this.encoreArgs.findIndex((arg) => arg === '--host')
+    if (hostIndex > -1) {
+      return this.encoreArgs[hostIndex + 1]
+    }
+
+    hostIndex = this.encoreArgs.findIndex((arg) => arg.includes('--host'))
+    if (hostIndex > -1) {
+      const tokens = this.encoreArgs[hostIndex].split('=')
+      return tokens[1] && tokens[1].trim()
+    }
   }
 
   /**
@@ -159,13 +211,31 @@ export class AssetsBundler extends Emittery {
   /**
    * Start the webpack dev server
    */
-  public startDevServer(): { state: 'not-installed' | 'no-assets' | 'running' } {
+  public async startDevServer(): Promise<DevServerResponse> {
     if (!this.isEncoreInstalled()) {
       return { state: 'not-installed' }
     }
 
     if (!this.buildAssets) {
       return { state: 'no-assets' }
+    }
+
+    const customHost = this.findCustomHost() || 'localhost'
+
+    /**
+     * Define a random port when the "--port" flag is not passed.
+     *
+     * Encore anyways doesn't allow defining port inside the webpack.config.js
+     * file for generating the manifest and entrypoints file.
+     *
+     * @see
+     * https://github.com/symfony/webpack-encore/issues/941#issuecomment-787568811
+     */
+    let customPort = this.findCustomPort()
+    if (!customPort) {
+      const randomPort = await getPort({ port: 8080, host: 'localhost' })
+      customPort = String(randomPort)
+      this.encoreArgs.push('--port', customPort)
     }
 
     const childProcess = execa(
@@ -179,6 +249,6 @@ export class AssetsBundler extends Emittery {
     childProcess.on('close', (code, signal) => this.emit('close', { code, signal }))
     childProcess.on('exit', (code, signal) => this.emit('exit', { code, signal }))
 
-    return { state: 'running' }
+    return { state: 'running', port: customPort, host: customHost }
   }
 }

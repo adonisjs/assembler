@@ -17,16 +17,21 @@ import { logger as uiLogger } from '@poppinss/cliui'
  * dies.
  */
 export class HttpServer extends Emittery {
-  private childProcess: execa.ExecaChildProcess
+  private childProcess?: execa.ExecaChildProcess
+  private nodeArgs: string[] = []
 
   constructor(
     private sourceFile: string,
     private projectRoot: string,
-    private nodeArgs: string[] = [],
+    nodeArgs: string[] = [],
     private logger: typeof uiLogger,
     private env: { [key: string]: string } = {}
   ) {
     super()
+    this.nodeArgs = nodeArgs.reduce((result, arg) => {
+      result = result.concat(arg.split(' '))
+      return result
+    }, [] as string[])
   }
 
   /**
@@ -61,7 +66,7 @@ export class HttpServer extends Emittery {
      * Notify about server events
      */
     this.childProcess.on('message', (message) => {
-      if (message && message['origin'] === 'adonis-http-server') {
+      if (message && message['isAdonisJS'] && message['environment'] === 'web') {
         this.emit('ready', message)
       }
     })

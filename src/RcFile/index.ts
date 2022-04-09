@@ -39,6 +39,11 @@ export class RcFile {
   public isMetaFile: (filePath: string) => boolean = picomatch(this.getMetaFilesGlob())
 
   /**
+   * A matcher to know if file is a test file or not
+   */
+  public isTestsFile: (filePath: string) => boolean = picomatch(this.getTestsFileGlob())
+
+  /**
    * A matcher to know if a file is part of the restart server files globs
    */
   public isRestartServerFile: (filePath: string) => boolean = picomatch(
@@ -100,6 +105,19 @@ export class RcFile {
   }
 
   /**
+   * Returns an array of globs for the test files
+   */
+  public getTestsFileGlob(): string[] {
+    return this.application.rcFile.tests.suites.reduce((result, suite) => {
+      if (suite.files) {
+        result = result.concat(suite.files)
+      }
+
+      return result
+    }, [] as string[])
+  }
+
+  /**
    * Reloads the rcfile.json
    */
   public getDiskContents(): any {
@@ -119,6 +137,7 @@ export class RcFile {
         reload: true,
         rcFile: true,
         metaFile: true,
+        testFile: false,
       }
     }
 
@@ -130,6 +149,7 @@ export class RcFile {
         reload: true,
         rcFile: false,
         metaFile: true,
+        testFile: false,
       }
     }
 
@@ -141,6 +161,19 @@ export class RcFile {
         reload: false,
         rcFile: false,
         metaFile: true,
+        testFile: false,
+      }
+    }
+
+    /**
+     * File is part of one of the tests suite
+     */
+    if (this.isTestsFile(filePath)) {
+      return {
+        reload: false,
+        rcFile: false,
+        metaFile: false,
+        testFile: true,
       }
     }
 
@@ -151,6 +184,7 @@ export class RcFile {
       reload: false,
       rcFile: false,
       metaFile: false,
+      testFile: false,
     }
   }
 }

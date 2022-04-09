@@ -39,7 +39,7 @@ test.group('Make Exception', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const exception = new MakeException(app, new Kernel(app))
+    const exception = new MakeException(app, new Kernel(app).mockConsoleOutput())
     exception.name = 'user'
     await exception.run()
 
@@ -59,7 +59,7 @@ test.group('Make Exception', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const exception = new MakeException(app, new Kernel(app))
+    const exception = new MakeException(app, new Kernel(app).mockConsoleOutput())
     exception.name = 'user'
     exception.selfHandle = true
     await exception.run()
@@ -90,7 +90,7 @@ test.group('Make Exception', (group) => {
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
     const app = new Application(fs.basePath, 'test', rcContents)
 
-    const exception = new MakeException(app, new Kernel(app))
+    const exception = new MakeException(app, new Kernel(app).mockConsoleOutput())
     exception.name = 'user'
     exception.selfHandle = true
     await exception.run()

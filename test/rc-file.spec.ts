@@ -44,18 +44,21 @@ test.group('RcFile', (group) => {
     assert.deepEqual(rcFile.getMetaData('.env'), {
       metaFile: true,
       reload: false,
+      testFile: false,
       rcFile: false,
     })
 
     assert.deepEqual(rcFile.getMetaData('public/foo.js'), {
       metaFile: true,
       reload: true,
+      testFile: false,
       rcFile: false,
     })
 
     assert.deepEqual(rcFile.getMetaData('schema/app.js'), {
       metaFile: false,
       reload: false,
+      testFile: false,
       rcFile: false,
     })
   })
@@ -133,24 +136,28 @@ test.group('RcFile', (group) => {
     assert.deepEqual(rcFile.getMetaData('.adonisrc.json'), {
       reload: true,
       rcFile: true,
+      testFile: false,
       metaFile: true,
     })
 
     assert.deepEqual(rcFile.getMetaData('public/style.css'), {
       reload: true,
       rcFile: false,
+      testFile: false,
       metaFile: true,
     })
 
     assert.deepEqual(rcFile.getMetaData('.env'), {
       reload: false,
       rcFile: false,
+      testFile: false,
       metaFile: true,
     })
 
     assert.deepEqual(rcFile.getMetaData('foo/bar.js'), {
       reload: false,
       rcFile: false,
+      testFile: false,
       metaFile: false,
     })
   })

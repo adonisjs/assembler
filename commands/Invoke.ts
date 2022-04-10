@@ -145,6 +145,7 @@ export default class Configure extends BaseCommand {
         },
       ],
     })
+    rcFile.addProvider('@japa/preset-adonis/TestsProvider')
 
     rcFile.commit()
     logger.action('update').succeeded('.adonisrc.json')
@@ -166,6 +167,30 @@ export default class Configure extends BaseCommand {
       testEnvFile.commit()
       logger.action('create').succeeded('.env.test')
     }
+
+    /**
+     * Update "tsconfig.json"
+     */
+    const tsConfig = new files.JsonFile(this.application.appRoot, 'tsconfig.json')
+    const existingTypes = tsConfig.get('compilerOptions.types') || []
+
+    if (!existingTypes.includes('@japa/preset-adonis/build/adonis-typings')) {
+      existingTypes.push('@japa/preset-adonis/build/adonis-typings')
+    }
+    tsConfig.set('compilerOptions.types', existingTypes)
+
+    tsConfig.commit()
+    logger.action('update').succeeded('tsconfig.json')
+
+    /**
+     * Set additional .env variables for "web" boilerplate
+     */
+    if (this.appType === 'web') {
+      testEnvFile.add(['ASSETS_DRIVER=fake', 'SESSION_DRIVER=memory'])
+    }
+
+    testEnvFile.commit()
+    logger.action('create').succeeded('.env.test')
 
     /**
      * Install required dependencies

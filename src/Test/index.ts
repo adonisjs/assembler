@@ -92,6 +92,13 @@ export class TestsServer {
   ) {}
 
   /**
+   * Clear terminal screen
+   */
+  private clearScreen() {
+    process.stdout.write('\u001Bc')
+  }
+
+  /**
    * Returns the glob paths for test suites. Returns all if no
    * filter is applied. Otherwise only the filtered suites
    * are picked.
@@ -150,6 +157,7 @@ export class TestsServer {
       return
     }
 
+    this.clearScreen()
     const filters = { ...this.filters }
 
     /**

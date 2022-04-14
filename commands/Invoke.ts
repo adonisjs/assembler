@@ -145,7 +145,7 @@ export default class Configure extends BaseCommand {
         },
       ],
     })
-    rcFile.addProvider('@japa/preset-adonis/TestsProvider')
+    rcFile.addTestProvider('@japa/preset-adonis/TestsProvider')
 
     rcFile.commit()
     logger.action('update').succeeded('.adonisrc.json')

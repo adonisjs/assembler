@@ -45,10 +45,10 @@
   "homepage": "https://github.com/adonisjs/assembler#readme",
   "devDependencies": {
     "@adonisjs/ace": "^11.2.3",
-    "@adonisjs/core": "^5.7.3",
+    "@adonisjs/core": "^5.7.4",
     "@adonisjs/mrm-preset": "^5.0.3",
     "@poppinss/dev-utils": "^2.0.3",
-    "@types/node": "^17.0.23",
+    "@types/node": "^17.0.24",
     "commitizen": "^4.2.4",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
@@ -89,11 +89,11 @@
     "anyBranch": false
   },
   "dependencies": {
-    "@adonisjs/application": "^5.2.3",
+    "@adonisjs/application": "^5.2.4",
     "@adonisjs/env": "^3.0.9",
     "@adonisjs/ioc-transformer": "^2.3.3",
     "@adonisjs/require-ts": "^2.0.11",
-    "@adonisjs/sink": "^5.2.2",
+    "@adonisjs/sink": "^5.2.3",
     "@poppinss/chokidar-ts": "^3.3.5",
     "@poppinss/cliui": "^3.0.2",
     "@poppinss/utils": "^4.0.4",

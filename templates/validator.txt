@@ -1,4 +1,4 @@
-import { schema } from '@ioc:Adonis/Core/Validator'
+import { schema, CustomMessages } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class {{ filename }} {
@@ -36,5 +36,5 @@ export default class {{ filename }} {
    * }
    *
    */
-  public messages = {}
+  public messages: CustomMessages = {}
 }

@@ -18,8 +18,6 @@ import CreateSuite from '../commands/CreateSuite'
 const fs = new Filesystem(join(__dirname, '__app'))
 
 test.group('CreateSuite', (group) => {
-  group.tap((t) => t.pin())
-
   group.each.teardown(async () => {
     await fs.cleanup()
   })
@@ -48,7 +46,7 @@ test.group('CreateSuite', (group) => {
     ])
   })
 
-  test("Shoudn't add suite to RcFile if it already exists", async ({ assert }) => {
+  test("Shouldn't add suite to RcFile if it already exists", async ({ assert }) => {
     await fs.ensureRoot()
     const app = new Application(fs.basePath, 'test', {})
     const suiteName = 'my-super-suite'

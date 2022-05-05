@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import test from 'japa'
+import { test } from '@japa/runner'
 import { join } from 'path'
 import { readJSONSync } from 'fs-extra'
 import { Kernel } from '@adonisjs/ace'
@@ -21,19 +21,19 @@ const fs = new Filesystem(join(__dirname, '__app'))
 const templates = new Filesystem(join(__dirname, '..', 'templates'))
 
 test.group('Make Exception', (group) => {
-  group.before(() => {
+  group.setup(() => {
     process.env.ADONIS_ACE_CWD = fs.basePath
   })
 
-  group.after(() => {
+  group.teardown(() => {
     delete process.env.ADONIS_ACE_CWD
   })
 
-  group.afterEach(async () => {
+  group.each.teardown(async () => {
     await fs.cleanup()
   })
 
-  test('make an exception class inside the default directory', async (assert) => {
+  test('make an exception class inside the default directory', async ({ assert }) => {
     await fs.add('.adonisrc.json', JSON.stringify({}))
 
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
@@ -53,7 +53,7 @@ test.group('Make Exception', (group) => {
     )
   })
 
-  test('make a self-handled exception class inside the default directory', async (assert) => {
+  test('make a self-handled exception class inside the default directory', async ({ assert }) => {
     await fs.add('.adonisrc.json', JSON.stringify({}))
 
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
@@ -74,7 +74,7 @@ test.group('Make Exception', (group) => {
     )
   })
 
-  test('make an exception class inside a custom directory', async (assert) => {
+  test('make an exception class inside a custom directory', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({

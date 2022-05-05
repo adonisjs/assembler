@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import test from 'japa'
+import { test } from '@japa/runner'
 import execa from 'execa'
 import { join } from 'path'
 import { Filesystem } from '@poppinss/dev-utils'
@@ -20,19 +20,19 @@ const ui = instantiate(true)
 const fs = new Filesystem(join(__dirname, '__app'))
 
 test.group('Compiler', (group) => {
-  group.before(() => {
+  group.setup(() => {
     ui.logger.useRenderer(ui.testingRenderer)
   })
 
-  group.afterEach(() => {
+  group.each.teardown(() => {
     ui.testingRenderer.logs = []
   })
 
-  group.afterEach(async () => {
+  group.each.teardown(async () => {
     await fs.cleanup()
   })
 
-  test('build source files', async (assert) => {
+  test('build source files', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -96,7 +96,7 @@ test.group('Compiler', (group) => {
     assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
   }).timeout(0)
 
-  test('build source files with explicit outDir', async (assert) => {
+  test('build source files with explicit outDir', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -158,7 +158,7 @@ test.group('Compiler', (group) => {
     ])
   }).timeout(0)
 
-  test('build source files with explicit rootDir', async (assert) => {
+  test('build source files with explicit rootDir', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -221,7 +221,7 @@ test.group('Compiler', (group) => {
     ])
   }).timeout(0)
 
-  test('build source files to nested outDir', async (assert) => {
+  test('build source files to nested outDir', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -284,7 +284,7 @@ test.group('Compiler', (group) => {
     ])
   }).timeout(0)
 
-  test('do not build when config has errors', async (assert) => {
+  test('do not build when config has errors', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -333,7 +333,7 @@ test.group('Compiler', (group) => {
     ])
   }).timeout(0)
 
-  test('catch and report typescript errors', async (assert) => {
+  test('catch and report typescript errors', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -401,7 +401,7 @@ test.group('Compiler', (group) => {
     ])
   }).timeout(0)
 
-  test('do not continue on error', async (assert) => {
+  test('do not continue on error', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -469,7 +469,7 @@ test.group('Compiler', (group) => {
     ])
   }).timeout(0)
 
-  test('do not emit when noEmitOnError is true', async (assert) => {
+  test('do not emit when noEmitOnError is true', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -530,7 +530,7 @@ test.group('Compiler', (group) => {
     ])
   }).timeout(0)
 
-  test('build for production should copy package files to build folder', async (assert) => {
+  test('build for production should copy package files to build folder', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -618,7 +618,7 @@ test.group('Compiler', (group) => {
     assert.isTrue(hasPackageLock)
   }).timeout(0)
 
-  test('gracefully log error when ace file finishes with non-zero exit code', async (assert) => {
+  test('gracefully log error when ace file finishes with non-zero exit code', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -689,7 +689,7 @@ test.group('Compiler', (group) => {
     assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
   }).timeout(0)
 
-  test('ignore error when any of the meta file is missing', async (assert) => {
+  test('ignore error when any of the meta file is missing', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -744,7 +744,7 @@ test.group('Compiler', (group) => {
     assert.isFalse(require(join(fs.basePath, 'build', '.adonisrc.json')).typescript)
   }).timeout(0)
 
-  test('build should support custom tsconfig file', async (assert) => {
+  test('build should support custom tsconfig file', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -795,7 +795,7 @@ test.group('Compiler', (group) => {
     assert.deepEqual(hasFiles, [true, true, false])
   }).timeout(0)
 
-  test('typecheck and report typescript errors', async (assert) => {
+  test('typecheck and report typescript errors', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -848,7 +848,7 @@ test.group('Compiler', (group) => {
     ])
   }).timeout(0)
 
-  test('complete successfully when typechecking has no errors', async (assert) => {
+  test('complete successfully when typechecking has no errors', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({

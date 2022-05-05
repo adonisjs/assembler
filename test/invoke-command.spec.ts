@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import test from 'japa'
+import { test } from '@japa/runner'
 import { join } from 'path'
 import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
@@ -18,11 +18,11 @@ import Invoke from '../commands/Invoke'
 const fs = new Filesystem(join(__dirname, '__app'))
 
 test.group('Invoke', (group) => {
-  group.afterEach(async () => {
+  group.each.teardown(async () => {
     await fs.cleanup()
   })
 
-  test('execute instructions defined in package.json file', async (assert) => {
+  test('execute instructions defined in package.json file', async ({ assert }) => {
     await fs.add(
       'node_modules/@adonisjs/sample/package.json',
       JSON.stringify({

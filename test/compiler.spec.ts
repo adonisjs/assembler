@@ -618,7 +618,9 @@ test.group('Compiler', (group) => {
     assert.isTrue(hasPackageLock)
   }).timeout(0)
 
-  test('gracefully log error when ace file finishes with non-zero exit code', async ({ assert }) => {
+  test('gracefully log error when ace file finishes with non-zero exit code', async ({
+    assert,
+  }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({

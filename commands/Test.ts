@@ -68,6 +68,12 @@ export default class Test extends BaseCommand {
   public ignoreTags: string[]
 
   /**
+   * Filter by test title
+   */
+  @flags.array({ description: 'Filter tests by title' })
+  public tests: string[]
+
+  /**
    * Customize tests timeout
    */
   @flags.number({ description: 'Customize tests timeout' })
@@ -106,6 +112,10 @@ export default class Test extends BaseCommand {
 
     if (this.ignoreTags) {
       filters['--ignore-tags'] = this.ignoreTags
+    }
+
+    if (this.tests) {
+      filters['--tests'] = this.tests
     }
 
     return filters

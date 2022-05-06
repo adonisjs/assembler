@@ -13,7 +13,7 @@ import { Kernel } from '@adonisjs/ace'
 import { Filesystem } from '@poppinss/dev-utils'
 import { Application } from '@adonisjs/application'
 import { files } from '@adonisjs/sink'
-import CreateSuite from '../commands/CreateSuite'
+import CreateSuite from '../commands/Make/Suite'
 
 const fs = new Filesystem(join(__dirname, '__app'))
 
@@ -28,7 +28,7 @@ test.group('CreateSuite', (group) => {
     const suiteName = 'my-super-suite'
     const createSuite = new CreateSuite(app, new Kernel(app).mockConsoleOutput())
 
-    createSuite.suiteName = suiteName
+    createSuite.suite = suiteName
     await createSuite.run()
 
     const sampleTestExist = fs.fsExtra.pathExistsSync(
@@ -52,7 +52,7 @@ test.group('CreateSuite', (group) => {
     const suiteName = 'my-super-suite'
     const createSuite = new CreateSuite(app, new Kernel(app).mockConsoleOutput())
 
-    createSuite.suiteName = suiteName
+    createSuite.suite = suiteName
     await createSuite.run()
     await createSuite.run()
     await createSuite.run()
@@ -74,8 +74,8 @@ test.group('CreateSuite', (group) => {
     const suiteName = 'my-super-suite'
     const createSuite = new CreateSuite(app, new Kernel(app).mockConsoleOutput())
 
-    createSuite.suiteName = suiteName
-    createSuite.addSampleTestFile = false
+    createSuite.suite = suiteName
+    createSuite.withExampleTest = false
     await createSuite.run()
 
     const sampleTestExist = fs.fsExtra.pathExistsSync(

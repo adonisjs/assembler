@@ -15,20 +15,20 @@ import { join } from 'path'
  * Create a new test suite
  */
 export default class CreateSuite extends BaseCommand {
-  public static commandName = 'create-test-suite'
+  public static commandName = 'make:suite'
   public static description = 'Create a new test suite'
 
   /**
    * Name of the test suite to be created
    */
   @args.string({ description: 'Name of the test suite' })
-  public suiteName: string
+  public suite: string
 
   /**
    * Should add a sample test file
    */
   @flags.boolean({ description: 'Add a sample test file' })
-  public addSampleTestFile: boolean = true
+  public withExampleTest: boolean = true
 
   /**
    * Check if the suite name is already defined in RcFile
@@ -37,7 +37,7 @@ export default class CreateSuite extends BaseCommand {
     const existingSuites = rcFile.get('tests.suites') || []
     const existingSuitesNames = existingSuites.map((suite) => suite.name)
 
-    return existingSuitesNames.includes(this.suiteName)
+    return existingSuitesNames.includes(this.suite)
   }
 
   /**
@@ -48,14 +48,14 @@ export default class CreateSuite extends BaseCommand {
     const existingSuites = rcFile.get('tests.suites') || []
 
     if (this.checkIfSuiteExists(rcFile)) {
-      return logger.action('update').skipped(`Suite ${this.suiteName} already exists`)
+      return logger.action('update').skipped(`Suite ${this.suite} already exists`)
     }
 
     rcFile.set('tests.suites', [
       ...existingSuites,
       {
-        name: this.suiteName,
-        files: [`tests/${this.suiteName}/**/*.spec(.ts|.js)`],
+        name: this.suite,
+        files: [`tests/${this.suite}/**/*.spec(.ts|.js)`],
         timeout: 60 * 1000,
       },
     ])
@@ -68,7 +68,7 @@ export default class CreateSuite extends BaseCommand {
    * Add a sample test file to the new suite folder
    */
   private createSampleTestFile() {
-    const path = `tests/${this.suiteName}/test.spec.ts`
+    const path = `tests/${this.suite}/test.spec.ts`
     const testFile = new files.MustacheFile(
       this.application.appRoot,
       path,
@@ -84,7 +84,7 @@ export default class CreateSuite extends BaseCommand {
   public async run() {
     await this.addSuiteToRcFile()
 
-    if (this.addSampleTestFile) {
+    if (this.withExampleTest) {
       this.createSampleTestFile()
     }
   }

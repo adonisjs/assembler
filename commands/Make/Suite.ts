@@ -9,6 +9,7 @@
 
 import { BaseCommand, args, flags } from '@adonisjs/core/build/standalone'
 import { files, logger } from '@adonisjs/sink'
+import globParent from 'glob-parent'
 import { join } from 'path'
 
 /**
@@ -25,10 +26,36 @@ export default class CreateSuite extends BaseCommand {
   public suite: string
 
   /**
+   * Glob pattern for the test suite, or only location to the test suite
+   */
+  @args.string({ description: 'Path to the test suite directory', required: false })
+  public location: string = ''
+
+  /**
    * Should add a sample test file
    */
   @flags.boolean({ description: 'Add a sample test file' })
   public withExampleTest: boolean = true
+
+  /**
+   * Get the destination path for the sample test file
+   */
+  private getExampleTestDestinationPath() {
+    return globParent(this.location) + '/test.spec.ts'
+  }
+
+  /**
+   * Generate suite glob pattern based on `location` argument
+   */
+  private generateSuiteGlobPattern() {
+    if (!this.location) {
+      this.location = `tests/${this.suite}`
+    }
+
+    if (!['*', '.js', '.ts'].find((keyword) => this.location.includes(keyword))) {
+      this.location = `${this.location}/**/*.spec(.ts|.js)`
+    }
+  }
 
   /**
    * Check if the suite name is already defined in RcFile
@@ -55,7 +82,7 @@ export default class CreateSuite extends BaseCommand {
       ...existingSuites,
       {
         name: this.suite,
-        files: [`tests/${this.suite}/**/*.spec(.ts|.js)`],
+        files: [this.location],
         timeout: 60 * 1000,
       },
     ])
@@ -68,11 +95,11 @@ export default class CreateSuite extends BaseCommand {
    * Add a sample test file to the new suite folder
    */
   private createSampleTestFile() {
-    const path = `tests/${this.suite}/test.spec.ts`
+    const path = this.getExampleTestDestinationPath()
     const testFile = new files.MustacheFile(
       this.application.appRoot,
       path,
-      join(__dirname, '..', 'templates/test.txt')
+      join(__dirname, '../..', 'templates/test.txt')
     )
 
     if (!testFile.exists()) {
@@ -82,6 +109,8 @@ export default class CreateSuite extends BaseCommand {
   }
 
   public async run() {
+    this.generateSuiteGlobPattern()
+
     await this.addSuiteToRcFile()
 
     if (this.withExampleTest) {

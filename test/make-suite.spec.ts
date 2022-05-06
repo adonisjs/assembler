@@ -18,6 +18,8 @@ import CreateSuite from '../commands/Make/Suite'
 const fs = new Filesystem(join(__dirname, '__app'))
 
 test.group('CreateSuite', (group) => {
+  group.tap((_test) => _test.pin())
+
   group.each.teardown(async () => {
     await fs.cleanup()
   })
@@ -84,4 +86,47 @@ test.group('CreateSuite', (group) => {
 
     assert.isFalse(sampleTestExist)
   })
+
+  test('Custom location - {location}')
+    .with([
+      { location: 'tests/unit/**.spec.ts', filePath: 'tests/unit/test.spec.ts' },
+      { location: 'tests/a/**/*.spec.ts', filePath: 'tests/a/test.spec.ts' },
+      {
+        location: 'tests/a/b/c/**.spec.ts',
+        filePath: 'tests/a/b/c/test.spec.ts',
+      },
+      {
+        location: 'tests/my-tests',
+        globPattern: 'tests/my-tests/**/*.spec(.ts|.js)',
+        filePath: 'tests/my-tests/test.spec.ts',
+      },
+      {
+        location: '',
+        globPattern: 'tests/my-super-suite/**/*.spec(.ts|.js)',
+        filePath: 'tests/my-super-suite/test.spec.ts',
+      },
+    ])
+    .run(async ({ assert }, { location, filePath, globPattern }) => {
+      await fs.ensureRoot()
+      const app = new Application(fs.basePath, 'test', {})
+      const suiteName = 'my-super-suite'
+      const createSuite = new CreateSuite(app, new Kernel(app).mockConsoleOutput())
+
+      createSuite.suite = suiteName
+      createSuite.location = location
+
+      await createSuite.run()
+
+      const sampleTestExist = fs.fsExtra.pathExistsSync(join(fs.basePath, filePath))
+      assert.isTrue(sampleTestExist)
+
+      const rcFile = new files.AdonisRcFile(fs.basePath)
+      assert.deepEqual(rcFile.get('tests.suites'), [
+        {
+          name: suiteName,
+          files: [globPattern || location],
+          timeout: 60000,
+        },
+      ])
+    })
 })

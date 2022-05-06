@@ -40,12 +40,14 @@ export class TestProcess {
     const filters = Object.keys(this.filters).reduce<string[]>((result, filter) => {
       const value = this.filters[filter]
 
-      if (filter !== '_') {
-        result.push(filter)
+      if (filter === '_') {
+        result.push(...value)
+        return result
       }
 
+      result.push(filter)
       if (Array.isArray(value)) {
-        result.push(...value)
+        result.push(value.join(','))
       } else {
         result.push(value)
       }

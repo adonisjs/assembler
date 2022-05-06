@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import test from 'japa'
+import { test } from '@japa/runner'
 import { join } from 'path'
 import { Filesystem } from '@poppinss/dev-utils'
 
@@ -16,11 +16,11 @@ import { RcFile } from '../src/RcFile'
 const fs = new Filesystem(join(__dirname, '__app'))
 
 test.group('RcFile', (group) => {
-  group.afterEach(async () => {
+  group.each.teardown(async () => {
     await fs.cleanup()
   })
 
-  test('get an array of meta file patterns from the rcfile', async (assert) => {
+  test('get an array of meta file patterns from the rcfile', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -32,7 +32,7 @@ test.group('RcFile', (group) => {
     assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
   })
 
-  test('get info about a meta file', async (assert) => {
+  test('get info about a meta file', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -63,7 +63,7 @@ test.group('RcFile', (group) => {
     })
   })
 
-  test('match relative paths against meta files', async (assert) => {
+  test('match relative paths against meta files', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -78,7 +78,7 @@ test.group('RcFile', (group) => {
     assert.isFalse(rcFile.isMetaFile('public/script.sass'))
   })
 
-  test('match relative paths against reloadServer meta files', async (assert) => {
+  test('match relative paths against reloadServer meta files', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -92,7 +92,7 @@ test.group('RcFile', (group) => {
     assert.isFalse(rcFile.isRestartServerFile('.env'))
   })
 
-  test('filter .adonisrc.json file from files globs array', async (assert) => {
+  test('filter .adonisrc.json file from files globs array', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -108,7 +108,7 @@ test.group('RcFile', (group) => {
     assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
   })
 
-  test('filter ace file from files globs array', async (assert) => {
+  test('filter ace file from files globs array', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -120,7 +120,7 @@ test.group('RcFile', (group) => {
     assert.deepEqual(rcFile.getMetaFilesGlob(), ['.env', 'public/**/*.(css|js)', 'ace'])
   })
 
-  test('get metadata for files', async (assert) => {
+  test('get metadata for files', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -162,7 +162,7 @@ test.group('RcFile', (group) => {
     })
   })
 
-  test('match sub paths to the defined command path', async (assert) => {
+  test('match sub paths to the defined command path', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -175,7 +175,7 @@ test.group('RcFile', (group) => {
     assert.isTrue(rcFile.isCommandsPath('commands/foo.ts'))
   })
 
-  test('match actual path to the defined command path', async (assert) => {
+  test('match actual path to the defined command path', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -188,7 +188,7 @@ test.group('RcFile', (group) => {
     assert.isTrue(rcFile.isCommandsPath('commands.ts'))
   })
 
-  test('do not work when commands refer to path outside the project root', async (assert) => {
+  test('do not work when commands refer to path outside the project root', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -202,7 +202,7 @@ test.group('RcFile', (group) => {
     assert.isFalse(rcFile.isCommandsPath('commands/foo.ts'))
   })
 
-  test('do not work when commands refer to a package', async (assert) => {
+  test('do not work when commands refer to a package', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({
@@ -216,7 +216,7 @@ test.group('RcFile', (group) => {
     assert.isFalse(rcFile.isCommandsPath('@adonisjs/foo/foo.ts'))
   })
 
-  test('read file from the disk by-passing the cache', async (assert) => {
+  test('read file from the disk by-passing the cache', async ({ assert }) => {
     await fs.add(
       '.adonisrc.json',
       JSON.stringify({

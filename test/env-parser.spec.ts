@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import test from 'japa'
+import { test } from '@japa/runner'
 import { join } from 'path'
 import { Filesystem } from '@poppinss/dev-utils'
 
@@ -16,7 +16,7 @@ import { EnvParser } from '../src/EnvParser'
 const fs = new Filesystem(join(__dirname, '__app'))
 
 test.group('EnvParser', (group) => {
-  group.afterEach(async () => {
+  group.each.teardown(async () => {
     await fs.cleanup()
   })
 
@@ -25,7 +25,7 @@ test.group('EnvParser', (group) => {
     await envParser.parse(fs.basePath)
   })
 
-  test('get value for a key defined inside .env file', async (assert) => {
+  test('get value for a key defined inside .env file', async ({ assert }) => {
     await fs.add('.env', 'PORT=3333')
 
     const envParser = new EnvParser()
@@ -33,7 +33,7 @@ test.group('EnvParser', (group) => {
     assert.equal(envParser.get('PORT'), '3333')
   })
 
-  test('get an object of values for defined keys', async (assert) => {
+  test('get an object of values for defined keys', async ({ assert }) => {
     await fs.add('.env', ['PORT=3333', 'TZ=Asia/Calcutta'].join('\n'))
 
     const envParser = new EnvParser()

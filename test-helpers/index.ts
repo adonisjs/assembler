@@ -11,6 +11,14 @@ export function toNewlineArray(contents: string): string[] {
   return contents.split(/\r?\n/)
 }
 
+export function replaceFactoryBindings(source: string, model: string, importPath: string) {
+  return toNewlineArray(
+    source
+      .replace('{{{ modelImportPath }}}', importPath)
+      .replace(/{{#toModelName}}{{{ model }}}{{\/toModelName}}/gi, model)
+  )
+}
+
 export const info = '[ blue(info) ]'
 export const success = '[ green(success) ]'
 export const error = '[ red(error) ]'

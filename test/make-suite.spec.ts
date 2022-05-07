@@ -17,9 +17,7 @@ import CreateSuite from '../commands/Make/Suite'
 
 const fs = new Filesystem(join(__dirname, '__app'))
 
-test.group('CreateSuite', (group) => {
-  group.tap((_test) => _test.pin())
-
+test.group('Make Suite', (group) => {
   group.each.teardown(async () => {
     await fs.cleanup()
   })

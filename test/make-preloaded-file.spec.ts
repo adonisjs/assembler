@@ -41,7 +41,7 @@ test.group('Make Preloaded File', (group) => {
 
     const preloadFile = new PreloadFile(app, new Kernel(app).mockConsoleOutput())
     preloadFile.name = 'viewGlobals'
-    preloadFile.environment = 'console,web' as any
+    preloadFile.environment = ['console', 'web']
     await preloadFile.run()
 
     const viewGlobals = await fs.get('start/viewGlobals.ts')
@@ -93,7 +93,7 @@ test.group('Make Preloaded File', (group) => {
     })
   })
 
-  test('select environment as repl', async ({ assert }) => {
+  test('set preload file environment as repl', async ({ assert }) => {
     await fs.add('.adonisrc.json', JSON.stringify({}))
 
     const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
@@ -127,12 +127,10 @@ test.group('Make Preloaded File', (group) => {
 
     const preloadFile = new PreloadFile(app, new Kernel(app).mockConsoleOutput())
     preloadFile.prompt.on('prompt', (question) => {
-      question.select(1)
+      question.select(2)
     })
 
     preloadFile.name = 'repl'
-    preloadFile.environment = ['repl']
-
     await preloadFile.exec()
 
     const replFile = await fs.get('start/repl.ts')
@@ -147,6 +145,30 @@ test.group('Make Preloaded File', (group) => {
           environment: ['repl'],
         },
       ],
+    })
+  })
+
+  test('do not set environment when all is selected', async ({ assert }) => {
+    await fs.add('.adonisrc.json', JSON.stringify({}))
+
+    const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
+    const app = new Application(fs.basePath, 'test', rcContents)
+
+    const preloadFile = new PreloadFile(app, new Kernel(app).mockConsoleOutput())
+    preloadFile.prompt.on('prompt', (question) => {
+      question.select(0)
+    })
+
+    preloadFile.name = 'events'
+    await preloadFile.exec()
+
+    const replFile = await fs.get('start/events.ts')
+    const preloadTemplate = await templates.get('preload-file.txt')
+    assert.deepEqual(toNewlineArray(replFile), toNewlineArray(preloadTemplate))
+
+    const rcRawContents = await fs.get('.adonisrc.json')
+    assert.deepEqual(JSON.parse(rcRawContents), {
+      preloads: ['./start/events'],
     })
   })
 })

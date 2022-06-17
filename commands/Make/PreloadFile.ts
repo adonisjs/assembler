@@ -12,6 +12,9 @@ import { join, extname } from 'path'
 import { args, flags } from '@adonisjs/core/build/standalone'
 
 import { BaseGenerator } from './Base'
+import type { AppEnvironments } from '@ioc:Adonis/Core/Application'
+
+const ALLOWED_ENVIRONMENTS: AppEnvironments[] = ['console', 'web', 'repl', 'test']
 
 /**
  * Command to make a new preloaded file
@@ -22,11 +25,6 @@ export default class MakePreloadFile extends BaseGenerator {
    */
   protected resourceName: string
   protected createExact = true
-
-  /**
-   * List of allowed environments
-   */
-  private allowedEnvironments = ['console', 'web', 'repl']
 
   /**
    * Command name
@@ -41,19 +39,16 @@ export default class MakePreloadFile extends BaseGenerator {
   @args.string({ description: 'Name of the file' })
   public name: string
 
-  @flags.string({
-    description: 'Define the environment in which you want to load this file',
+  @flags.array({
+    description: `Define the preload file environment. Accepted values "${ALLOWED_ENVIRONMENTS}"`,
   })
-  public environment: ('console' | 'web' | 'repl')[]
+  public environment: AppEnvironments[]
 
   /**
-   * Validates environments to ensure they are allowed. Especially when
-   * defined as a flag.
+   * Check if the mentioned environments are valid
    */
-  private validateEnvironments(
-    environments: string[]
-  ): environments is ('console' | 'web' | 'repl')[] {
-    return !environments.find((environment) => !this.allowedEnvironments.includes(environment))
+  private isValidEnviroment(environment: string[]): environment is AppEnvironments[] {
+    return !environment.find((one) => !ALLOWED_ENVIRONMENTS.includes(one as any))
   }
 
   /**
@@ -70,48 +65,51 @@ export default class MakePreloadFile extends BaseGenerator {
     return this.application.rcFile.directories.start || 'start'
   }
 
-  public async prepare() {
-    this.environment = await this.prompt.multiple(
-      'Select the environment(s) in which you want to load this file',
-      [
-        {
-          name: 'console',
-          message: 'During ace commands',
-        },
-        {
-          name: 'repl',
-          message: 'During repl session',
-        },
-        {
-          name: 'web',
-          message: 'During HTTP server',
-        },
-      ],
-      {
-        validate(choices) {
-          return choices && choices.length ? true : 'Use space to select the environment'
-        },
-      }
-    )
-  }
-
   /**
    * Run command
    */
   public async run() {
-    const environments =
-      typeof this.environment === 'string'
-        ? (this.environment as string).split(',')
-        : this.environment
-
     /**
-     * Show error when defined environments are invalid
+     * Ensure the environments are valid when provided via flag
      */
-    if (!this.validateEnvironments(environments)) {
+    if (this.environment && this.environment.length && !this.isValidEnviroment(this.environment)) {
       this.logger.error(
-        `Invalid environments "${environments}". Only "${this.allowedEnvironments}" are allowed`
+        `Invalid environment(s) "${this.environment}". Only "${ALLOWED_ENVIRONMENTS}" are allowed`
       )
       return
+    }
+
+    let environments: string[] = this.environment
+
+    /**
+     * Prompt user to select one or more environments
+     */
+    if (!environments) {
+      environments = await this.prompt.multiple(
+        'Select the environment(s) in which you want to load this file',
+        [
+          {
+            name: 'all',
+            message: 'Load file in all environments',
+          },
+          {
+            name: 'console',
+            message: 'Environment for ace commands',
+          },
+          {
+            name: 'repl',
+            message: 'Environment for the REPL session',
+          },
+          {
+            name: 'web',
+            message: 'Environment for HTTP requests',
+          },
+          {
+            name: 'test',
+            message: 'Environment for the test process',
+          },
+        ]
+      )
     }
 
     /**
@@ -131,10 +129,13 @@ export default class MakePreloadFile extends BaseGenerator {
     const relativePath = file.toJSON().relativepath
     const rcFile = new files.AdonisRcFile(this.application.appRoot)
 
-    if (environments && environments.length) {
-      rcFile.setPreload(`./${slash(relativePath).replace(extname(relativePath), '')}`, environments)
-    } else {
+    if (!environments || !environments.length || environments.includes('all')) {
       rcFile.setPreload(`./${slash(relativePath).replace(extname(relativePath), '')}`)
+    } else {
+      rcFile.setPreload(
+        `./${slash(relativePath).replace(extname(relativePath), '')}`,
+        environments as AppEnvironments[]
+      )
     }
 
     rcFile.commit()

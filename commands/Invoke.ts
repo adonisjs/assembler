@@ -8,7 +8,7 @@
  */
 
 import { join } from 'path'
-import { tasks, files, logger } from '@adonisjs/sink'
+import { tasks, files, logger, utils } from '@adonisjs/sink'
 import { BaseCommand, args } from '@adonisjs/core/build/standalone'
 
 import { Manifest } from '../src/Manifest'
@@ -30,6 +30,16 @@ export default class Configure extends BaseCommand {
     description: 'Name of the package(s) you want to configure',
   })
   public packages: string[]
+
+  /**
+   * Returns package manager for installing dependencies
+   */
+  private getPackageManager() {
+    if (process.env['ADONIS_CREATE_APP_CLIENT']) {
+      return process.env['ADONIS_CREATE_APP_CLIENT'] as 'yarn' | 'npm' | 'pnpm'
+    }
+    return utils.getPackageManager(this.application.appRoot)
+  }
 
   /**
    * Configure encore
@@ -62,6 +72,7 @@ export default class Configure extends BaseCommand {
      */
     const pkgFile = new files.PackageJsonFile(this.application.appRoot)
     pkgFile.install('@symfony/webpack-encore')
+    pkgFile.useClient(this.getPackageManager())
 
     const spinner = logger.await(logger.colors.gray('installing @symfony/webpack-encore'))
 
@@ -198,6 +209,7 @@ export default class Configure extends BaseCommand {
     const pkgFile = new files.PackageJsonFile(this.application.appRoot)
     pkgFile.install('@japa/runner')
     pkgFile.install('@japa/preset-adonis')
+    pkgFile.useClient(this.getPackageManager())
 
     const spinner = logger.await(logger.colors.gray('installing @japa/runner, @japa/preset-adonis'))
 

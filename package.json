@@ -100,7 +100,7 @@
     "@poppinss/chokidar-ts": "^3.3.5",
     "@poppinss/cliui": "^3.0.2",
     "@poppinss/utils": "^4.0.4",
-    "cpy": "^8.1.2",
+    "cpy": "^9.0.1",
     "emittery": "^0.11.0",
     "execa": "^5.1.1",
     "fs-extra": "^10.0.1",

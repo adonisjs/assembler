@@ -74,6 +74,12 @@ export default class Test extends BaseCommand {
   public tests: string[]
 
   /**
+   * Filter by group title
+   */
+  @flags.array({ description: 'Filter tests by group title' })
+  public groups: string[]
+
+  /**
    * Customize tests timeout
    */
   @flags.number({ description: 'Customize tests timeout' })
@@ -116,6 +122,10 @@ export default class Test extends BaseCommand {
 
     if (this.tests) {
       filters['--tests'] = this.tests
+    }
+
+    if (this.groups) {
+      filters['--groups'] = this.groups
     }
 
     return filters

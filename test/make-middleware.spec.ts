@@ -50,4 +50,32 @@ test.group('Make Middleware', (group) => {
       toNewlineArray(MiddlewareTemplate.replace('{{ filename }}', 'SpoofAccept'))
     )
   })
+
+  test('make a middleware inside a custom directory', async ({ assert }) => {
+    await fs.add(
+      '.adonisrc.json',
+      JSON.stringify({
+        namespaces: {
+          middleware: 'App/Module/Testing/Middleware',
+        },
+        autoloads: {
+          App: './app',
+        },
+      })
+    )
+
+    const rcContents = readJSONSync(join(fs.basePath, '.adonisrc.json'))
+    const app = new Application(fs.basePath, 'test', rcContents)
+
+    const middleware = new MakeMiddleware(app, new Kernel(app).mockConsoleOutput())
+    middleware.name = 'spoof_accept'
+    await middleware.run()
+
+    const SpoofMiddleware = await fs.get('app/Module/Testing/Middleware/SpoofAccept.ts')
+    const MiddlewareTemplate = await templates.get('middleware.txt')
+    assert.deepEqual(
+      toNewlineArray(SpoofMiddleware),
+      toNewlineArray(MiddlewareTemplate.replace('{{ filename }}', 'SpoofAccept'))
+    )
+  })
 })

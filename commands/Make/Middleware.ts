@@ -51,7 +51,7 @@ export default class MakeMiddleware extends BaseGenerator {
    * We can look into configuring it later.
    */
   protected getDestinationPath(): string {
-    return 'app/Middleware'
+    return this.getPathForNamespace('middleware') || 'app/Middleware'
   }
 
   public async run() {

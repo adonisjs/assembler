@@ -43,6 +43,15 @@ test.group('Configure Encore', (group) => {
       'utf-8'
     )
 
+    const pkgFile = await fs.get('package.json')
+    assert.properties(JSON.parse(pkgFile).devDependencies, [
+      '@babel/core',
+      '@babel/preset-env',
+      '@symfony/webpack-encore',
+      'webpack',
+      'webpack-cli',
+    ])
+
     assert.isTrue(envFile)
     assert.equal(envExampleFile.trim(), '// app entrypoint')
   })

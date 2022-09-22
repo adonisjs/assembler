@@ -72,13 +72,17 @@ export default class Configure extends BaseCommand {
      */
     const pkgFile = new files.PackageJsonFile(this.application.appRoot)
     pkgFile.install('@symfony/webpack-encore')
+    pkgFile.install('webpack')
+    pkgFile.install('webpack-cli')
+    pkgFile.install('@babel/core')
+    pkgFile.install('@babel/preset-env')
     pkgFile.useClient(this.getPackageManager())
 
-    const spinner = logger.await(logger.colors.gray('installing @symfony/webpack-encore'))
+    const spinner = logger.await(logger.colors.gray('configure @symfony/webpack-encore'))
 
     try {
       await pkgFile.commitAsync()
-      spinner.update('Installed')
+      spinner.update('Configured')
       spinner.stop()
     } catch (error) {
       spinner.update('Unable to install the package')

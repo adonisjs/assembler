@@ -96,7 +96,7 @@
     "@adonisjs/env": "^3.0.9",
     "@adonisjs/ioc-transformer": "^2.3.4",
     "@adonisjs/require-ts": "^2.0.13",
-    "@adonisjs/sink": "^5.4.0",
+    "@adonisjs/sink": "^5.4.1",
     "@poppinss/chokidar-ts": "^3.3.5",
     "@poppinss/cliui": "^3.0.2",
     "@poppinss/utils": "^5.0.0",

@@ -165,7 +165,7 @@ export class TestsServer {
      * is mentioned
      */
     if (filePath) {
-      filters['--files'] = [filePath]
+      filters['--files'] = [filePath.replace(/\\/g, '/')]
     }
 
     this.busy = true

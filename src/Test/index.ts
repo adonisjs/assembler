@@ -129,7 +129,7 @@ export class TestsServer {
    * for the HTTP server
    */
   private async getEnvironmentVariables() {
-    const envParser = new EnvParser('.env.test')
+    const envParser = new EnvParser()
     await envParser.parse(this.appRoot)
 
     const envOptions = envParser.asEnvObject(['PORT', 'TZ', 'HOST'])

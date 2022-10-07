@@ -7,9 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import { join } from 'path'
-import { readFile } from 'fs-extra'
-import { EnvParser as Parser } from '@adonisjs/env'
+import { EnvParser as Parser, envLoader } from '@adonisjs/env'
 
 /**
  * Parses the env file inside the project root.
@@ -17,17 +15,16 @@ import { EnvParser as Parser } from '@adonisjs/env'
 export class EnvParser {
   private envContents: any = {}
 
-  private parser = new Parser(false)
-
-  constructor(private envFileName: string = '.env') {}
+  constructor() {}
 
   /**
    * Parse .env file contents
    */
   public async parse(rootDir: string) {
-    try {
-      this.envContents = this.parser.parse(await readFile(join(rootDir, this.envFileName), 'utf-8'))
-    } catch {}
+    const { envContents, testEnvContent } = envLoader(rootDir)
+    const envVars = new Parser(true).parse(envContents)
+    const testEnvVars = new Parser(true).parse(testEnvContent)
+    this.envContents = { ...envVars, ...testEnvVars }
   }
 
   /**

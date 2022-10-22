@@ -57,29 +57,25 @@ export default class Serve extends BaseCommand {
   /**
    * Arguments to pass to the `encore` binary
    */
-  @flags.array({ description: 'CLI options to pass to the encore command line' })
-  public encoreArgs: string[] = []
+  @flags.array({ description: 'CLI options to pass to the assets bundler command line' })
+  public assetsBundlerArgs: string[] = []
 
   public async run() {
     const { DevServer } = await import('../src/DevServer')
 
     try {
+      const devServer = new DevServer(
+        this.application,
+        this.nodeArgs,
+        this.assetsBundlerArgs,
+        this.assets,
+        this.logger
+      )
+
       if (this.watch) {
-        await new DevServer(
-          this.application.appRoot,
-          this.nodeArgs,
-          this.encoreArgs,
-          this.assets,
-          this.logger
-        ).watch(this.poll)
+        await devServer.watch(this.poll)
       } else {
-        await new DevServer(
-          this.application.appRoot,
-          this.nodeArgs,
-          this.encoreArgs,
-          this.assets,
-          this.logger
-        ).start()
+        await devServer.start()
       }
     } catch (error) {
       this.logger.fatal(error)

@@ -33,7 +33,7 @@ export default class TypeCheck extends BaseCommand {
     const { Compiler } = await import('../src/Compiler')
 
     try {
-      const compiler = new Compiler(this.application.appRoot, [], false, this.logger, this.tsconfig)
+      const compiler = new Compiler(this.application, [], false, this.logger, this.tsconfig)
       const success = await compiler.typeCheck()
 
       /**

@@ -18,7 +18,9 @@ import { EnvParser } from '../EnvParser'
 import { HttpServer } from '../HttpServer'
 
 import { ENV_FILES, SERVER_ENTRY_FILE } from '../../config/paths'
-import { AssetsBundler, DevServerResponse } from '../AssetsBundler'
+import { AssetsBundlerManager } from '../Assets/AssetsBundlerManager'
+import { ApplicationContract } from '@ioc:Adonis/Core/Application'
+import { DevServerResponse } from '../Assets/Drivers/BaseDriver'
 
 /**
  * Exposes the API to watch project for compilition changes.
@@ -39,7 +41,7 @@ export class DevServer {
   /**
    * Encore dev server host
    */
-  private encoreDevServerResponse: DevServerResponse
+  private assetsBundlerDevServerResponse: DevServerResponse
 
   /**
    * A boolean to know if we are watching for filesystem
@@ -54,27 +56,27 @@ export class DevServer {
   /**
    * Reference to the typescript compiler
    */
-  private ts = new Ts(this.appRoot, this.logger)
+  private ts = new Ts(this.application.appRoot, this.logger)
 
   /**
    * Reference to the RCFile
    */
-  private rcFile = new RcFile(this.appRoot)
+  private rcFile = new RcFile(this.application.appRoot)
 
   /**
    * Manifest instance to generate ace manifest file
    */
-  private manifest = new Manifest(this.appRoot, this.logger)
+  private manifest = new Manifest(this.application.appRoot, this.logger)
 
   /**
    * Require-ts watch helpers
    */
-  private watchHelpers = getWatcherHelpers(this.appRoot)
+  private watchHelpers = getWatcherHelpers(this.application.appRoot)
 
   constructor(
-    private appRoot: string,
+    private application: ApplicationContract,
     private nodeArgs: string[] = [],
-    private encoreArgs: string[],
+    private assetsBundlerArgs: string[],
     private buildAssets: boolean,
     private logger: typeof uiLogger = uiLogger
   ) {}
@@ -90,17 +92,13 @@ export class DevServer {
   /**
    * Create the http server
    */
-  private async createHttpServer() {
+  private async createHttpServer(env: Record<string, string>) {
     if (this.httpServer) {
       return
     }
 
-    const envParser = new EnvParser()
-    await envParser.parse(this.appRoot)
-
-    const envOptions = envParser.asEnvObject(['PORT', 'TZ', 'HOST'])
-    const HOST = process.env.HOST || envOptions.HOST || '0.0.0.0'
-    let PORT = process.env.PORT || envOptions.PORT || '3333'
+    const HOST = process.env.HOST || env.HOST || '0.0.0.0'
+    let PORT = process.env.PORT || env.PORT || '3333'
 
     /**
      * Obtains a random port by giving preference to the one defined inside
@@ -117,11 +115,17 @@ export class DevServer {
       )
     }
 
-    this.httpServer = new HttpServer(SERVER_ENTRY_FILE, this.appRoot, this.nodeArgs, this.logger, {
-      PORT,
-      HOST,
-      TZ: envOptions.TZ,
-    })
+    this.httpServer = new HttpServer(
+      SERVER_ENTRY_FILE,
+      this.application.appRoot,
+      this.nodeArgs,
+      this.logger,
+      {
+        PORT,
+        HOST,
+        TZ: env.TZ,
+      }
+    )
   }
 
   /**
@@ -155,10 +159,10 @@ export class DevServer {
     /**
      * Running the encore dev server
      */
-    if (this.encoreDevServerResponse.state === 'running') {
+    if (this.assetsBundlerDevServerResponse.state === 'running') {
       stickerInstance.add(
-        `Encore server address: ${this.logger.colors.cyan(
-          `http://${this.encoreDevServerResponse.host}:${this.encoreDevServerResponse.port}`
+        `Assets bundler address: ${this.logger.colors.cyan(
+          `http://${this.assetsBundlerDevServerResponse.host}:${this.assetsBundlerDevServerResponse.port}`
         )}`
       )
     }
@@ -177,9 +181,16 @@ export class DevServer {
     this.logger.info('building project...')
 
     /**
+     * Parse some environment variables
+     */
+    const env = new EnvParser()
+      .parse(this.application.appRoot)
+      .asEnvObject(['PORT', 'TZ', 'HOST', 'ASSETS_DRIVER'])
+
+    /**
      * Start the HTTP server right away
      */
-    await this.createHttpServer()
+    await this.createHttpServer(env)
     this.httpServer.start()
 
     /**
@@ -198,12 +209,18 @@ export class DevServer {
       this.renderServerIsReady()
     })
 
-    const encore = new AssetsBundler(this.appRoot, this.encoreArgs, this.buildAssets, this.logger)
-    encore.on('exit', ({ code }) => {
+    const manager = new AssetsBundlerManager(
+      this.application,
+      this.assetsBundlerArgs,
+      this.logger,
+      env.ASSETS_DRIVER
+    )
+
+    manager.driver.on('exit', ({ code }) => {
       this.logger.warning(`Underlying encore dev server died with "${code} code"`)
     })
 
-    this.encoreDevServerResponse = await encore.startDevServer()
+    this.assetsBundlerDevServerResponse = await manager.startDevServer()
   }
 
   /**
@@ -294,6 +311,15 @@ export class DevServer {
        */
       if (this.rcFile.isCommandsPath(relativePath)) {
         this.manifest.generate()
+      }
+
+      // TODO: If a .ts file in the resources/js folder is changed,
+      // The whole server is restarted. This is not ideal.
+      // Not sure how to approach this yet. First idea was to
+      // use .adonisrc.metaFile but seems a bit hacky.
+      // This kind of hardcoded condition also seems hacky.
+      if (relativePath.includes('resources')) {
+        return
       }
 
       this.httpServer.restart()

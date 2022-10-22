@@ -19,7 +19,8 @@ import { Ts } from '../Ts'
 import { RcFile } from '../RcFile'
 import { Manifest } from '../Manifest'
 import { RCFILE_NAME } from '../../config/paths'
-import { AssetsBundler } from '../AssetsBundler'
+import { AssetsBundlerManager } from '../Assets/AssetsBundlerManager'
+import { ApplicationContract } from '@ioc:Adonis/Core/Application'
 
 /**
  * Exposes the API to build the AdonisJs project for development or
@@ -34,16 +35,16 @@ export class Compiler {
   /**
    * Reference to rc File
    */
-  private rcFile = new RcFile(this.appRoot)
+  private rcFile = new RcFile(this.application.appRoot)
 
   constructor(
-    public appRoot: string,
-    private encoreArgs: string[],
+    public application: ApplicationContract,
+    private assetsBundlerArgs: string[],
     private buildAssets: boolean,
     private logger: typeof uiLogger = uiLogger,
     tsconfig?: string
   ) {
-    this.ts = new Ts(this.appRoot, this.logger, tsconfig)
+    this.ts = new Ts(this.application.appRoot, this.logger, tsconfig)
     this.ts.tsCompiler.use(() => {
       return iocTransformer(this.ts.tsCompiler.ts, this.rcFile.application.rcFile)
     }, 'after')
@@ -54,7 +55,7 @@ export class Compiler {
    * display only
    */
   private getRelativeUnixPath(absPath: string): string {
-    return slash(relative(this.appRoot, absPath))
+    return slash(relative(this.application.appRoot, absPath))
   }
 
   /**
@@ -108,7 +109,7 @@ export class Compiler {
    */
   private async copyFiles(files: string[], outDir: string) {
     try {
-      await copyfiles(files, outDir, { cwd: this.appRoot, parents: true })
+      await copyfiles(files, outDir, { cwd: this.application.appRoot, parents: true })
     } catch (error) {
       if (!error.message.includes("the file doesn't exist")) {
         throw error
@@ -191,20 +192,23 @@ export class Compiler {
     }
 
     /**
-     * Bundle frontend assets when encore is installed
+     * Bundle frontend assets
      */
-    const encore = await new AssetsBundler(
-      this.appRoot,
-      this.encoreArgs,
-      this.buildAssets,
-      this.logger
-    ).build()
 
-    /**
-     * Skipped, coz of frontend errors
-     */
-    if (encore.hasErrors) {
-      return false
+    if (this.buildAssets) {
+      const manager = new AssetsBundlerManager(
+        this.application,
+        this.assetsBundlerArgs,
+        this.logger
+      )
+      const buildResult = await manager.build('dev')
+
+      /**
+       * Skipped, coz of frontend errors
+       */
+      if (buildResult.hasErrors) {
+        return false
+      }
     }
 
     /**
@@ -274,21 +278,20 @@ export class Compiler {
       return false
     }
 
-    /**
-     * Bundle frontend assets when encore is installed
-     */
-    const encore = await new AssetsBundler(
-      this.appRoot,
-      this.encoreArgs,
-      this.buildAssets,
-      this.logger
-    ).buildForProduction()
+    if (this.buildAssets) {
+      const manager = new AssetsBundlerManager(
+        this.application,
+        this.assetsBundlerArgs,
+        this.logger
+      )
+      const buildResult = await manager.build('production')
 
-    /**
-     * Skipped, coz of frontend errors
-     */
-    if (encore.hasErrors) {
-      return false
+      /**
+       * Skipped, coz of frontend errors
+       */
+      if (buildResult.hasErrors) {
+        return false
+      }
     }
 
     const pkgFiles =

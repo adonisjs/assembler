@@ -1,0 +1,13 @@
+import { defineConfig } from 'vite'
+import adonis from '@adonisjs/vite-plugin-adonis'
+
+export default defineConfig({
+  plugins: [
+    adonis({
+      entryPoints: [
+        'resources/js/app.ts',
+        'resources/css/app.css'
+      ],
+    }),
+  ],
+})

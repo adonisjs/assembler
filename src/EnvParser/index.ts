@@ -20,11 +20,13 @@ export class EnvParser {
   /**
    * Parse .env file contents
    */
-  public async parse(rootDir: string) {
+  public parse(rootDir: string) {
     const { envContents, testEnvContent } = envLoader(rootDir)
     const envVars = new Parser(true).parse(envContents)
     const testEnvVars = new Parser(true).parse(testEnvContent)
     this.envContents = { ...envVars, ...testEnvVars }
+
+    return this
   }
 
   /**

@@ -8,10 +8,12 @@
  */
 
 import { join } from 'path'
-import { tasks, files, logger, utils } from '@adonisjs/sink'
+import { tasks, files, logger } from '@adonisjs/sink'
 import { BaseCommand, args } from '@adonisjs/core/build/standalone'
 
 import { Manifest } from '../src/Manifest'
+import { getPackageManager } from '../src/utils'
+import { AssetsBundlerManager } from '../src/Assets/AssetsBundlerManager'
 
 /**
  * Configure a package
@@ -32,63 +34,11 @@ export default class Configure extends BaseCommand {
   public packages: string[]
 
   /**
-   * Returns package manager for installing dependencies
+   * Configure assets bundler
    */
-  private getPackageManager() {
-    if (process.env['ADONIS_CREATE_APP_CLIENT']) {
-      return process.env['ADONIS_CREATE_APP_CLIENT'] as 'yarn' | 'npm' | 'pnpm'
-    }
-    return utils.getPackageManager(this.application.appRoot)
-  }
-
-  /**
-   * Configure encore
-   */
-  private async configureEncore() {
-    /**
-     * Create the webpack config file
-     */
-    const webpackConfigFile = new files.MustacheFile(
-      this.application.appRoot,
-      'webpack.config.js',
-      join(__dirname, '..', 'templates/webpack.config.txt')
-    )
-    if (!webpackConfigFile.exists()) {
-      webpackConfigFile.apply({}).commit()
-      logger.action('create').succeeded('webpack.config.js')
-    }
-
-    /**
-     * Create app.js entrypoint
-     */
-    const entryPointFile = new files.NewLineFile(this.application.appRoot, 'resources/js/app.js')
-    if (!entryPointFile.exists()) {
-      entryPointFile.add('// app entrypoint').commit()
-      logger.action('create').succeeded('resources/js/app.js')
-    }
-
-    /**
-     * Install Encore
-     */
-    const pkgFile = new files.PackageJsonFile(this.application.appRoot)
-    pkgFile.install('@symfony/webpack-encore')
-    pkgFile.install('webpack')
-    pkgFile.install('webpack-cli')
-    pkgFile.install('@babel/core')
-    pkgFile.install('@babel/preset-env')
-    pkgFile.useClient(this.getPackageManager())
-
-    const spinner = logger.await(logger.colors.gray('configure @symfony/webpack-encore'))
-
-    try {
-      await pkgFile.commitAsync()
-      spinner.update('Configured')
-      spinner.stop()
-    } catch (error) {
-      spinner.update('Unable to install the package')
-      spinner.stop()
-      logger.fatal(error)
-    }
+  private async configureAssetsBundler() {
+    const manager = new AssetsBundlerManager(this.application)
+    return manager.configure()
   }
 
   /**
@@ -213,7 +163,7 @@ export default class Configure extends BaseCommand {
     const pkgFile = new files.PackageJsonFile(this.application.appRoot)
     pkgFile.install('@japa/runner')
     pkgFile.install('@japa/preset-adonis')
-    pkgFile.useClient(this.getPackageManager())
+    pkgFile.useClient(getPackageManager(this.application))
 
     const spinner = logger.await(logger.colors.gray('installing @japa/runner, @japa/preset-adonis'))
 
@@ -232,8 +182,8 @@ export default class Configure extends BaseCommand {
    * Configure a give package
    */
   private async configurePackage(name: string) {
-    if (name === 'encore') {
-      await this.configureEncore()
+    if (name === 'encore' || name === 'vite') {
+      await this.configureAssetsBundler()
       return
     }
 

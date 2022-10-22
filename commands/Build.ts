@@ -88,7 +88,7 @@ export default class Build extends BaseCommand {
 
     try {
       const compiler = new Compiler(
-        this.application.appRoot,
+        this.application,
         this.encoreArgs,
         this.assets,
         this.logger,

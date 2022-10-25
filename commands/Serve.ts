@@ -56,11 +56,27 @@ export default class Serve extends BaseCommand {
 
   /**
    * Arguments to pass to the `encore` binary
+   *
+   * @deprecated
+   */
+  @flags.array({ description: 'CLI options to pass to the encore command line' })
+  public encoreArgs: string[] = []
+
+  /**
+   * Arguments to pass to the assets bundler binary
    */
   @flags.array({ description: 'CLI options to pass to the assets bundler command line' })
   public assetsBundlerArgs: string[] = []
 
   public async run() {
+    if (this.encoreArgs) {
+      this.logger.warning(
+        'The "--encore-args" flag is deprecated. Use "--assets-bundler-args" instead.'
+      )
+
+      this.assetsBundlerArgs = this.encoreArgs
+    }
+
     const { DevServer } = await import('../src/DevServer')
 
     try {

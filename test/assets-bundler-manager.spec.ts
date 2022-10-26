@@ -9,8 +9,6 @@ const fs = new Filesystem(join(__dirname, '__app'))
 test.group('Assets Bundler Manage', (group) => {
   group.each.teardown(() => fs.cleanup())
 
-  group.tap((t) => t.pin())
-
   test('Should throw if cant detect bundler', async ({ assert }) => {
     assert.plan(1)
     const app = new Application(fs.basePath, 'test', {})

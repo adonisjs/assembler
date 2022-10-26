@@ -32,11 +32,7 @@ export abstract class BaseAssetsBundlerDriver extends Emittery {
     localDir: this.application.appRoot,
     cwd: this.application.appRoot,
     windowsHide: false,
-    env: {
-      FORCE_COLOR: 'true',
-      // TODO/ add this.env
-      // ...this.env,
-    },
+    env: { FORCE_COLOR: 'true' },
   }
 
   constructor(

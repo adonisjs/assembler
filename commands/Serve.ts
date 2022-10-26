@@ -69,7 +69,7 @@ export default class Serve extends BaseCommand {
   public assetsBundlerArgs: string[] = []
 
   public async run() {
-    if (this.encoreArgs) {
+    if (this.encoreArgs.length) {
       this.logger.warning(
         'The "--encore-args" flag is deprecated. Use "--assets-bundler-args" instead.'
       )

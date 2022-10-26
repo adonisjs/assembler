@@ -92,10 +92,12 @@ export class DevServer {
   /**
    * Create the http server
    */
-  private async createHttpServer(env: Record<string, string>) {
+  private async createHttpServer() {
     if (this.httpServer) {
       return
     }
+
+    const env = new EnvParser().parse(this.application.appRoot).asEnvObject(['PORT', 'TZ', 'HOST'])
 
     const HOST = process.env.HOST || env.HOST || '0.0.0.0'
     let PORT = process.env.PORT || env.PORT || '3333'
@@ -181,16 +183,9 @@ export class DevServer {
     this.logger.info('building project...')
 
     /**
-     * Parse some environment variables
-     */
-    const env = new EnvParser()
-      .parse(this.application.appRoot)
-      .asEnvObject(['PORT', 'TZ', 'HOST', 'ASSETS_DRIVER'])
-
-    /**
      * Start the HTTP server right away
      */
-    await this.createHttpServer(env)
+    await this.createHttpServer()
     this.httpServer.start()
 
     /**
@@ -209,13 +204,7 @@ export class DevServer {
       this.renderServerIsReady()
     })
 
-    const manager = new AssetsBundlerManager(
-      this.application,
-      this.assetsBundlerArgs,
-      this.logger,
-      env.ASSETS_DRIVER
-    )
-
+    const manager = new AssetsBundlerManager(this.application, this.assetsBundlerArgs, this.logger)
     manager.driver.on('exit', ({ code }) => {
       this.logger.warning(`Underlying encore dev server died with "${code} code"`)
     })
@@ -311,15 +300,6 @@ export class DevServer {
        */
       if (this.rcFile.isCommandsPath(relativePath)) {
         this.manifest.generate()
-      }
-
-      // TODO: If a .ts file in the resources/js folder is changed,
-      // The whole server is restarted. This is not ideal.
-      // Not sure how to approach this yet. First idea was to
-      // use .adonisrc.metaFile but seems a bit hacky.
-      // This kind of hardcoded condition also seems hacky.
-      if (relativePath.includes('resources')) {
-        return
       }
 
       this.httpServer.restart()

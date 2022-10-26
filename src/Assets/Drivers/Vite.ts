@@ -65,7 +65,7 @@ export class Vite extends BaseAssetsBundlerDriver {
     }
 
     const customHost = this.findCustomHost() || 'localhost'
-    const customPort = this.findCustomPort() || '5178'
+    const customPort = this.findCustomPort() || '5173'
 
     const childProcess = execa(this.binaryName, ['dev'].concat(this.bundlerArgs), this.execaOptions)
 

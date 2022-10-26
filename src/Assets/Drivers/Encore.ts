@@ -4,6 +4,8 @@ import execa from 'execa'
 import getPort from 'get-port'
 
 export class Encore extends BaseAssetsBundlerDriver {
+  public name = 'encore'
+
   private configurer = new EncoreConfigurer(this.application)
 
   /**

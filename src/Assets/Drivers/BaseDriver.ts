@@ -15,12 +15,20 @@ export type DevServerResponse =
     }
 
 export abstract class BaseAssetsBundlerDriver extends Emittery {
+  /**
+   * Arguments to pass to the binary
+   */
   protected bundlerArgs: string[] = []
 
   /**
    * Binary to execute
    */
   protected abstract binaryName: string
+
+  /**
+   * Name of the driver
+   */
+  public abstract name: string
 
   /**
    * Options passed to spawn a child process

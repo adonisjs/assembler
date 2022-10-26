@@ -3,6 +3,8 @@ import { BaseAssetsBundlerDriver, DevServerResponse } from './BaseDriver'
 import { ViteConfigurer } from './ViteConfigurer'
 
 export class Vite extends BaseAssetsBundlerDriver {
+  public name = 'vite'
+
   private configurer = new ViteConfigurer(this.application)
 
   /**

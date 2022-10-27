@@ -13,18 +13,6 @@ export class Vite extends BaseAssetsBundlerDriver {
   protected binaryName = 'vite'
 
   /**
-   * Notify user that we are about to use vite
-   */
-  private notifyAboutVite() {
-    this.logger.info(`detected { ${this.logger.colors.dim().yellow('vite')} }`)
-    this.logger.info(
-      `building frontend assets. Use { ${this.logger.colors
-        .dim()
-        .yellow('--no-assets')} } to disable`
-    )
-  }
-
-  /**
    * Check if vite is installed
    */
   private isViteInstalled() {

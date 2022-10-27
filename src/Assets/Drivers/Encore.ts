@@ -14,18 +14,6 @@ export class Encore extends BaseAssetsBundlerDriver {
   protected binaryName = 'encore'
 
   /**
-   * Notify user that we are about to use encore
-   */
-  private notifyAboutEncore() {
-    this.logger.info(`detected { ${this.logger.colors.dim().yellow('@symfony/webpack-encore')} }`)
-    this.logger.info(
-      `building frontend assets. Use { ${this.logger.colors
-        .dim()
-        .yellow('--no-assets')} } to disable`
-    )
-  }
-
-  /**
    * Check if webpack encore is installed
    */
   private isEncoreInstalled() {
@@ -46,8 +34,6 @@ export class Encore extends BaseAssetsBundlerDriver {
     if (!this.isEncoreInstalled()) {
       return { hasErrors: false }
     }
-
-    this.notifyAboutEncore()
 
     try {
       await this.exec(([env] as string[]).concat(this.bundlerArgs))

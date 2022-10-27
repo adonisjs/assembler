@@ -1,13 +1,63 @@
 import { defineConfig } from 'vite'
-import adonis from '@adonisjs/vite-plugin-adonis'
+import Adonis from '@adonisjs/vite-plugin-adonis'
+// import Vue from '@vitejs/plugin-vue'
+// import React from '@vitejs/plugin-react'
 
-export default defineConfig({
+export default defineConfig(({}) => ({
   plugins: [
-    adonis({
-      entryPoints: [
-        'resources/js/app.ts',
-        'resources/css/app.css'
-      ],
+    Adonis({
+      /*
+      |--------------------------------------------------------------------------
+      | Output path
+      |--------------------------------------------------------------------------
+      |
+      | The output path for writing the compiled files. It should always
+      | be inside the public directory, so that AdonisJS can serve it.
+      |
+      */
+      outputPath: 'public/assets',
+
+      /*
+      |--------------------------------------------------------------------------
+      | Public URI
+      |--------------------------------------------------------------------------
+      |
+      | The public URI to access the static files. It should always be
+      | relative from the "public" directory.
+      |
+      */
+      publicPath: '/assets',
+
+      /*
+      |--------------------------------------------------------------------------
+      | Entrypoints
+      |--------------------------------------------------------------------------
+      |
+      | Entrypoints are script files that boots your frontend application. Ideally
+      | a single entrypoint is used by majority of applications. However, feel
+      | free to add more (if required).
+      |
+      | Also, make sure to read the docs on "Assets bundler" to learn more about
+      | entrypoints.
+      |
+      */
+      entryPoints: {
+        app: ['resources/js/app.ts', 'resources/css/app.css'],
+      },
     }),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Enable Vue/React Plugin
+    |--------------------------------------------------------------------------
+    |
+    | Uncomment the following lines of code to enable support for Vue or React.
+    | Also make sure to install the required dependencies.
+    |
+    | If you are using React, you will also need the @viteReactRefresh tag.
+    | Check the docs for more information.
+    */
+    // Vue(),
+    // React(),
   ],
-})
+}))

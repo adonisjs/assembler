@@ -71,12 +71,12 @@ export default class Configure extends BaseCommand {
      * Install Encore
      */
     const pkgFile = new files.PackageJsonFile(this.application.appRoot)
-    pkgFile.install('@symfony/webpack-encore')
-    pkgFile.install('webpack')
-    pkgFile.install('webpack-cli')
-    pkgFile.install('@babel/core')
-    pkgFile.install('@babel/preset-env')
-    pkgFile.useClient(this.getPackageManager())
+    pkgFile.install('@symfony/webpack-encore@4.1.1');
+    pkgFile.install('webpack@5.72');
+    pkgFile.install('webpack-cli@4.9.1');
+    pkgFile.install('@babel/core@7.17.0');
+    pkgFile.install('@babel/preset-env@7.16.0');
+pkgFile.useClient(this.getPackageManager())
 
     const spinner = logger.await(logger.colors.gray('configure @symfony/webpack-encore'))
 

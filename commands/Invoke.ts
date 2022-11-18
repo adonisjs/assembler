@@ -71,21 +71,25 @@ export default class Configure extends BaseCommand {
      * Install Encore
      */
     const pkgFile = new files.PackageJsonFile(this.application.appRoot)
-    pkgFile.install('@symfony/webpack-encore@4.1.1');
-    pkgFile.install('webpack@5.72');
-    pkgFile.install('webpack-cli@4.9.1');
-    pkgFile.install('@babel/core@7.17.0');
-    pkgFile.install('@babel/preset-env@7.16.0');
-pkgFile.useClient(this.getPackageManager())
+    pkgFile.install('@symfony/webpack-encore@4.1.1')
+    pkgFile.install('webpack@5.72')
+    pkgFile.install('webpack-cli@4.9.1')
+    pkgFile.install('@babel/core@7.17.0')
+    pkgFile.install('@babel/preset-env@7.16.0')
+    pkgFile.useClient(this.getPackageManager())
 
     const spinner = logger.await(logger.colors.gray('configure @symfony/webpack-encore'))
 
     try {
-      await pkgFile.commitAsync()
-      spinner.update('Configured')
-      spinner.stop()
+      const response = await pkgFile.commitAsync()
+      if (response && response.status === 1) {
+        spinner.stop()
+        logger.fatal({ message: 'Unable to configure encore', stack: response.stderr.toString() })
+      } else {
+        spinner.stop()
+        logger.success('Configured encore successfully')
+      }
     } catch (error) {
-      spinner.update('Unable to install the package')
       spinner.stop()
       logger.fatal(error)
     }
@@ -218,11 +222,18 @@ pkgFile.useClient(this.getPackageManager())
     const spinner = logger.await(logger.colors.gray('installing @japa/runner, @japa/preset-adonis'))
 
     try {
-      await pkgFile.commitAsync()
-      spinner.update('Installed')
-      spinner.stop()
+      const response = await pkgFile.commitAsync()
+      if (response && response.status === 1) {
+        spinner.stop()
+        logger.fatal({
+          message: 'Unable to configure tests runner',
+          stack: response.stderr.toString(),
+        })
+      } else {
+        spinner.stop()
+        logger.success('Configured tests runner successfully')
+      }
     } catch (error) {
-      spinner.update('Unable to install packages')
       spinner.stop()
       logger.fatal(error)
     }

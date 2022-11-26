@@ -66,11 +66,12 @@ export class AssetsBundlerManager {
       return 'vite'
     }
 
-    throw new Exception(
-      'Unable to detect assets bundler. Please install Encore or Vite and configure it in .adonisrc.json',
-      500,
-      'E_UNABLE_TO_DETECT_ASSETS_BUNDLER'
-    )
+    /**
+     * TODO: We may throw an exception here for the next major version. But for now,
+     * let's just assume that the user is using Encore for keeping things backward
+     * compatible
+     */
+    return 'encore'
   }
 
   /**

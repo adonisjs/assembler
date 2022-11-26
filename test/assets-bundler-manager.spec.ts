@@ -9,17 +9,6 @@ const fs = new Filesystem(join(__dirname, '__app'))
 test.group('Assets Bundler Manage', (group) => {
   group.each.teardown(() => fs.cleanup())
 
-  test('Should throw if cant detect bundler', async ({ assert }) => {
-    assert.plan(1)
-    const app = new Application(fs.basePath, 'test', {})
-
-    try {
-      new AssetsBundlerManager(app)
-    } catch (err) {
-      assert.deepEqual(err.code, 'E_UNABLE_TO_DETECT_ASSETS_BUNDLER')
-    }
-  })
-
   test('Should pick the one defined in RC file', async ({ assert }) => {
     const app = new Application(fs.basePath, 'test', {})
     app.rcFile.assetsDriver = 'vite'

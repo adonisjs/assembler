@@ -204,7 +204,16 @@ export class DevServer {
       this.renderServerIsReady()
     })
 
-    const manager = new AssetsBundlerManager(this.application, this.assetsBundlerArgs, this.logger)
+    /**
+     * Start the assets bundler dev server
+     */
+    const manager = new AssetsBundlerManager(
+      this.application,
+      this.assetsBundlerArgs,
+      this.buildAssets,
+      this.logger
+    )
+
     manager.driver.on('exit', ({ code }) => {
       this.logger.warning(`Underlying assets bundler dev server died with "${code} code"`)
     })

@@ -24,6 +24,7 @@ export class AssetsBundlerManager {
   constructor(
     public application: ApplicationContract,
     private assetsBundlerArgs: string[] = [],
+    private buildAssets = true,
     private logger: typeof uiLogger = uiLogger,
     driverName?: 'vite' | 'encore'
   ) {
@@ -83,6 +84,10 @@ export class AssetsBundlerManager {
    * Build the assets either for production or development
    */
   public async build(env: 'production' | 'dev') {
+    if (!this.buildAssets) {
+      return { hasErrors: false }
+    }
+
     return this.driver.build(env)
   }
 
@@ -90,6 +95,11 @@ export class AssetsBundlerManager {
    * Start the assets bundler dev server
    */
   public async startDevServer() {
+    console.log('start dev server')
+    if (!this.buildAssets) {
+      return { state: 'no-assets' as const }
+    }
+
     return this.driver.startDevServer()
   }
 }

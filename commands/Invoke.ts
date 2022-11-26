@@ -37,7 +37,7 @@ export default class Configure extends BaseCommand {
    * Configure assets bundler
    */
   private async configureAssetsBundler(name: 'vite' | 'encore') {
-    const manager = new AssetsBundlerManager(this.application, [], this.logger, name)
+    const manager = new AssetsBundlerManager(this.application, [], false, this.logger, name)
     return manager.configure()
   }
 

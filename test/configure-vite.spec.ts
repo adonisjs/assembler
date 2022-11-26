@@ -48,6 +48,5 @@ test.group('Configure Vite', (group) => {
 
     assert.isTrue(envFile)
     assert.equal(envExampleFile.trim(), '// app entrypoint')
-  })
-    .timeout(0)
+  }).timeout(0)
 })

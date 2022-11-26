@@ -194,21 +194,19 @@ export class Compiler {
     /**
      * Bundle frontend assets
      */
+    const manager = new AssetsBundlerManager(
+      this.application,
+      this.assetsBundlerArgs,
+      this.buildAssets,
+      this.logger
+    )
+    const buildResult = await manager.build('dev')
 
-    if (this.buildAssets) {
-      const manager = new AssetsBundlerManager(
-        this.application,
-        this.assetsBundlerArgs,
-        this.logger
-      )
-      const buildResult = await manager.build('dev')
-
-      /**
-       * Skipped, coz of frontend errors
-       */
-      if (buildResult.hasErrors) {
-        return false
-      }
+    /**
+     * Skipped, coz of frontend errors
+     */
+    if (buildResult.hasErrors) {
+      return false
     }
 
     /**
@@ -278,20 +276,22 @@ export class Compiler {
       return false
     }
 
-    if (this.buildAssets) {
-      const manager = new AssetsBundlerManager(
-        this.application,
-        this.assetsBundlerArgs,
-        this.logger
-      )
-      const buildResult = await manager.build('production')
+    /**
+     * Bundle frontend assets for production
+     */
+    const manager = new AssetsBundlerManager(
+      this.application,
+      this.assetsBundlerArgs,
+      this.buildAssets,
+      this.logger
+    )
+    const buildResult = await manager.build('production')
 
-      /**
-       * Skipped, coz of frontend errors
-       */
-      if (buildResult.hasErrors) {
-        return false
-      }
+    /**
+     * Skipped, coz of frontend errors
+     */
+    if (buildResult.hasErrors) {
+      return false
     }
 
     const pkgFiles =

@@ -34,8 +34,6 @@ export class Vite extends BaseAssetsBundlerDriver {
       return { hasErrors: false }
     }
 
-    this.notifyAboutVite()
-
     try {
       const command = env === 'dev' ? 'dev' : 'build'
 

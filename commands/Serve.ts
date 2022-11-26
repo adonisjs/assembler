@@ -26,7 +26,7 @@ export default class Serve extends BaseCommand {
    * Bundle frontend assets. Defaults to true
    */
   @flags.boolean({
-    description: 'Start webpack dev server when encore is installed. Use "--no-assets" to disable',
+    description: 'Start the assets bundler dev server when installed. Use "--no-assets" to disable',
   })
   public assets: boolean = true
 

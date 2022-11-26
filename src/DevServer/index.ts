@@ -39,7 +39,7 @@ export class DevServer {
   private serverHost?: string
 
   /**
-   * Encore dev server host
+   * Response from the assets bundler dev server
    */
   private assetsBundlerDevServerResponse: DevServerResponse
 
@@ -159,7 +159,7 @@ export class DevServer {
       )
 
     /**
-     * Running the encore dev server
+     * Running the assets dev server
      */
     if (this.assetsBundlerDevServerResponse.state === 'running') {
       stickerInstance.add(
@@ -206,7 +206,7 @@ export class DevServer {
 
     const manager = new AssetsBundlerManager(this.application, this.assetsBundlerArgs, this.logger)
     manager.driver.on('exit', ({ code }) => {
-      this.logger.warning(`Underlying encore dev server died with "${code} code"`)
+      this.logger.warning(`Underlying assets bundler dev server died with "${code} code"`)
     })
 
     this.assetsBundlerDevServerResponse = await manager.startDevServer()

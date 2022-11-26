@@ -50,5 +50,4 @@ test.group('Configure Vite', (group) => {
     assert.equal(envExampleFile.trim(), '// app entrypoint')
   })
     .timeout(0)
-    .skip(true, 'TODO: Will fail until @adonisjs/vite-plugin-adonis is published')
 })

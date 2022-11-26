@@ -168,11 +168,18 @@ export default class Configure extends BaseCommand {
     const spinner = logger.await(logger.colors.gray('installing @japa/runner, @japa/preset-adonis'))
 
     try {
-      await pkgFile.commitAsync()
-      spinner.update('Installed')
-      spinner.stop()
+      const response = await pkgFile.commitAsync()
+      if (response && response.status === 1) {
+        spinner.stop()
+        logger.fatal({
+          message: 'Unable to configure tests runner',
+          stack: response.stderr.toString(),
+        })
+      } else {
+        spinner.stop()
+        logger.success('Configured tests runner successfully')
+      }
     } catch (error) {
-      spinner.update('Unable to install packages')
       spinner.stop()
       logger.fatal(error)
     }

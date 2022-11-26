@@ -23,7 +23,7 @@ import { EnvParser } from '../EnvParser'
 import getPort from 'get-port'
 
 /**
- * Exposes the API to watch project for compilition changes and
+ * Exposes the API to watch project for compilation changes and
  * run/re-run tests
  */
 export class TestsServer {

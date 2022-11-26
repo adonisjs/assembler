@@ -34,18 +34,23 @@ export class EncoreConfigurer {
      */
     const pkgFile = new files.PackageJsonFile(this.application.appRoot)
     pkgFile.install('@symfony/webpack-encore')
-    pkgFile.install('webpack')
-    pkgFile.install('webpack-cli')
-    pkgFile.install('@babel/core')
-    pkgFile.install('@babel/preset-env')
+    pkgFile.install('webpack@^5.72')
+    pkgFile.install('webpack-cli@^4.9.1')
+    pkgFile.install('@babel/core@^7.17.0')
+    pkgFile.install('@babel/preset-env@^7.16.0')
     pkgFile.useClient(getPackageManager(this.application))
 
     const spinner = logger.await(logger.colors.gray('configure @symfony/webpack-encore'))
 
     try {
-      await pkgFile.commitAsync()
-      spinner.update('Configured')
-      spinner.stop()
+      const response = await pkgFile.commitAsync()
+      if (response && response.status === 1) {
+        spinner.stop()
+        logger.fatal({ message: 'Unable to configure encore', stack: response.stderr.toString() })
+      } else {
+        spinner.stop()
+        logger.success('Configured encore successfully')
+      }
     } catch (error) {
       spinner.update('Unable to install the package')
       spinner.stop()

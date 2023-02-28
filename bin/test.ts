@@ -1,7 +1,11 @@
 import { assert } from '@japa/assert'
+import { fileSystem } from '@japa/file-system'
 import { specReporter } from '@japa/spec-reporter'
 import { runFailedTests } from '@japa/run-failed-tests'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { processCliArgs, configure, run } from '@japa/runner'
+
+const TEST_TMP_DIR_PATH = fileURLToPath(new URL('../tmp', import.meta.url))
 
 /*
 |--------------------------------------------------------------------------
@@ -19,10 +23,10 @@ import { processCliArgs, configure, run } from '@japa/runner'
 configure({
   ...processCliArgs(process.argv.slice(2)),
   ...{
-    files: ['test/**/*.spec.ts'],
-    plugins: [assert(), runFailedTests()],
+    files: ['tests/**/*.spec.ts'],
+    plugins: [assert(), runFailedTests(), fileSystem({ basePath: TEST_TMP_DIR_PATH })],
     reporters: [specReporter()],
-    importer: (filePath: string) => import(filePath),
+    importer: (filePath: string) => import(pathToFileURL(filePath).href),
   },
 })
 

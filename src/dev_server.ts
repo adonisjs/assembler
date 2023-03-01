@@ -17,6 +17,7 @@ import { EnvLoader, EnvParser } from '@adonisjs/env'
 import { run } from './run.js'
 import { watch } from './watch.js'
 import type { DevServerOptions } from './types.js'
+import type { Watcher } from '@poppinss/chokidar-ts'
 
 /**
  * Instance of CLIUI
@@ -43,6 +44,9 @@ export class DevServer {
   #httpServerProcess?: ExecaChildProcess<string>
   #isMetaFileWithReloadsEnabled: picomatch.Matcher
   #isMetaFileWithReloadsDisabled: picomatch.Matcher
+  #watcher?: ReturnType<Watcher['watch']>
+  #onError?: (error: any) => any
+  #onClose?: (exitCode: number) => any
 
   /**
    * Getting reference to colors library from logger
@@ -136,7 +140,7 @@ export class DevServer {
   /**
    * Starts the HTTP server
    */
-  #startHTTPServer(port: string) {
+  #startHTTPServer(port: string, mode: 'blocking' | 'nonblocking') {
     this.#httpServerProcess = run(this.#cwd, {
       script: this.#scriptFile,
       env: { PORT: port, ...this.#options.env },
@@ -159,15 +163,20 @@ export class DevServer {
       }
     })
 
-    this.#httpServerProcess.on('error', (error) => {
-      this.#logger.warning('unable to connect to underlying HTTP server process')
-      this.#logger.fatal(error)
-    })
-
-    this.#httpServerProcess.on('close', (exitCode) => {
-      this.#logger.warning(`underlying HTTP server closed with status code "${exitCode}"`)
-      this.#logger.info('watching file system and waiting for application to recover')
-    })
+    this.#httpServerProcess
+      .then((result) => {
+        this.#logger.warning(`underlying HTTP server closed with status code "${result.exitCode}"`)
+        if (mode === 'nonblocking') {
+          this.#onClose?.(result.exitCode)
+          this.#watcher?.close()
+        }
+      })
+      .catch((error) => {
+        this.#logger.warning('unable to connect to underlying HTTP server process')
+        this.#logger.fatal(error)
+        this.#onError?.(error)
+        this.#watcher?.close()
+      })
   }
 
   /**
@@ -179,7 +188,7 @@ export class DevServer {
       this.#httpServerProcess.kill('SIGKILL')
     }
 
-    this.#startHTTPServer(port)
+    this.#startHTTPServer(port, 'blocking')
   }
 
   /**
@@ -191,36 +200,64 @@ export class DevServer {
   }
 
   /**
+   * Add listener to get notified when dev server is
+   * closed
+   */
+  onClose(callback: (exitCode: number) => any): this {
+    this.#onClose = callback
+    return this
+  }
+
+  /**
+   * Add listener to get notified when dev server exists
+   * with an error
+   */
+  onError(callback: (error: any) => any): this {
+    this.#onError = callback
+    return this
+  }
+
+  /**
    * Start the development server
    */
   async start() {
     this.#clearScreen()
     this.#logger.info('starting HTTP server...')
-    this.#startHTTPServer(String(await this.#getPort()))
+    this.#startHTTPServer(String(await this.#getPort()), 'nonblocking')
   }
 
   /**
    * Start the development server in watch mode
    */
   async startAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
-    const port = String(await this.#getPort())
-
     this.#isWatching = true
     this.#clearScreen()
 
+    const port = String(await this.#getPort())
+
     this.#logger.info('starting HTTP server...')
-    this.#startHTTPServer(port)
+    this.#startHTTPServer(port, 'blocking')
 
     const output = watch(this.#cwd, ts, options || {})
     if (!output) {
+      this.#onClose?.(1)
       return
     }
+
+    this.#watcher = output.chokidar
 
     /**
      * Notify the watcher is ready
      */
     output.watcher.on('watcher:ready', () => {
       this.#logger.info('watching file system for changes...')
+    })
+
+    output.chokidar.on('error', (error) => {
+      this.#logger.warning('file system watcher failure')
+      this.#logger.fatal(error)
+      this.#onError?.(error)
+      output.chokidar.close()
     })
 
     /**

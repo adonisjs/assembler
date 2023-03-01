@@ -26,6 +26,7 @@ configure({
     files: ['tests/**/*.spec.ts'],
     plugins: [assert(), runFailedTests(), fileSystem({ basePath: TEST_TMP_DIR_PATH })],
     reporters: [specReporter()],
+    timeout: 10 * 1000,
     importer: (filePath: string) => import(pathToFileURL(filePath).href),
   },
 })

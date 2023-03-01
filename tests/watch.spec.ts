@@ -23,8 +23,12 @@ test.group('Watcher', () => {
     )
     await fs.create('foo.ts', '')
 
-    const output = watch(fs.baseUrl, ts, {})
+    const output = watch(fs.baseUrl, ts, { poll: true })
     cleanup(() => output!.chokidar.close())
+
+    output?.chokidar.on('all', (event, path) => {
+      console.log('chokidar event', { event, path })
+    })
 
     output!.watcher.on('source:add', (file) => {
       assert.equal(file.relativePath, 'bar.ts')

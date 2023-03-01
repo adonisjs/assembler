@@ -15,7 +15,7 @@
   },
   "scripts": {
     "pretest": "npm run lint",
-    "test": "cross-env NODE_DEBUG=adonisjs:assembler c8 npm run vscode:test",
+    "test": "cross-env NODE_DEBUG=chokidar:ts c8 npm run vscode:test",
     "lint": "eslint . --ext=.ts",
     "clean": "del-cli build",
     "compile": "npm run lint && npm run clean && tsc",

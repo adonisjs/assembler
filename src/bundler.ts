@@ -62,9 +62,9 @@ export class Bundler {
   /**
    * Runs tsc command to build the source.
    */
-  async #runTsc() {
+  async #runTsc(outDir: string) {
     try {
-      await execa('tsc', [], {
+      await execa('tsc', ['--outDir', outDir], {
         cwd: this.#cwd,
         preferLocal: true,
         localDir: this.#cwd,
@@ -161,7 +161,21 @@ export class Bundler {
     /**
      * Step 1: Parse config file to get the build output directory
      */
-    const { config } = new ConfigParser(this.#cwd, 'tsconfig.json', this.#ts).parse()
+    const { config, error } = new ConfigParser(this.#cwd, 'tsconfig.json', this.#ts).parse()
+    if (error) {
+      const compilerHost = this.#ts.createCompilerHost({})
+      this.#logger.logError(this.#ts.formatDiagnosticsWithColorAndContext([error], compilerHost))
+      return false
+    }
+
+    if (config!.errors.length) {
+      const compilerHost = this.#ts.createCompilerHost({})
+      this.#logger.logError(
+        this.#ts.formatDiagnosticsWithColorAndContext(config!.errors, compilerHost)
+      )
+      return false
+    }
+
     if (!config) {
       return false
     }
@@ -177,7 +191,7 @@ export class Bundler {
      * Step 3: Build typescript source code
      */
     this.#logger.info('compiling typescript source', { suffix: 'tsc' })
-    const buildCompleted = await this.#runTsc()
+    const buildCompleted = await this.#runTsc(outDir)
     await this.#copyFiles(['ace.js'], outDir)
 
     /**

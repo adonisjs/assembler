@@ -1,49 +1,36 @@
-<div align="center">
-  <img src="https://res.cloudinary.com/adonisjs/image/upload/q_100/v1558612869/adonis-readme_zscycu.jpg" width="600px">
-</div>
+# @adonisjs/assembler
 
 <br />
 
-<div align="center">
-  <h3> Core Commands for building AdonisJS projects </h3>
-  <p>
-    Assembler contains a set of core commands to <strong>build and serve the AdonisJS typescript project</strong>, along with scaffolding <code>make</code> commands.
-  </p>
-</div>
+[![gh-workflow-image]][gh-workflow-url] [![npm-image]][npm-url] ![][typescript-image] [![license-image]][license-url] [![synk-image]][synk-url]
 
-<br />
+## Introduction
+Assembler exports the API for starting the **AdonisJS development server**, **building project for production** and **running tests** in watch mode. Assembler must be used during development only.
 
-<div align="center">
+## Official Documentation
+The documentation is available on the official website
 
-[![gh-workflow-image]][gh-workflow-url] [![npm-image]][npm-url] [![synk-image]][synk-url]
+## Contributing
+One of the primary goals of AdonisJS is to have a vibrant community of users and contributors who believes in the principles of the framework.
 
-</div>
+We encourage you to read the [contribution guide](https://github.com/adonisjs/.github/blob/main/docs/CONTRIBUTING.md) before contributing to the framework.
 
-<div align="center">
-  <h3>
-    <a href="https://adonisjs.com">
-      Website
-    </a>
-    <span> | </span>
-    <a href="https://docs.adonisjs.com/guides/installation">
-      Guides
-    </a>
-    <span> | </span>
-    <a href="CONTRIBUTING.md">
-      Contributing
-    </a>
-  </h3>
-</div>
+## Code of Conduct
+In order to ensure that the AdonisJS community is welcoming to all, please review and abide by the [Code of Conduct](https://github.com/adonisjs/.github/blob/main/docs/CODE_OF_CONDUCT.md).
 
-<div align="center">
-  <sub>Built with ❤︎ by <a href="https://twitter.com/AmanVirk1">Harminder Virk</a>
-</div>
+## License
+AdonisJS Assembler is open-sourced software licensed under the [MIT license](LICENSE.md).
 
-[gh-workflow-image]: https://img.shields.io/github/workflow/status/adonisjs/assembler/test?style=for-the-badge
+[gh-workflow-image]: https://img.shields.io/github/actions/workflow/status/adonisjs/assembler/test.yml?style=for-the-badge
 [gh-workflow-url]: https://github.com/adonisjs/assembler/actions/workflows/test.yml "Github action"
 
 [npm-image]: https://img.shields.io/npm/v/@adonisjs/assembler/latest.svg?style=for-the-badge&logo=npm
 [npm-url]: https://npmjs.org/package/@adonisjs/assembler/v/latest "npm"
+
+[typescript-image]: https://img.shields.io/badge/Typescript-294E80.svg?style=for-the-badge&logo=typescript
+
+[license-url]: LICENSE.md
+[license-image]: https://img.shields.io/github/license/adonisjs/ace?style=for-the-badge
 
 [synk-image]: https://img.shields.io/snyk/vulnerabilities/github/adonisjs/assembler?label=Synk%20Vulnerabilities&style=for-the-badge
 [synk-url]: https://snyk.io/test/github/adonisjs/assembler?targetFile=package.json "synk"

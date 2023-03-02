@@ -74,6 +74,9 @@
     "picomatch": "^2.3.1",
     "slash": "^5.0.0"
   },
+  "peerDependencies": {
+    "typescript": "^4.0.0 || ^5.0.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/adonisjs/assembler.git"

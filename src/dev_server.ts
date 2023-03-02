@@ -11,13 +11,13 @@ import getPort from 'get-port'
 import picomatch from 'picomatch'
 import type tsStatic from 'typescript'
 import { type ExecaChildProcess } from 'execa'
+import type { Watcher } from '@poppinss/chokidar-ts'
 import { cliui, type Logger } from '@poppinss/cliui'
 import { EnvLoader, EnvParser } from '@adonisjs/env'
 
-import { run } from './run.js'
 import { watch } from './watch.js'
+import { run, runNode } from './run.js'
 import type { DevServerOptions } from './types.js'
-import type { Watcher } from '@poppinss/chokidar-ts'
 
 /**
  * Instance of CLIUI
@@ -45,6 +45,7 @@ export class DevServer {
   #isMetaFileWithReloadsEnabled: picomatch.Matcher
   #isMetaFileWithReloadsDisabled: picomatch.Matcher
   #watcher?: ReturnType<Watcher['watch']>
+  #assetsServerProcess?: ExecaChildProcess<string>
   #onError?: (error: any) => any
   #onClose?: (exitCode: number) => any
 
@@ -141,7 +142,7 @@ export class DevServer {
    * Starts the HTTP server
    */
   #startHTTPServer(port: string, mode: 'blocking' | 'nonblocking') {
-    this.#httpServerProcess = run(this.#cwd, {
+    this.#httpServerProcess = runNode(this.#cwd, {
       script: this.#scriptFile,
       env: { PORT: port, ...this.#options.env },
       nodeArgs: this.#options.nodeArgs,
@@ -176,6 +177,35 @@ export class DevServer {
         this.#logger.fatal(error)
         this.#onError?.(error)
         this.#watcher?.close()
+      })
+  }
+
+  /**
+   * Starts the assets bundler server. The assets bundler server process is
+   * considered as the secondary process and therefore we do not perform
+   * any cleanup if it dies.
+   */
+  #startAssetsServer() {
+    const assetsBundler = this.#options.assets
+    if (!assetsBundler?.serve) {
+      return
+    }
+
+    this.#logger.info(`starting "${assetsBundler.driver}" dev server...`)
+    this.#assetsServerProcess = run(assetsBundler.cmd, {
+      script: this.#scriptFile,
+      scriptArgs: this.#options.scriptArgs,
+    })
+
+    this.#assetsServerProcess
+      .then((result) => {
+        this.#logger.warning(
+          `"${assetsBundler.driver}" dev server closed with status code "${result.exitCode}"`
+        )
+      })
+      .catch((error) => {
+        this.#logger.warning(`unable to connect to "${assetsBundler.driver}" dev server`)
+        this.#logger.fatal(error)
       })
   }
 
@@ -224,26 +254,36 @@ export class DevServer {
     this.#clearScreen()
     this.#logger.info('starting HTTP server...')
     this.#startHTTPServer(String(await this.#getPort()), 'nonblocking')
+
+    this.#startAssetsServer()
   }
 
   /**
    * Start the development server in watch mode
    */
   async startAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
-    this.#isWatching = true
-    this.#clearScreen()
-
     const port = String(await this.#getPort())
+    this.#isWatching = true
 
+    this.#clearScreen()
     this.#logger.info('starting HTTP server...')
-    this.#startHTTPServer(port, 'blocking')
 
+    this.#startHTTPServer(port, 'blocking')
+    this.#startAssetsServer()
+
+    /**
+     * Create watcher using tsconfig.json file
+     */
     const output = watch(this.#cwd, ts, options || {})
     if (!output) {
       this.#onClose?.(1)
       return
     }
 
+    /**
+     * Storing reference to watcher, so that we can close it
+     * when HTTP server exists with error
+     */
     this.#watcher = output.chokidar
 
     /**
@@ -253,6 +293,9 @@ export class DevServer {
       this.#logger.info('watching file system for changes...')
     })
 
+    /**
+     * Cleanup when watcher dies
+     */
     output.chokidar.on('error', (error) => {
       this.#logger.warning('file system watcher failure')
       this.#logger.fatal(error)

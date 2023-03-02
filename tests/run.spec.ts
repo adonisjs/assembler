@@ -9,7 +9,7 @@
 
 import { pEvent } from 'p-event'
 import { test } from '@japa/runner'
-import { run } from '../src/run.js'
+import { run, runNode } from '../src/run.js'
 
 test.group('Child process', () => {
   test('run typescript file as a child process', async ({ fs, assert }) => {
@@ -20,7 +20,7 @@ test.group('Child process', () => {
     `
     )
 
-    const childProcess = run(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
+    const childProcess = runNode(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
     const payload = await pEvent(childProcess, 'message', { rejectionEvents: ['error'] })
 
     await pEvent(childProcess, 'close', { rejectionEvents: ['error'] })
@@ -37,7 +37,7 @@ test.group('Child process', () => {
     `
     )
 
-    const childProcess = run(fs.basePath, {
+    const childProcess = runNode(fs.basePath, {
       script: 'foo.ts',
       scriptArgs: ['--watch', '--foo=bar'],
       nodeArgs: [],
@@ -57,7 +57,7 @@ test.group('Child process', () => {
     `
     )
 
-    const childProcess = run(fs.basePath, {
+    const childProcess = runNode(fs.basePath, {
       script: 'foo.ts',
       scriptArgs: ['--watch', '--foo=bar'],
       nodeArgs: ['--throw-deprecation'],
@@ -85,7 +85,7 @@ test.group('Child process', () => {
     `
     )
 
-    const childProcess = run(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
+    const childProcess = runNode(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
     await pEvent(childProcess, 'close', { rejectionEvents: ['error'] })
     assert.equal(childProcess.exitCode, 0)
   })
@@ -98,7 +98,7 @@ test.group('Child process', () => {
     `
     )
 
-    const childProcess = run(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
+    const childProcess = runNode(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
 
     await pEvent(childProcess, 'close', { rejectionEvents: ['error'] })
     assert.equal(childProcess.exitCode, 1)
@@ -114,7 +114,7 @@ test.group('Child process', () => {
     `
     )
 
-    const childProcess = run(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
+    const childProcess = runNode(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
     try {
       await childProcess
     } catch {

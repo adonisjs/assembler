@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import { execaNode } from 'execa'
+import { execaNode, execa } from 'execa'
 import type { RunOptions } from './types.js'
 
 /**
@@ -24,11 +24,28 @@ const DEFAULT_NODE_ARGS = [
 ]
 
 /**
- * Runs a script as a child process and inherits the stdio streams
+ * Runs a Node.js script as a child process and inherits the stdio streams
  */
-export function run(cwd: string | URL, options: RunOptions) {
+export function runNode(cwd: string | URL, options: RunOptions) {
   const childProces = execaNode(options.script, options.scriptArgs, {
     nodeOptions: DEFAULT_NODE_ARGS.concat(options.nodeArgs),
+    preferLocal: true,
+    windowsHide: false,
+    localDir: cwd,
+    cwd,
+    buffer: false,
+    stdio: 'inherit',
+    env: options.env,
+  })
+
+  return childProces
+}
+
+/**
+ * Runs a script as a child process and inherits the stdio streams
+ */
+export function run(cwd: string | URL, options: Omit<RunOptions, 'nodeArgs'>) {
+  const childProces = execa(options.script, options.scriptArgs, {
     preferLocal: true,
     windowsHide: false,
     localDir: cwd,

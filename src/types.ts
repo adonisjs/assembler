@@ -36,6 +36,17 @@ export type DevServerOptions = {
     pattern: string
     reloadServer: boolean
   }[]
+  assets?:
+    | {
+        serve: false
+        driver?: string
+        cmd?: string
+      }
+    | {
+        serve: true
+        driver: string
+        cmd: string
+      }
 }
 
 /**

@@ -31,7 +31,9 @@ test.group('Watcher', () => {
       done()
     })
 
-    await fs.create('bar.ts', '')
+    output!.watcher.on('watcher:ready', async () => {
+      await fs.create('bar.ts', '')
+    })
   })
     .waitForDone()
     .skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
@@ -55,7 +57,9 @@ test.group('Watcher', () => {
       done()
     })
 
-    await fs.create('foo.ts', 'hello world')
+    output!.watcher.on('watcher:ready', async () => {
+      await fs.create('foo.ts', 'hello world')
+    })
   })
     .waitForDone()
     .skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
@@ -79,7 +83,9 @@ test.group('Watcher', () => {
       done()
     })
 
-    await fs.remove('foo.ts')
+    output!.watcher.on('watcher:ready', async () => {
+      await fs.remove('foo.ts')
+    })
   })
     .waitForDone()
     .skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
@@ -105,7 +111,9 @@ test.group('Watcher', () => {
       assert.fail('Never expected to reach here')
     })
 
-    await fs.create('baz.ts', '')
+    output!.watcher.on('watcher:ready', async () => {
+      await fs.create('baz.ts', '')
+    })
     await new Promise((resolve) => setTimeout(resolve, 1000))
   }).skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
 
@@ -132,7 +140,9 @@ test.group('Watcher', () => {
       done()
     })
 
-    await fs.create('foo.md', '')
+    output!.watcher.on('watcher:ready', async () => {
+      await fs.create('foo.md', '')
+    })
   })
     .waitForDone()
     .skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')

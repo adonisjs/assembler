@@ -45,7 +45,7 @@
     "@poppinss/cliui": "^6.1.1-0",
     "@poppinss/dev-utils": "^2.0.3",
     "@swc/core": "^1.3.36",
-    "@types/node": "^18.14.1",
+    "@types/node": "^18.14.3",
     "c8": "^7.13.0",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
@@ -64,7 +64,7 @@
   },
   "dependencies": {
     "@adonisjs/env": "^4.2.0-0",
-    "@poppinss/chokidar-ts": "^4.0.0-0",
+    "@poppinss/chokidar-ts": "^4.1.0-0",
     "@types/fs-extra": "^11.0.1",
     "@types/picomatch": "^2.3.0",
     "cpy": "^9.0.1",

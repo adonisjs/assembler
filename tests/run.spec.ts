@@ -9,7 +9,7 @@
 
 import { pEvent } from 'p-event'
 import { test } from '@japa/runner'
-import { run, runNode } from '../src/run.js'
+import { runNode } from '../src/run.js'
 
 test.group('Child process', () => {
   test('run typescript file as a child process', async ({ fs, assert }) => {

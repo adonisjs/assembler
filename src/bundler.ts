@@ -10,13 +10,13 @@
 import fs from 'fs-extra'
 import slash from 'slash'
 import copyfiles from 'cpy'
-import { execa } from 'execa'
-import { join, relative } from 'node:path'
 import type tsStatic from 'typescript'
 import { fileURLToPath } from 'node:url'
-import { ConfigParser } from '@poppinss/chokidar-ts'
+import { join, relative } from 'node:path'
 import { cliui, type Logger } from '@poppinss/cliui'
 
+import { run } from './run.js'
+import { parseConfig } from './parse_config.js'
 import type { BundlerOptions } from './types.js'
 
 /**
@@ -60,17 +60,36 @@ export class Bundler {
   }
 
   /**
+   * Runs assets bundler command to build assets.
+   */
+  async #buildAssets(): Promise<boolean> {
+    const assetsBundler = this.#options.assets
+    if (!assetsBundler?.serve) {
+      return true
+    }
+
+    try {
+      this.#logger.info('compiling frontend assets', { suffix: assetsBundler.cmd })
+      await run(this.#cwd, {
+        stdio: 'inherit',
+        script: assetsBundler.cmd,
+        scriptArgs: [],
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
    * Runs tsc command to build the source.
    */
-  async #runTsc(outDir: string) {
+  async #runTsc(outDir: string): Promise<boolean> {
     try {
-      await execa('tsc', ['--outDir', outDir], {
-        cwd: this.#cwd,
-        preferLocal: true,
-        localDir: this.#cwd,
-        windowsHide: false,
-        buffer: false,
+      await run(this.#cwd, {
         stdio: 'inherit',
+        script: 'tsc',
+        scriptArgs: ['--outDir', outDir],
       })
       return true
     } catch {
@@ -161,21 +180,7 @@ export class Bundler {
     /**
      * Step 1: Parse config file to get the build output directory
      */
-    const { config, error } = new ConfigParser(this.#cwd, 'tsconfig.json', this.#ts).parse()
-    if (error) {
-      const compilerHost = this.#ts.createCompilerHost({})
-      this.#logger.logError(this.#ts.formatDiagnosticsWithColorAndContext([error], compilerHost))
-      return false
-    }
-
-    if (config!.errors.length) {
-      const compilerHost = this.#ts.createCompilerHost({})
-      this.#logger.logError(
-        this.#ts.formatDiagnosticsWithColorAndContext(config!.errors, compilerHost)
-      )
-      return false
-    }
-
+    const config = parseConfig(this.#cwd, this.#ts)
     if (!config) {
       return false
     }
@@ -188,7 +193,14 @@ export class Bundler {
     await this.#cleanupBuildDirectory(outDir)
 
     /**
-     * Step 3: Build typescript source code
+     * Step 3: Build frontend assets
+     */
+    if (!(await this.#buildAssets())) {
+      return false
+    }
+
+    /**
+     * Step 4: Build typescript source code
      */
     this.#logger.info('compiling typescript source', { suffix: 'tsc' })
     const buildCompleted = await this.#runTsc(outDir)
@@ -219,14 +231,14 @@ export class Bundler {
     }
 
     /**
-     * Step 4: Copy meta files to the build directory
+     * Step 5: Copy meta files to the build directory
      */
     const pkgFiles = ['package.json', this.#getClientLockFile(client)]
     this.#logger.info('copying meta files to the output directory')
     await this.#copyMetaFiles(outDir, pkgFiles)
 
     /**
-     * Step 5: Copy .adonisrc.json file to the build directory
+     * Step 6: Copy .adonisrc.json file to the build directory
      */
     this.#logger.info('copying .adonisrc.json file to the output directory')
     await this.#copyAdonisRcFile(outDir)
@@ -234,6 +246,9 @@ export class Bundler {
     this.#logger.success('build completed')
     this.#logger.log('')
 
+    /**
+     * Next steps
+     */
     ui.instructions()
       .useRenderer(this.#logger.getRenderer())
       .heading('Run the following commands to start the server in production')

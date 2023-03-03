@@ -27,33 +27,39 @@ const DEFAULT_NODE_ARGS = [
  * Runs a Node.js script as a child process and inherits the stdio streams
  */
 export function runNode(cwd: string | URL, options: RunOptions) {
-  const childProces = execaNode(options.script, options.scriptArgs, {
+  const childProcess = execaNode(options.script, options.scriptArgs, {
     nodeOptions: DEFAULT_NODE_ARGS.concat(options.nodeArgs),
     preferLocal: true,
     windowsHide: false,
     localDir: cwd,
     cwd,
     buffer: false,
-    stdio: 'inherit',
-    env: options.env,
+    stdio: options.stdio || 'inherit',
+    env: {
+      ...(options.stdio === 'pipe' ? { FORCE_COLOR: 'true' } : {}),
+      ...options.env,
+    },
   })
 
-  return childProces
+  return childProcess
 }
 
 /**
  * Runs a script as a child process and inherits the stdio streams
  */
 export function run(cwd: string | URL, options: Omit<RunOptions, 'nodeArgs'>) {
-  const childProces = execa(options.script, options.scriptArgs, {
+  const childProcess = execa(options.script, options.scriptArgs, {
     preferLocal: true,
     windowsHide: false,
     localDir: cwd,
     cwd,
     buffer: false,
-    stdio: 'inherit',
-    env: options.env,
+    stdio: options.stdio || 'inherit',
+    env: {
+      ...(options.stdio === 'pipe' ? { FORCE_COLOR: 'true' } : {}),
+      ...options.env,
+    },
   })
 
-  return childProces
+  return childProcess
 }

@@ -116,6 +116,62 @@ export class DevServer {
   }
 
   /**
+   * Logs messages from vite dev server stdout and stderr
+   */
+  #logViteDevServerMessage(data: Buffer) {
+    const dataString = data.toString()
+    const lines = dataString.split('\n')
+
+    /**
+     * Logging VITE ready in message with proper
+     * spaces and newlines
+     */
+    if (dataString.includes('ready in')) {
+      console.log('')
+      console.log(dataString.trim())
+      return
+    }
+
+    /**
+     * Put a wrapper around vite network address log
+     */
+    if (dataString.includes('Local') && dataString.includes('Network')) {
+      const sticker = ui.sticker().useColors(this.#colors).useRenderer(this.#logger.getRenderer())
+
+      lines.forEach((line: string) => {
+        if (line.trim()) {
+          sticker.add(line)
+        }
+      })
+
+      sticker.render()
+      return
+    }
+
+    /**
+     * Log rest of the lines
+     */
+    lines.forEach((line: string) => {
+      if (line.trim()) {
+        console.log(line)
+      }
+    })
+  }
+
+  /**
+   * Logs messages from assets dev server stdout and stderr
+   */
+  #logAssetsDevServerMessage(data: Buffer) {
+    const dataString = data.toString()
+    const lines = dataString.split('\n')
+    lines.forEach((line: string) => {
+      if (line.trim()) {
+        console.log(line)
+      }
+    })
+  }
+
+  /**
    * Returns PORT for starting the HTTP server with option to use
    * a random PORT if main PORT is in use.
    */
@@ -192,9 +248,34 @@ export class DevServer {
     }
 
     this.#logger.info(`starting "${assetsBundler.driver}" dev server...`)
-    this.#assetsServerProcess = run(assetsBundler.cmd, {
-      script: this.#scriptFile,
+    this.#assetsServerProcess = run(this.#cwd, {
+      script: assetsBundler.cmd,
+
+      /**
+       * We do not inherit the stdio for vite and encore, because they then
+       * own the stdin and interrupts the `Ctrl + C`.
+       */
+      stdio: 'pipe',
       scriptArgs: this.#options.scriptArgs,
+    })
+
+    /**
+     * Log child process messages
+     */
+    this.#assetsServerProcess.stdout?.on('data', (data) => {
+      if (assetsBundler.driver === 'vite') {
+        this.#logViteDevServerMessage(data)
+      } else {
+        this.#logAssetsDevServerMessage(data)
+      }
+    })
+
+    this.#assetsServerProcess.stderr?.on('data', (data) => {
+      if (assetsBundler.driver === 'vite') {
+        this.#logViteDevServerMessage(data)
+      } else {
+        this.#logAssetsDevServerMessage(data)
+      }
     })
 
     this.#assetsServerProcess

@@ -7,10 +7,10 @@
  * file that was distributed with this source code.
  */
 
-import fs from 'fs-extra'
 import slash from 'slash'
 import copyfiles from 'cpy'
 import type tsStatic from 'typescript'
+import fs from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { join, relative } from 'node:path'
 import { cliui, type Logger } from '@poppinss/cliui'
@@ -56,7 +56,7 @@ export class Bundler {
    * Cleans up the build directory
    */
   async #cleanupBuildDirectory(outDir: string) {
-    await fs.remove(outDir)
+    await fs.rm(outDir, { recursive: true, force: true, maxRetries: 5 })
   }
 
   /**
@@ -125,13 +125,19 @@ export class Bundler {
    * Copies .adonisrc.json file to the destination
    */
   async #copyAdonisRcFile(outDir: string) {
-    const existingContents = await fs.readJSON(join(this.#cwdPath, '.adonisrc.json'))
+    const existingContents = JSON.parse(
+      await fs.readFile(join(this.#cwdPath, '.adonisrc.json'), 'utf-8')
+    )
     const compiledContents = Object.assign({}, existingContents, {
       typescript: false,
       lastCompiledAt: new Date().toISOString(),
     })
 
-    await fs.outputJSON(join(outDir, '.adonisrc.json'), compiledContents, { spaces: 2 })
+    await fs.mkdir(outDir, { recursive: true })
+    await fs.writeFile(
+      join(outDir, '.adonisrc.json'),
+      JSON.stringify(compiledContents, null, 2) + '\n'
+    )
   }
 
   /**

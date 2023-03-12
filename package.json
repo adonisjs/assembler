@@ -63,11 +63,9 @@
     "@adonisjs/env": "^4.2.0-0",
     "@poppinss/chokidar-ts": "^4.1.0-1",
     "@poppinss/cliui": "^6.1.1-1",
-    "@types/fs-extra": "^11.0.1",
     "@types/picomatch": "^2.3.0",
     "cpy": "^9.0.1",
     "execa": "^7.0.0",
-    "fs-extra": "^11.1.0",
     "get-port": "^6.1.2",
     "picomatch": "^2.3.1",
     "slash": "^5.0.0"

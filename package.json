@@ -1,6 +1,6 @@
 {
   "name": "@adonisjs/assembler",
-  "version": "6.1.3-2",
+  "version": "6.1.3-3",
   "description": "Provides utilities to run AdonisJS development server and build project for production",
   "main": "build/index.js",
   "type": "module",

@@ -60,7 +60,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@adonisjs/env": "^4.2.0-0",
+    "@adonisjs/env": "^4.2.0-1",
     "@poppinss/chokidar-ts": "^4.1.0-1",
     "@poppinss/cliui": "^6.1.1-1",
     "@types/picomatch": "^2.3.0",

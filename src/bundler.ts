@@ -9,8 +9,8 @@
 
 import slash from 'slash'
 import copyfiles from 'cpy'
-import type tsStatic from 'typescript'
 import fs from 'node:fs/promises'
+import type tsStatic from 'typescript'
 import { fileURLToPath } from 'node:url'
 import { join, relative } from 'node:path'
 import { cliui, type Logger } from '@poppinss/cliui'

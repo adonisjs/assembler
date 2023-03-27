@@ -2,7 +2,7 @@
 
 <br />
 
-[![gh-workflow-image]][gh-workflow-url] [![npm-image]][npm-url] ![][typescript-image] [![license-image]][license-url] [![synk-image]][synk-url]
+[![gh-workflow-image]][gh-workflow-url] [![npm-image]][npm-url] ![][typescript-image] [![license-image]][license-url] [![snyk-image]][snyk-url]
 
 ## Introduction
 Assembler exports the API for starting the **AdonisJS development server**, **building project for production** and **running tests** in watch mode. Assembler must be used during development only.
@@ -32,5 +32,5 @@ AdonisJS Assembler is open-sourced software licensed under the [MIT license](LIC
 [license-url]: LICENSE.md
 [license-image]: https://img.shields.io/github/license/adonisjs/ace?style=for-the-badge
 
-[synk-image]: https://img.shields.io/snyk/vulnerabilities/github/adonisjs/assembler?label=Synk%20Vulnerabilities&style=for-the-badge
-[synk-url]: https://snyk.io/test/github/adonisjs/assembler?targetFile=package.json "synk"
+[snyk-image]: https://img.shields.io/snyk/vulnerabilities/github/adonisjs/assembler?label=snyk%20Vulnerabilities&style=for-the-badge
+[snyk-url]: https://snyk.io/test/github/adonisjs/assembler?targetFile=package.json "snyk"

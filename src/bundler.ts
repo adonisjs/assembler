@@ -15,8 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { join, relative } from 'node:path'
 import { cliui, type Logger } from '@poppinss/cliui'
 
-import { run } from './run.js'
-import { parseConfig } from './parse_config.js'
+import { run, parseConfig } from './helpers.js'
 import type { BundlerOptions } from './types.js'
 
 /**

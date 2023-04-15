@@ -34,16 +34,26 @@ export type MetaFile = {
 }
 
 /**
+ * Test suite defined in ".adonisrc.json" file
+ */
+export type Suite = {
+  files: string[]
+  name: string
+}
+
+/**
  * Options accepted by assets bundler
  */
 export type AssetsBundlerOptions =
   | {
       serve: false
+      args?: string[]
       driver?: string
       cmd?: string
     }
   | {
       serve: true
+      args: string[]
       driver: string
       cmd: string
     }
@@ -58,6 +68,37 @@ export type DevServerOptions = {
   env?: NodeJS.ProcessEnv
   metaFiles?: MetaFile[]
   assets?: AssetsBundlerOptions
+}
+
+/**
+ * Options accepted by the test runner
+ */
+export type TestRunnerOptions = {
+  /**
+   * Filter arguments are provided as a key-value
+   * pair, so that we can mutate them (if needed)
+   */
+  filters: Partial<{
+    tests: string[]
+    suites: string[]
+    groups: string[]
+    files: string[]
+    match: string[]
+    tags: string[]
+    ignoreTags: string[]
+  }>
+
+  /**
+   * All other tags are provided as a collection of
+   * arguments
+   */
+  scriptArgs: string[]
+  nodeArgs: string[]
+  clearScreen?: boolean
+  env?: NodeJS.ProcessEnv
+  metaFiles?: MetaFile[]
+  assets?: AssetsBundlerOptions
+  suites: Suite[]
 }
 
 /**

@@ -13,9 +13,9 @@ import { type ExecaChildProcess } from 'execa'
 import { cliui, type Logger } from '@poppinss/cliui'
 import type { Watcher } from '@poppinss/chokidar-ts'
 
-import type { DevServerOptions } from './types.js'
+import type { TestRunnerOptions } from './types.js'
 import { AssetsDevServer } from './assets_dev_server.js'
-import { getPort, isDotEnvFile, isRcFile, runNode, watch } from './helpers.js'
+import { getPort, isDotEnvFile, runNode, watch } from './helpers.js'
 
 /**
  * Instance of CLIUI
@@ -33,19 +33,26 @@ const ui = cliui()
  * - Uses metaFiles from .adonisrc.json file to collect a list of files to watch.
  * - Restart HTTP server on every file change.
  */
-export class DevServer {
+export class TestRunner {
   #cwd: URL
   #logger = ui.logger
-  #options: DevServerOptions
-  #isWatching: boolean = false
-  #scriptFile: string = 'bin/server.js'
-  #isMetaFileWithReloadsEnabled: picomatch.Matcher
-  #isMetaFileWithReloadsDisabled: picomatch.Matcher
+  #options: TestRunnerOptions
+  #scriptFile: string = 'bin/test.js'
+  #isMetaFile: picomatch.Matcher
+  #isTestFile: picomatch.Matcher
+
+  /**
+   * In watch mode, after a file is changed, we wait for the current
+   * set of tests to finish before triggering a re-run. Therefore,
+   * we use this flag to know if we are already busy in running
+   * tests and ignore file-changes.
+   */
+  #isBusy: boolean = false
 
   #onError?: (error: any) => any
   #onClose?: (exitCode: number) => any
 
-  #httpServer?: ExecaChildProcess<string>
+  #testScript?: ExecaChildProcess<string>
   #watcher?: ReturnType<Watcher['watch']>
   #assetsServer?: AssetsDevServer
 
@@ -56,36 +63,69 @@ export class DevServer {
     return this.#logger.getColors()
   }
 
-  constructor(cwd: URL, options: DevServerOptions) {
+  constructor(cwd: URL, options: TestRunnerOptions) {
     this.#cwd = cwd
     this.#options = options
+    this.#isMetaFile = picomatch((this.#options.metaFiles || []).map(({ pattern }) => pattern))
+    this.#isTestFile = picomatch(
+      this.#options.suites
+        .filter((suite) => {
+          if (this.#options.filters.suites) {
+            this.#options.filters.suites.includes(suite.name)
+          }
 
-    this.#isMetaFileWithReloadsEnabled = picomatch(
-      (this.#options.metaFiles || [])
-        .filter(({ reloadServer }) => reloadServer === true)
-        .map(({ pattern }) => pattern)
-    )
-
-    this.#isMetaFileWithReloadsDisabled = picomatch(
-      (this.#options.metaFiles || [])
-        .filter(({ reloadServer }) => reloadServer !== true)
-        .map(({ pattern }) => pattern)
+          return true
+        })
+        .map((suite) => suite.files)
+        .flat(1)
     )
   }
 
   /**
-   * Inspect if child process message is from AdonisJS HTTP server
+   * Converts all known filters to CLI args.
+   *
+   * The following code snippet may seem like repetitive code. But, it
+   * is done intentionally to have visibility around how each filter
+   * is converted to an arg.
    */
-  #isAdonisJSReadyMessage(
-    message: unknown
-  ): message is { isAdonisJS: true; environment: 'web'; port: number; host: string } {
-    return (
-      message !== null &&
-      typeof message === 'object' &&
-      'isAdonisJS' in message &&
-      'environment' in message &&
-      message.environment === 'web'
-    )
+  #convertFiltersToArgs(filters: TestRunnerOptions['filters']): string[] {
+    const args: string[] = []
+
+    if (filters.suites) {
+      args.push(...filters.suites)
+    }
+
+    if (filters.files) {
+      args.push('--files')
+      args.push(filters.files.join(','))
+    }
+
+    if (filters.groups) {
+      args.push('--groups')
+      args.push(filters.groups.join(','))
+    }
+
+    if (filters.tags) {
+      args.push('--tags')
+      args.push(filters.tags.join(','))
+    }
+
+    if (filters.ignoreTags) {
+      args.push('--ignore-tags')
+      args.push(filters.ignoreTags.join(','))
+    }
+
+    if (filters.tests) {
+      args.push('--ignore-tests')
+      args.push(filters.tests.join(','))
+    }
+
+    if (filters.match) {
+      args.push('--match')
+      args.push(filters.match.join(','))
+    }
+
+    return args
   }
 
   /**
@@ -98,34 +138,20 @@ export class DevServer {
   }
 
   /**
-   * Starts the HTTP server
+   * Runs tests
    */
-  #startHTTPServer(port: string, mode: 'blocking' | 'nonblocking') {
-    this.#httpServer = runNode(this.#cwd, {
+  #runTests(port: string, filtersArgs: string[], mode: 'blocking' | 'nonblocking') {
+    this.#isBusy = true
+
+    this.#testScript = runNode(this.#cwd, {
       script: this.#scriptFile,
       env: { PORT: port, ...this.#options.env },
       nodeArgs: this.#options.nodeArgs,
-      scriptArgs: this.#options.scriptArgs,
+      scriptArgs: filtersArgs.concat(this.#options.scriptArgs),
     })
 
-    this.#httpServer.on('message', (message) => {
-      if (this.#isAdonisJSReadyMessage(message)) {
-        ui.sticker()
-          .useColors(this.#colors)
-          .useRenderer(this.#logger.getRenderer())
-          .add(`Server address: ${this.#colors.cyan(`http://${message.host}:${message.port}`)}`)
-          .add(
-            `File system watcher: ${this.#colors.cyan(
-              `${this.#isWatching ? 'enabled' : 'disabled'}`
-            )}`
-          )
-          .render()
-      }
-    })
-
-    this.#httpServer
+    this.#testScript
       .then((result) => {
-        this.#logger.warning(`underlying HTTP server closed with status code "${result.exitCode}"`)
         if (mode === 'nonblocking') {
           this.#onClose?.(result.exitCode)
           this.#watcher?.close()
@@ -133,11 +159,14 @@ export class DevServer {
         }
       })
       .catch((error) => {
-        this.#logger.warning('unable to connect to underlying HTTP server process')
+        this.#logger.warning(`unable to run test script "${this.#scriptFile}"`)
         this.#logger.fatal(error)
         this.#onError?.(error)
         this.#watcher?.close()
         this.#assetsServer?.stop()
+      })
+      .finally(() => {
+        this.#isBusy = false
       })
   }
 
@@ -150,48 +179,48 @@ export class DevServer {
   }
 
   /**
-   * Restarts the HTTP server
-   */
-  #restartHTTPServer(port: string) {
-    if (this.#httpServer) {
-      this.#httpServer.removeAllListeners()
-      this.#httpServer.kill('SIGKILL')
-    }
-
-    this.#startHTTPServer(port, 'blocking')
-  }
-
-  /**
    * Handles a non TypeScript file change
    */
-  #handleFileChange(action: string, port: string, relativePath: string) {
-    if (isDotEnvFile(relativePath) || isRcFile(relativePath)) {
-      this.#clearScreen()
-      this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
-      this.#restartHTTPServer(port)
+  #handleFileChange(action: string, port: string, filters: string[], relativePath: string) {
+    if (this.#isBusy) {
       return
     }
 
-    if (this.#isMetaFileWithReloadsEnabled(relativePath)) {
+    if (isDotEnvFile(relativePath) || this.#isMetaFile(relativePath)) {
       this.#clearScreen()
       this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
-      this.#restartHTTPServer(port)
-      return
-    }
-
-    if (this.#isMetaFileWithReloadsDisabled(relativePath)) {
-      this.#clearScreen()
-      this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
+      this.#runTests(port, filters, 'blocking')
     }
   }
 
   /**
    * Handles TypeScript source file change
    */
-  #handleSourceFileChange(action: string, port: string, relativePath: string) {
+  #handleSourceFileChange(action: string, port: string, filters: string[], relativePath: string) {
+    if (this.#isBusy) {
+      return
+    }
+
     this.#clearScreen()
     this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
-    this.#restartHTTPServer(port)
+
+    /**
+     * If changed file is a test file after considering the initial filters,
+     * then only run that file
+     */
+    if (this.#isTestFile(relativePath)) {
+      this.#runTests(
+        port,
+        this.#convertFiltersToArgs({
+          ...this.#options.filters,
+          files: [relativePath.replace(/\\/g, '/')],
+        }),
+        'blocking'
+      )
+      return
+    }
+
+    this.#runTests(port, filters, 'blocking')
   }
 
   /**
@@ -222,28 +251,31 @@ export class DevServer {
   }
 
   /**
-   * Start the development server
+   * Runs tests
    */
-  async start() {
+  async run() {
+    const port = String(await getPort(this.#cwd))
+    const initialFilters = this.#convertFiltersToArgs(this.#options.filters)
+
     this.#clearScreen()
-    this.#logger.info('starting HTTP server...')
-    this.#startHTTPServer(String(await getPort(this.#cwd)), 'nonblocking')
     this.#startAssetsServer()
+
+    this.#logger.info('booting application to run tests...')
+    this.#runTests(port, initialFilters, 'nonblocking')
   }
 
   /**
-   * Start the development server in watch mode
+   * Run tests in watch mode
    */
-  async startAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
+  async runAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
     const port = String(await getPort(this.#cwd))
-    this.#isWatching = true
+    const initialFilters = this.#convertFiltersToArgs(this.#options.filters)
 
     this.#clearScreen()
-
-    this.#logger.info('starting HTTP server...')
-    this.#startHTTPServer(port, 'blocking')
-
     this.#startAssetsServer()
+
+    this.#logger.info('booting application to run tests...')
+    this.#runTests(port, initialFilters, 'blocking')
 
     /**
      * Create watcher using tsconfig.json file
@@ -281,26 +313,26 @@ export class DevServer {
      * Changes in TypeScript source file
      */
     output.watcher.on('source:add', ({ relativePath }) =>
-      this.#handleSourceFileChange('add', port, relativePath)
+      this.#handleSourceFileChange('add', port, initialFilters, relativePath)
     )
     output.watcher.on('source:change', ({ relativePath }) =>
-      this.#handleSourceFileChange('update', port, relativePath)
+      this.#handleSourceFileChange('update', port, initialFilters, relativePath)
     )
     output.watcher.on('source:unlink', ({ relativePath }) =>
-      this.#handleSourceFileChange('delete', port, relativePath)
+      this.#handleSourceFileChange('delete', port, initialFilters, relativePath)
     )
 
     /**
      * Changes in non-TypeScript source files
      */
     output.watcher.on('add', ({ relativePath }) =>
-      this.#handleFileChange('add', port, relativePath)
+      this.#handleFileChange('add', port, initialFilters, relativePath)
     )
     output.watcher.on('change', ({ relativePath }) =>
-      this.#handleFileChange('update', port, relativePath)
+      this.#handleFileChange('update', port, initialFilters, relativePath)
     )
     output.watcher.on('unlink', ({ relativePath }) =>
-      this.#handleFileChange('delete', port, relativePath)
+      this.#handleFileChange('delete', port, initialFilters, relativePath)
     )
   }
 }

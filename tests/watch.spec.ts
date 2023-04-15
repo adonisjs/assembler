@@ -9,7 +9,7 @@
 
 import ts from 'typescript'
 import { test } from '@japa/runner'
-import { watch } from '../src/watch.js'
+import { watch } from '../src/helpers.js'
 
 test.group('Watcher', () => {
   test('watch files included by the tsconfig.json', async ({ fs, assert, cleanup }, done) => {

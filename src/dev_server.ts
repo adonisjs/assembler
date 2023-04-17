@@ -146,6 +146,7 @@ export class DevServer {
    */
   #startAssetsServer() {
     this.#assetsServer = new AssetsDevServer(this.#cwd, this.#options.assets)
+    this.#assetsServer.setLogger(this.#logger)
     this.#assetsServer.start()
   }
 

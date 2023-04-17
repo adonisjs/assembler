@@ -213,7 +213,7 @@ export class TestRunner {
         port,
         this.#convertFiltersToArgs({
           ...this.#options.filters,
-          files: [relativePath.replace(/\\/g, '/')],
+          files: [relativePath],
         }),
         'blocking'
       )

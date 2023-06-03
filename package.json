@@ -3,6 +3,9 @@
   "version": "5.9.5",
   "description": "Core commands to compiler and build AdonisJs project",
   "main": "build/ace-manifest.json",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "files": [
     "build/commands",
     "build/config",

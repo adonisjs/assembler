@@ -18,7 +18,7 @@
   },
   "scripts": {
     "pretest": "npm run lint",
-    "test": "cross-env NODE_DEBUG=chokidar:ts c8 npm run vscode:test",
+    "test": "cross-env NODE_DEBUG=chokidar:ts c8 npm run quick:test",
     "lint": "eslint . --ext=.ts",
     "clean": "del-cli build",
     "compile": "npm run lint && npm run clean && tsc",
@@ -28,7 +28,7 @@
     "sync-labels": "github-label-sync --labels .github/labels.json adonisjs/assembler",
     "format": "prettier --write .",
     "prepublishOnly": "npm run build",
-    "vscode:test": "node --loader=ts-node/esm bin/test.ts"
+    "quick:test": "node --loader=ts-node/esm bin/test.ts"
   },
   "keywords": [
     "adonisjs",
@@ -67,7 +67,7 @@
     "@poppinss/chokidar-ts": "^4.1.0-3",
     "@poppinss/cliui": "^6.1.1-2",
     "@types/picomatch": "^2.3.0",
-    "cpy": "^9.0.1",
+    "cpy": "^8.1.2",
     "execa": "^7.0.0",
     "get-port": "^6.1.2",
     "picomatch": "^2.3.1",

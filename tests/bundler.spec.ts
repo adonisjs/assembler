@@ -5,7 +5,10 @@ import ts from 'typescript'
 test.group('Bundler', () => {
   test('should copy metafiles to the build directory', async ({ assert, fs }) => {
     await Promise.all([
-      fs.create('tsconfig.json', JSON.stringify({ compilerOptions: { outDir: 'build' } })),
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+      ),
       fs.create('.adonisrc.json', '{}'),
       fs.create('package.json', '{}'),
       fs.create('package-lock.json', '{}'),

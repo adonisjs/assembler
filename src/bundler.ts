@@ -101,7 +101,7 @@ export class Bundler {
    */
   async #copyFiles(files: string[], outDir: string) {
     try {
-      await copyfiles(files, outDir, { cwd: this.#cwdPath })
+      await copyfiles(files, outDir, { parents: true, cwd: this.#cwdPath })
     } catch (error) {
       if (!error.message.includes("the file doesn't exist")) {
         throw error

@@ -120,11 +120,6 @@ export class TestRunner {
       args.push(filters.tests.join(','))
     }
 
-    if (filters.match) {
-      args.push('--match')
-      args.push(filters.match.join(','))
-    }
-
     return args
   }
 

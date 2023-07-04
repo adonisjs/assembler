@@ -83,7 +83,6 @@ export type TestRunnerOptions = {
     suites: string[]
     groups: string[]
     files: string[]
-    match: string[]
     tags: string[]
     ignoreTags: string[]
   }>

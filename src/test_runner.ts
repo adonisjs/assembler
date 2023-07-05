@@ -160,8 +160,6 @@ export class TestRunner {
          * watcher on.
          */
         if (mode === 'nonblocking') {
-          this.#logger.warning(`unable to run test script "${this.#scriptFile}"`)
-          this.#logger.fatal(error)
           this.#onError?.(error)
           this.#watcher?.close()
           this.#assetsServer?.stop()

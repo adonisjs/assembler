@@ -133,8 +133,6 @@ export class DevServer {
         }
       })
       .catch((error) => {
-        this.#logger.warning('unable to connect to underlying HTTP server process')
-        this.#logger.fatal(error)
         this.#onError?.(error)
         this.#watcher?.close()
         this.#assetsServer?.stop()

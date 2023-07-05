@@ -125,7 +125,6 @@ export class DevServer {
 
     this.#httpServer
       .then((result) => {
-        this.#logger.warning(`underlying HTTP server closed with status code "${result.exitCode}"`)
         if (mode === 'nonblocking') {
           this.#onClose?.(result.exitCode)
           this.#watcher?.close()
@@ -133,9 +132,11 @@ export class DevServer {
         }
       })
       .catch((error) => {
-        this.#onError?.(error)
-        this.#watcher?.close()
-        this.#assetsServer?.stop()
+        if (mode === 'nonblocking') {
+          this.#onError?.(error)
+          this.#watcher?.close()
+          this.#assetsServer?.stop()
+        }
       })
   }
 
@@ -218,6 +219,18 @@ export class DevServer {
   onError(callback: (error: any) => any): this {
     this.#onError = callback
     return this
+  }
+
+  /**
+   * Close watchers and running child processes
+   */
+  async close() {
+    await this.#watcher?.close()
+    this.#assetsServer?.stop()
+    if (this.#httpServer) {
+      this.#httpServer.removeAllListeners()
+      this.#httpServer.kill('SIGKILL')
+    }
   }
 
   /**

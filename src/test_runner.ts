@@ -149,25 +149,30 @@ export class TestRunner {
       .then((result) => {
         if (mode === 'nonblocking') {
           this.#onClose?.(result.exitCode)
-          this.#watcher?.close()
-          this.#assetsServer?.stop()
+          this.close()
         }
       })
       .catch((error) => {
-        /**
-         * Since the tests runner set the `process.exitCode = 1`, execa will
-         * throw an exception. However, we should ignore it and keep the
-         * watcher on.
-         */
         if (mode === 'nonblocking') {
           this.#onError?.(error)
-          this.#watcher?.close()
-          this.#assetsServer?.stop()
+          this.close()
         }
       })
       .finally(() => {
         this.#isBusy = false
       })
+  }
+
+  /**
+   * Restarts the HTTP server
+   */
+  #rerunTests(port: string, filtersArgs: string[]) {
+    if (this.#testScript) {
+      this.#testScript.removeAllListeners()
+      this.#testScript.kill('SIGKILL')
+    }
+
+    this.#runTests(port, filtersArgs, 'blocking')
   }
 
   /**
@@ -190,7 +195,7 @@ export class TestRunner {
     if (isDotEnvFile(relativePath) || this.#isMetaFile(relativePath)) {
       this.#clearScreen()
       this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
-      this.#runTests(port, filters, 'blocking')
+      this.#rerunTests(port, filters)
     }
   }
 
@@ -210,18 +215,17 @@ export class TestRunner {
      * then only run that file
      */
     if (this.#isTestFile(relativePath)) {
-      this.#runTests(
+      this.#rerunTests(
         port,
         this.#convertFiltersToArgs({
           ...this.#options.filters,
           files: [relativePath],
-        }),
-        'blocking'
+        })
       )
       return
     }
 
-    this.#runTests(port, filters, 'blocking')
+    this.#rerunTests(port, filters)
   }
 
   /**
@@ -249,6 +253,18 @@ export class TestRunner {
   onError(callback: (error: any) => any): this {
     this.#onError = callback
     return this
+  }
+
+  /**
+   * Close watchers and running child processes
+   */
+  async close() {
+    await this.#watcher?.close()
+    this.#assetsServer?.stop()
+    if (this.#testScript) {
+      this.#testScript.removeAllListeners()
+      this.#testScript.kill('SIGKILL')
+    }
   }
 
   /**

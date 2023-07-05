@@ -106,7 +106,10 @@
     "exclude": [
       "tests/**",
       "build/**",
-      "examples/**"
+      "examples/**",
+      "src/dev_server.ts",
+      "src/test_runner.ts",
+      "src/assets_dev_server.ts"
     ]
   },
   "eslintConfig": {

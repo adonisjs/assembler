@@ -82,7 +82,7 @@ export class TestRunner {
         .flat(1)
     )
 
-    this.#scriptArgs = this.#convertOptionsToArgs()
+    this.#scriptArgs = this.#convertOptionsToArgs().concat(this.#options.scriptArgs)
     this.#initialFiltersArgs = this.#convertFiltersToArgs(this.#options.filters)
   }
 

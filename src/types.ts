@@ -87,6 +87,11 @@ export type TestRunnerOptions = {
     ignoreTags: string[]
   }>
 
+  reporters?: string[]
+  timeout?: number
+  retries?: number
+  failed?: boolean
+
   /**
    * All other tags are provided as a collection of
    * arguments

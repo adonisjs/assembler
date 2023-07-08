@@ -40,6 +40,8 @@ export class TestRunner {
   #scriptFile: string = 'bin/test.js'
   #isMetaFile: picomatch.Matcher
   #isTestFile: picomatch.Matcher
+  #scriptArgs: string[]
+  #initialFiltersArgs: string[]
 
   /**
    * In watch mode, after a file is changed, we wait for the current
@@ -79,6 +81,37 @@ export class TestRunner {
         .map((suite) => suite.files)
         .flat(1)
     )
+
+    this.#scriptArgs = this.#convertOptionsToArgs()
+    this.#initialFiltersArgs = this.#convertFiltersToArgs(this.#options.filters)
+  }
+
+  /**
+   * Converts options to CLI args
+   */
+  #convertOptionsToArgs() {
+    const args: string[] = []
+
+    if (this.#options.reporters) {
+      args.push('--reporters')
+      args.push(this.#options.reporters.join(','))
+    }
+
+    if (this.#options.timeout !== undefined) {
+      args.push('--timeout')
+      args.push(String(this.#options.timeout))
+    }
+
+    if (this.#options.failed) {
+      args.push('--failed')
+    }
+
+    if (this.#options.retries !== undefined) {
+      args.push('--timeout')
+      args.push(String(this.#options.retries))
+    }
+
+    return args
   }
 
   /**
@@ -135,14 +168,22 @@ export class TestRunner {
   /**
    * Runs tests
    */
-  #runTests(port: string, filtersArgs: string[], mode: 'blocking' | 'nonblocking') {
+  #runTests(
+    port: string,
+    mode: 'blocking' | 'nonblocking',
+    filters?: TestRunnerOptions['filters']
+  ) {
     this.#isBusy = true
+
+    const scriptArgs = filters
+      ? this.#convertFiltersToArgs(filters).concat(this.#scriptArgs)
+      : this.#initialFiltersArgs.concat(this.#scriptArgs)
 
     this.#testScript = runNode(this.#cwd, {
       script: this.#scriptFile,
       env: { PORT: port, ...this.#options.env },
       nodeArgs: this.#options.nodeArgs,
-      scriptArgs: filtersArgs.concat(this.#options.scriptArgs),
+      scriptArgs,
     })
 
     this.#testScript
@@ -166,13 +207,13 @@ export class TestRunner {
   /**
    * Restarts the HTTP server
    */
-  #rerunTests(port: string, filtersArgs: string[]) {
+  #rerunTests(port: string, filters?: TestRunnerOptions['filters']) {
     if (this.#testScript) {
       this.#testScript.removeAllListeners()
       this.#testScript.kill('SIGKILL')
     }
 
-    this.#runTests(port, filtersArgs, 'blocking')
+    this.#runTests(port, 'blocking', filters)
   }
 
   /**
@@ -187,7 +228,7 @@ export class TestRunner {
   /**
    * Handles a non TypeScript file change
    */
-  #handleFileChange(action: string, port: string, filters: string[], relativePath: string) {
+  #handleFileChange(action: string, port: string, relativePath: string) {
     if (this.#isBusy) {
       return
     }
@@ -195,14 +236,14 @@ export class TestRunner {
     if (isDotEnvFile(relativePath) || this.#isMetaFile(relativePath)) {
       this.#clearScreen()
       this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
-      this.#rerunTests(port, filters)
+      this.#rerunTests(port)
     }
   }
 
   /**
    * Handles TypeScript source file change
    */
-  #handleSourceFileChange(action: string, port: string, filters: string[], relativePath: string) {
+  #handleSourceFileChange(action: string, port: string, relativePath: string) {
     if (this.#isBusy) {
       return
     }
@@ -215,17 +256,14 @@ export class TestRunner {
      * then only run that file
      */
     if (this.#isTestFile(relativePath)) {
-      this.#rerunTests(
-        port,
-        this.#convertFiltersToArgs({
-          ...this.#options.filters,
-          files: [relativePath],
-        })
-      )
+      this.#rerunTests(port, {
+        ...this.#options.filters,
+        files: [relativePath],
+      })
       return
     }
 
-    this.#rerunTests(port, filters)
+    this.#rerunTests(port)
   }
 
   /**
@@ -272,13 +310,12 @@ export class TestRunner {
    */
   async run() {
     const port = String(await getPort(this.#cwd))
-    const initialFilters = this.#convertFiltersToArgs(this.#options.filters)
 
     this.#clearScreen()
     this.#startAssetsServer()
 
     this.#logger.info('booting application to run tests...')
-    this.#runTests(port, initialFilters, 'nonblocking')
+    this.#runTests(port, 'nonblocking')
   }
 
   /**
@@ -286,13 +323,12 @@ export class TestRunner {
    */
   async runAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
     const port = String(await getPort(this.#cwd))
-    const initialFilters = this.#convertFiltersToArgs(this.#options.filters)
 
     this.#clearScreen()
     this.#startAssetsServer()
 
     this.#logger.info('booting application to run tests...')
-    this.#runTests(port, initialFilters, 'blocking')
+    this.#runTests(port, 'blocking')
 
     /**
      * Create watcher using tsconfig.json file
@@ -330,26 +366,26 @@ export class TestRunner {
      * Changes in TypeScript source file
      */
     output.watcher.on('source:add', ({ relativePath }) =>
-      this.#handleSourceFileChange('add', port, initialFilters, relativePath)
+      this.#handleSourceFileChange('add', port, relativePath)
     )
     output.watcher.on('source:change', ({ relativePath }) =>
-      this.#handleSourceFileChange('update', port, initialFilters, relativePath)
+      this.#handleSourceFileChange('update', port, relativePath)
     )
     output.watcher.on('source:unlink', ({ relativePath }) =>
-      this.#handleSourceFileChange('delete', port, initialFilters, relativePath)
+      this.#handleSourceFileChange('delete', port, relativePath)
     )
 
     /**
      * Changes in non-TypeScript source files
      */
     output.watcher.on('add', ({ relativePath }) =>
-      this.#handleFileChange('add', port, initialFilters, relativePath)
+      this.#handleFileChange('add', port, relativePath)
     )
     output.watcher.on('change', ({ relativePath }) =>
-      this.#handleFileChange('update', port, initialFilters, relativePath)
+      this.#handleFileChange('update', port, relativePath)
     )
     output.watcher.on('unlink', ({ relativePath }) =>
-      this.#handleFileChange('delete', port, initialFilters, relativePath)
+      this.#handleFileChange('delete', port, relativePath)
     )
   }
 }

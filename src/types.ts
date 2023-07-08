@@ -37,7 +37,7 @@ export type MetaFile = {
  * Test suite defined in ".adonisrc.json" file
  */
 export type Suite = {
-  files: string[]
+  files: string | string[]
   name: string
 }
 

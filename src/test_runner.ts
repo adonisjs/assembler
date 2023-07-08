@@ -73,7 +73,7 @@ export class TestRunner {
       this.#options.suites
         .filter((suite) => {
           if (this.#options.filters.suites) {
-            this.#options.filters.suites.includes(suite.name)
+            return this.#options.filters.suites.includes(suite.name)
           }
 
           return true

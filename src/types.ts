@@ -84,7 +84,6 @@ export type TestRunnerOptions = {
     groups: string[]
     files: string[]
     tags: string[]
-    ignoreTags: string[]
   }>
 
   reporters?: string[]

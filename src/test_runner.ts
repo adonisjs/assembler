@@ -107,7 +107,7 @@ export class TestRunner {
     }
 
     if (this.#options.retries !== undefined) {
-      args.push('--timeout')
+      args.push('--retries')
       args.push(String(this.#options.retries))
     }
 
@@ -143,13 +143,8 @@ export class TestRunner {
       args.push(filters.tags.join(','))
     }
 
-    if (filters.ignoreTags) {
-      args.push('--ignore-tags')
-      args.push(filters.ignoreTags.join(','))
-    }
-
     if (filters.tests) {
-      args.push('--ignore-tests')
+      args.push('--tests')
       args.push(filters.tests.join(','))
     }
 

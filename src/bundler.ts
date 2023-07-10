@@ -8,15 +8,14 @@
  */
 
 import slash from 'slash'
-import copyfiles from 'cpy'
 import fs from 'node:fs/promises'
 import type tsStatic from 'typescript'
 import { fileURLToPath } from 'node:url'
 import { join, relative } from 'node:path'
 import { cliui, type Logger } from '@poppinss/cliui'
 
-import { run, parseConfig } from './helpers.js'
 import type { BundlerOptions } from './types.js'
+import { run, parseConfig, copyFiles } from './helpers.js'
 
 /**
  * Instance of CLIUI
@@ -101,7 +100,7 @@ export class Bundler {
    */
   async #copyFiles(files: string[], outDir: string) {
     try {
-      await copyfiles(files, outDir, { parents: true, cwd: this.#cwdPath })
+      await copyFiles(files, this.#cwdPath, outDir)
     } catch (error) {
       if (!error.message.includes("the file doesn't exist")) {
         throw error

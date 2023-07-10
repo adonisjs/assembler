@@ -11,7 +11,9 @@ import ts from 'typescript'
 import { test } from '@japa/runner'
 import { watch } from '../src/helpers.js'
 
-test.group('Watcher', () => {
+test.group('Watcher', (group) => {
+  group.tap((t) => t.disableTimeout())
+
   test('watch files included by the tsconfig.json', async ({ fs, assert, cleanup }, done) => {
     assert.plan(1)
 

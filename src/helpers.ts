@@ -7,14 +7,19 @@
  * file that was distributed with this source code.
  */
 
+import cpy from 'cpy'
+import { isNotJunk } from 'junk'
+import fastGlob from 'fast-glob'
 import getRandomPort from 'get-port'
 import type tsStatic from 'typescript'
 import { fileURLToPath } from 'node:url'
 import { execaNode, execa } from 'execa'
+import { isAbsolute, relative } from 'node:path'
 import { EnvLoader, EnvParser } from '@adonisjs/env'
 import { ConfigParser, Watcher } from '@poppinss/chokidar-ts'
 
 import type { RunOptions, WatchOptions } from './types.js'
+import debug from './debug.js'
 
 /**
  * Default set of args to pass in order to run TypeScript
@@ -159,4 +164,46 @@ export async function getPort(cwd: URL): Promise<number> {
    * Use 3333 as the port
    */
   return getRandomPort({ port: 3333 })
+}
+
+/**
+ * Helper function to copy files from relative paths or glob
+ * patterns
+ */
+export async function copyFiles(files: string[], cwd: string, outDir: string) {
+  /**
+   * Looping over files and create a new collection with paths
+   * and glob patterns
+   */
+  const { paths, patterns } = files.reduce<{ patterns: string[]; paths: string[] }>(
+    (result, file) => {
+      if (fastGlob.isDynamicPattern(file)) {
+        result.patterns.push(file)
+      } else {
+        result.paths.push(file)
+      }
+
+      return result
+    },
+    { patterns: [], paths: [] }
+  )
+
+  debug('copyFiles inputs: %O, paths: %O, patterns: %O', files, paths, patterns)
+
+  /**
+   * Getting list of relative paths from glob patterns
+   */
+  const filePaths = paths.concat(await fastGlob(patterns, { cwd }))
+
+  /**
+   * Computing relative destination. This is because, cpy is buggy when
+   * outDir is an absolute path.
+   */
+  const destination = isAbsolute(outDir) ? relative(cwd, outDir) : outDir
+  debug('copying files %O to destination "%s"', filePaths, destination)
+
+  return cpy(filePaths.filter(isNotJunk), destination, {
+    cwd: cwd,
+    flat: false,
+  })
 }

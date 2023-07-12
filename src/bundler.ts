@@ -71,7 +71,7 @@ export class Bundler {
       await run(this.#cwd, {
         stdio: 'inherit',
         script: assetsBundler.cmd,
-        scriptArgs: [],
+        scriptArgs: assetsBundler.args,
       })
       return true
     } catch {

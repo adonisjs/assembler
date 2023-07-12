@@ -72,6 +72,7 @@ test.group('Child process', () => {
         '--loader=ts-node/esm',
         '--no-warnings',
         '--experimental-import-meta-resolve',
+        '--enable-source-maps',
         '--throw-deprecation',
       ],
     })

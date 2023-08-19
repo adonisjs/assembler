@@ -9,42 +9,39 @@
 
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { CodeBlockWriter, Project, SourceFile } from 'ts-morph'
+import { CodeBlockWriter, Node, Project, SourceFile, SyntaxKind } from 'ts-morph'
 
-import { AddMiddlewareEntry, EnvValidationDefinition } from './types.js'
+import { RcFileTransformer } from './rc_file_transformer.js'
+import type { AddMiddlewareEntry, EnvValidationDefinition } from '../types.js'
 
 /**
  * This class is responsible for updating
  */
 export class CodeTransformer {
-  #cwd: URL
-
   /**
-   * Reference to TS Morph
-   * We lazy load it to avoid loading it when not
-   * used
+   * Directory of the adonisjs project
    */
-  #tsMorph!: typeof import('ts-morph')
+  #cwd: URL
 
   /**
    * The TsMorph project
    */
-  #project!: Project
+  #project: Project
 
   constructor(cwd: URL) {
     this.#cwd = cwd
+    this.#project = new Project({
+      tsConfigFilePath: join(fileURLToPath(this.#cwd), 'tsconfig.json'),
+    })
   }
 
   /**
-   * Lazy load ts-morph and create the project
+   * Update the `adonisrc.ts` file
    */
-  async #loadProject() {
-    if (this.#project) return
-
-    this.#tsMorph = await import('ts-morph')
-    this.#project = new this.#tsMorph.Project({
-      tsConfigFilePath: join(fileURLToPath(this.#cwd), 'tsconfig.json'),
-    })
+  async updateRcFile(callback: (transformer: RcFileTransformer) => void) {
+    const rcFileTransformer = new RcFileTransformer(this.#cwd, this.#project)
+    callback(rcFileTransformer)
+    await rcFileTransformer.save()
   }
 
   /**
@@ -53,7 +50,7 @@ export class CodeTransformer {
    */
   #addToMiddlewareArray(file: SourceFile, target: string, middlewareEntry: AddMiddlewareEntry) {
     const callExpressions = file
-      .getDescendantsOfKind(this.#tsMorph.SyntaxKind.CallExpression)
+      .getDescendantsOfKind(SyntaxKind.CallExpression)
       .filter((statement) => statement.getExpression().getText() === target)
 
     if (!callExpressions.length) {
@@ -61,10 +58,7 @@ export class CodeTransformer {
     }
 
     const arrayLiteralExpression = callExpressions[0].getArguments()[0]
-    if (
-      !arrayLiteralExpression ||
-      !this.#tsMorph.Node.isArrayLiteralExpression(arrayLiteralExpression)
-    ) {
+    if (!arrayLiteralExpression || !Node.isArrayLiteralExpression(arrayLiteralExpression)) {
       throw new Error(`Cannot find middleware array in ${target} statement.`)
     }
 
@@ -85,7 +79,7 @@ export class CodeTransformer {
 
     const callArguments = file
       .getVariableDeclarationOrThrow('middleware')
-      .getInitializerIfKindOrThrow(this.#tsMorph.SyntaxKind.CallExpression)
+      .getInitializerIfKindOrThrow(SyntaxKind.CallExpression)
       .getArguments()
 
     if (callArguments.length === 0) {
@@ -93,7 +87,7 @@ export class CodeTransformer {
     }
 
     const namedMiddlewareObject = callArguments[0]
-    if (!this.#tsMorph.Node.isObjectLiteralExpression(namedMiddlewareObject)) {
+    if (!Node.isObjectLiteralExpression(namedMiddlewareObject)) {
       throw new Error('The argument of the named middleware call is not an object literal.')
     }
 
@@ -128,8 +122,6 @@ export class CodeTransformer {
     stack: 'server' | 'router' | 'named',
     middleware: AddMiddlewareEntry[]
   ) {
-    await this.#loadProject()
-
     /**
      * Get the `start/kernel.ts` source file
      */
@@ -156,8 +148,6 @@ export class CodeTransformer {
    * `env.ts` file
    */
   async defineEnvValidations(definition: EnvValidationDefinition) {
-    await this.#loadProject()
-
     /**
      * Get the `start/env.ts` source file
      */
@@ -168,7 +158,7 @@ export class CodeTransformer {
      * Get the `Env.create` call expression
      */
     const callExpressions = file
-      .getDescendantsOfKind(this.#tsMorph.SyntaxKind.CallExpression)
+      .getDescendantsOfKind(SyntaxKind.CallExpression)
       .filter((statement) => statement.getExpression().getText() === 'Env.create')
 
     if (!callExpressions.length) {
@@ -176,7 +166,7 @@ export class CodeTransformer {
     }
 
     const objectLiteralExpression = callExpressions[0].getArguments()[1]
-    if (!this.#tsMorph.Node.isObjectLiteralExpression(objectLiteralExpression)) {
+    if (!Node.isObjectLiteralExpression(objectLiteralExpression)) {
       throw new Error(`The second argument of Env.create is not an object literal.`)
     }
 

@@ -1,15 +1,21 @@
+import dedent from 'dedent'
 import { test } from '@japa/runner'
 import { readFile } from 'node:fs/promises'
-import { CodeTransformer } from '../src/code_transformer.js'
+import type { FileSystem } from '@japa/file-system'
 
-test.group('Code transformer', (group) => {
-  group.each.setup(async ({ context }) => {
-    await Promise.all([
-      context.fs.createJson('tsconfig.json', { compilerOptions: {} }),
-      context.fs.create('start/kernel.ts', await readFile('./tests/fixtures/kernel.txt', 'utf-8')),
-      context.fs.create('start/env.ts', await readFile('./tests/fixtures/env.txt', 'utf-8')),
-    ])
-  })
+import { CodeTransformer } from '../src/code_transformer/code_transformer.js'
+
+async function setupFakeAdonisproject(fs: FileSystem) {
+  await Promise.all([
+    fs.createJson('tsconfig.json', { compilerOptions: {} }),
+    fs.create('start/kernel.ts', await readFile('./tests/fixtures/kernel.txt', 'utf-8')),
+    fs.create('adonisrc.ts', await readFile('./tests/fixtures/adonisrc.txt', 'utf-8')),
+    fs.create('start/env.ts', await readFile('./tests/fixtures/env.txt', 'utf-8')),
+  ])
+}
+
+test.group('Code transformer | addMiddlewareToStack', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
 
   test('add a server middleware', async ({ assert, fs }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
@@ -81,7 +87,10 @@ test.group('Code transformer', (group) => {
     assert.fileContains('start/kernel.ts', `auth: () => import('#foo/bar.js')`)
     assert.fileContains('start/kernel.ts', `rand: () => import('@adonisjs/random_middleware')`)
   })
+})
 
+test.group('Code transformer | defineEnvValidations', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
   test('define new env validations', async ({ assert, fs }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
 
@@ -109,5 +118,333 @@ test.group('Code transformer', (group) => {
 
     const file = await fs.contents('start/env.ts')
     assert.snapshot(file).match()
+  })
+})
+
+test.group('Code transformer | addCommand', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add command to rc file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addCommand('#foo/bar.js').addCommand('#foo/bar2.js')
+    })
+
+    assert.fileContains('adonisrc.ts', `() => import('#foo/bar.js')`)
+    assert.fileContains('adonisrc.ts', `() => import('#foo/bar2.js')`)
+  })
+
+  test('add command should not add duplicate', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addCommand('#foo/bar.js').addCommand('#foo/bar.js')
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    const occurrences = (file.match(/() => import\('#foo\/bar\.js'\)/g) || []).length
+
+    assert.equal(occurrences, 1)
+  })
+
+  test('should add command even if commands property is missing', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        typescript: true,
+      })`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addCommand('#foo/bar.js')
+    })
+
+    assert.fileContains('adonisrc.ts', `() => import('#foo/bar.js')`)
+  })
+})
+
+test.group('Code transformer | addProvider', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add provider to rc file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addProvider('@adonisjs/redis-provider')
+    })
+
+    assert.fileContains('adonisrc.ts', `() => import('@adonisjs/redis-provider')`)
+  })
+
+  test('add provider to rc file with specific environments', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addProvider('@adonisjs/redis-provider', ['console', 'repl'])
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
+  })
+
+  test('should add provider even if providers property is missing', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        typescript: true,
+      })`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addProvider('@adonisjs/redis-provider')
+    })
+
+    assert.fileContains('adonisrc.ts', `() => import('@adonisjs/redis-provider')`)
+  })
+
+  test('should ignore provider duplicate', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addProvider('@adonisjs/redis-provider').addProvider('@adonisjs/redis-provider')
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    const occurrences = (file.match(/() => import\('@adonisjs\/redis-provider'\)/g) || []).length
+
+    assert.equal(occurrences, 1)
+  })
+
+  test('should ignore provider duplicate when using different environments', async ({
+    assert,
+    fs,
+  }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile
+        .addProvider('@adonisjs/redis-provider', ['console'])
+        .addProvider('@adonisjs/redis-provider')
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    const occurrences = (file.match(/() => import\('@adonisjs\/redis-provider'\)/g) || []).length
+
+    assert.equal(occurrences, 1)
+  })
+
+  test('do no add environments when they are all specified', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addProvider('@adonisjs/redis-provider', ['console', 'repl', 'web', 'test'])
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
+  })
+})
+
+test.group('Code transformer | addMetaFile', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add meta files to rc file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addMetaFile('assets/**', false)
+    })
+
+    assert.fileContains('adonisrc.ts', `assets/**`)
+  })
+
+  test('add meta files to rc file with reload server', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addMetaFile('assets/**', true)
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
+  })
+})
+
+test.group('Code transformer | setDirectory', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('set directory in rc file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.setDirectory('views', 'templates')
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
+  })
+
+  test('set directory should overwrite if already defined', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          views: 'resources/views',
+        },
+      })`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.setDirectory('views', 'templates')
+    })
+
+    assert.fileContains('adonisrc.ts', `templates`)
+  })
+})
+
+test.group('Code transformer | setCommandAlias', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('set command alias in rc file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.setCommandAlias('migrate', 'migration:run')
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
+  })
+
+  test('set commandAlias should overwrite if already defined', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        commandsAliases: {
+          migrate: 'migration:run',
+        },
+      })`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.setCommandAlias('migrate', 'migration:run --force')
+    })
+
+    assert.fileContains('adonisrc.ts', `migration:run --force`)
+  })
+})
+
+test.group('Code transformer | addSuite', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add a new test suite to the rcFile', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/build/standalone'
+
+      export default defineConfig({
+        commands: [],
+      })
+      `
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addSuite('unit', 'test/unit')
+    })
+
+    assert.fileContains('adonisrc.ts', `name: 'unit'`)
+  })
+
+  test('should ignore suite duplicate', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/build/standalone'
+
+      export default defineConfig({
+        commands: [],
+        tests: {
+          suites: [
+            {
+              name: 'unit',
+              files: ['test/unit'],
+            },
+          ],
+        },
+      })
+      `
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addSuite('unit', 'nope')
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.include(file, `name: 'unit'`)
+    assert.notInclude(file, `nope`)
+  })
+})
+
+test.group('Code transformer | addPreloadFile', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add preload file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addPreloadFile('#start/foo.js')
+    })
+
+    assert.fileContains('adonisrc.ts', `'#start/foo.js'`)
+  })
+
+  test('add preload file with specific environments', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addPreloadFile('#start/foo.js', ['console', 'repl'])
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
+  })
+
+  test('do not add preload file when already defined', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addPreloadFile('#start/foo.js').addPreloadFile('#start/foo.js')
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    const occurrences = (file.match(/'#start\/foo\.js'/g) || []).length
+
+    assert.equal(occurrences, 1)
   })
 })

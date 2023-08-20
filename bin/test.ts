@@ -1,5 +1,7 @@
 import { assert } from '@japa/assert'
 import { fileURLToPath } from 'node:url'
+
+import { snapshot } from '@japa/snapshot'
 import { fileSystem } from '@japa/file-system'
 import { processCLIArgs, configure, run } from '@japa/runner'
 
@@ -21,7 +23,7 @@ const TEST_TMP_DIR_PATH = fileURLToPath(new URL('../tmp', import.meta.url))
 processCLIArgs(process.argv.slice(2))
 configure({
   files: ['tests/**/*.spec.ts'],
-  plugins: [assert(), fileSystem({ basePath: TEST_TMP_DIR_PATH })],
+  plugins: [assert(), fileSystem({ basePath: TEST_TMP_DIR_PATH }), snapshot()],
   timeout: 5 * 1000,
 })
 

@@ -3,7 +3,7 @@ import { test } from '@japa/runner'
 import { readFile } from 'node:fs/promises'
 import type { FileSystem } from '@japa/file-system'
 
-import { CodeTransformer } from '../src/code_transformer/code_transformer.js'
+import { CodeTransformer } from '../src/code_transformer/main.js'
 
 async function setupFakeAdonisproject(fs: FileSystem) {
   await Promise.all([

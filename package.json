@@ -14,7 +14,7 @@
   ],
   "exports": {
     ".": "./build/index.js",
-    "./code_transformer": "./build/src/code_transformer/code_transformer.js",
+    "./code_transformer": "./build/src/code_transformer/main.js",
     "./types": "./build/src/types.js"
   },
   "scripts": {

@@ -9,9 +9,9 @@
 
 import slash from 'slash'
 import fs from 'node:fs/promises'
+import { relative } from 'node:path'
 import type tsStatic from 'typescript'
 import { fileURLToPath } from 'node:url'
-import { join, relative } from 'node:path'
 import { cliui, type Logger } from '@poppinss/cliui'
 
 import type { BundlerOptions } from './types.js'
@@ -120,25 +120,6 @@ export class Bundler {
   }
 
   /**
-   * Copies .adonisrc.json file to the destination
-   */
-  async #copyAdonisRcFile(outDir: string) {
-    const existingContents = JSON.parse(
-      await fs.readFile(join(this.#cwdPath, '.adonisrc.json'), 'utf-8')
-    )
-    const compiledContents = Object.assign({}, existingContents, {
-      typescript: false,
-      lastCompiledAt: new Date().toISOString(),
-    })
-
-    await fs.mkdir(outDir, { recursive: true })
-    await fs.writeFile(
-      join(outDir, '.adonisrc.json'),
-      JSON.stringify(compiledContents, null, 2) + '\n'
-    )
-  }
-
-  /**
    * Returns the lock file name for a given packages client
    */
   #getClientLockFile(client: 'npm' | 'yarn' | 'pnpm') {
@@ -240,12 +221,6 @@ export class Bundler {
     const pkgFiles = ['package.json', this.#getClientLockFile(client)]
     this.#logger.info('copying meta files to the output directory')
     await this.#copyMetaFiles(outDir, pkgFiles)
-
-    /**
-     * Step 6: Copy .adonisrc.json file to the build directory
-     */
-    this.#logger.info('copying .adonisrc.json file to the output directory')
-    await this.#copyAdonisRcFile(outDir)
 
     this.#logger.success('build completed')
     this.#logger.log('')

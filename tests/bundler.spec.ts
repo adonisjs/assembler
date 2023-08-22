@@ -9,7 +9,7 @@ test.group('Bundler', () => {
         'tsconfig.json',
         JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
       ),
-      fs.create('.adonisrc.json', '{}'),
+      fs.create('adonisrc.ts', 'export default {}'),
       fs.create('package.json', '{}'),
       fs.create('package-lock.json', '{}'),
 
@@ -36,8 +36,8 @@ test.group('Bundler', () => {
       assert.fileExists('./build/resources/views/foo.edge'),
       assert.fileExists('./build/resources/views/nested/bar.edge'),
       assert.fileExists('./build/resources/views/nested/baz.edge'),
-      assert.fileExists('./build/.adonisrc.json'),
       assert.fileExists('./build/package.json'),
+      assert.fileExists('./build/adonisrc.js'),
       assert.fileExists('./build/package-lock.json'),
     ])
   })

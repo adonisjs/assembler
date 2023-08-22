@@ -185,6 +185,9 @@ export class CodeTransformer {
      * Add each variable validation
      */
     for (const [variable, validation] of Object.entries(definition.variables)) {
+      const existingProperty = objectLiteralExpression.getProperty(variable)
+      if (existingProperty) existingProperty.remove()
+
       objectLiteralExpression.addPropertyAssignment({
         name: variable,
         initializer: validation,

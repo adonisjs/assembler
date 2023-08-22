@@ -119,6 +119,22 @@ test.group('Code transformer | defineEnvValidations', (group) => {
     const file = await fs.contents('start/env.ts')
     assert.snapshot(file).match()
   })
+
+  test('should replace duplicates', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.defineEnvValidations({
+      variables: {
+        NODE_ENV: 'Env.schema.string.optional()',
+      },
+    })
+
+    const file = await fs.contents('start/env.ts')
+    const occurrences = (file.match(/NODE_ENV/g) || []).length
+
+    assert.equal(occurrences, 1)
+    assert.fileContains('start/env.ts', `NODE_ENV: Env.schema.string.optional()`)
+  })
 })
 
 test.group('Code transformer | addCommand', (group) => {

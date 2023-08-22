@@ -28,6 +28,15 @@ export class CodeTransformer {
    */
   #project: Project
 
+  /**
+   * Settings to use when persisting files
+   */
+  #editorSettings = {
+    indentSize: 2,
+    convertTabsToSpaces: true,
+    trimTrailingWhitespace: true,
+  }
+
   constructor(cwd: URL) {
     this.#cwd = cwd
     this.#project = new Project({
@@ -139,7 +148,7 @@ export class CodeTransformer {
       }
     }
 
-    file.formatText()
+    file.formatText(this.#editorSettings)
     await file.save()
   }
 
@@ -187,7 +196,7 @@ export class CodeTransformer {
       })
     }
 
-    file.formatText()
+    file.formatText(this.#editorSettings)
     await file.save()
   }
 }

@@ -18,6 +18,15 @@ export class RcFileTransformer {
   #cwd: URL
   #project: Project
 
+  /**
+   * Settings to use when persisting files
+   */
+  #editorSettings = {
+    indentSize: 2,
+    convertTabsToSpaces: true,
+    trimTrailingWhitespace: true,
+  }
+
   constructor(cwd: URL, project: Project) {
     this.#cwd = cwd
     this.#project = project
@@ -326,7 +335,7 @@ export class RcFileTransformer {
    */
   save() {
     const file = this.#getRcFileOrThrow()
-    file.formatText()
+    file.formatText(this.#editorSettings)
     return file.save()
   }
 }

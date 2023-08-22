@@ -33,7 +33,7 @@
     "quick:test": "node --enable-source-maps --loader=ts-node/esm bin/test.ts"
   },
   "devDependencies": {
-    "@adonisjs/application": "7.1.2-9",
+    "@adonisjs/application": "^7.1.2-12",
     "@adonisjs/eslint-config": "^1.1.8",
     "@adonisjs/prettier-config": "^1.1.8",
     "@adonisjs/tsconfig": "^1.1.8",

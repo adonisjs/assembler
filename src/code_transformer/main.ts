@@ -76,21 +76,19 @@ export class CodeTransformer {
     /**
      * Delete the existing middleware if it exists
      */
-    const existingMiddleware = arrayLiteralExpression
+    const existingMiddlewareIndex = arrayLiteralExpression
       .getElements()
       .findIndex((element) => element.getText() === middleware)
 
-    if (existingMiddleware !== -1) {
-      arrayLiteralExpression.removeElement(existingMiddleware)
-    }
-
-    /**
-     * Add the middleware to the top or bottom of the array
-     */
-    if (middlewareEntry.position === 'before') {
-      arrayLiteralExpression.insertElement(0, middleware)
-    } else {
-      arrayLiteralExpression.addElement(middleware)
+    if (existingMiddlewareIndex === -1) {
+      /**
+       * Add the middleware to the top or bottom of the array
+       */
+      if (middlewareEntry.position === 'before') {
+        arrayLiteralExpression.insertElement(0, middleware)
+      } else {
+        arrayLiteralExpression.addElement(middleware)
+      }
     }
   }
 
@@ -98,7 +96,9 @@ export class CodeTransformer {
    * Add a new middleware to the named middleware of the given file
    */
   #addToNamedMiddleware(file: SourceFile, middlewareEntry: AddMiddlewareEntry) {
-    if (!middlewareEntry.name) throw new Error('Named middleware requires a name.')
+    if (!middlewareEntry.name) {
+      throw new Error('Named middleware requires a name.')
+    }
 
     const callArguments = file
       .getVariableDeclarationOrThrow('middleware')
@@ -118,20 +118,22 @@ export class CodeTransformer {
      * Check if property is already defined. If so, remove it
      */
     const existingProperty = namedMiddlewareObject.getProperty(middlewareEntry.name)
-    if (existingProperty) existingProperty.remove()
-
-    /**
-     * Add the named middleware
-     */
-    const middleware = `${middlewareEntry.name}: () => import('${middlewareEntry.path}')`
-    namedMiddlewareObject!.insertProperty(0, middleware)
+    if (!existingProperty) {
+      /**
+       * Add the named middleware
+       */
+      const middleware = `${middlewareEntry.name}: () => import('${middlewareEntry.path}')`
+      namedMiddlewareObject!.insertProperty(0, middleware)
+    }
   }
 
   /**
    * Write a leading comment
    */
   #addLeadingComment(writer: CodeBlockWriter, comment?: string) {
-    if (!comment) return writer.blankLine()
+    if (!comment) {
+      return writer.blankLine()
+    }
 
     return writer
       .blankLine()
@@ -202,7 +204,7 @@ export class CodeTransformer {
       throw new Error(`The second argument of Env.create is not an object literal.`)
     }
 
-    let firstAdded = false
+    let shouldAddComment = true
 
     /**
      * Add each variable validation
@@ -212,17 +214,32 @@ export class CodeTransformer {
        * Check if the variable is already defined. If so, remove it
        */
       const existingProperty = objectLiteralExpression.getProperty(variable)
-      if (existingProperty) existingProperty.remove()
 
-      objectLiteralExpression.addPropertyAssignment({
-        name: variable,
-        initializer: validation,
-        leadingTrivia: (writer) => {
-          if (firstAdded) return
-          firstAdded = true
-          return this.#addLeadingComment(writer, definition.leadingComment)
-        },
-      })
+      /**
+       * Do not add leading comment if one or more properties
+       * already exists
+       */
+      if (existingProperty) {
+        shouldAddComment = false
+      }
+
+      /**
+       * Add property only when the property does not exist
+       */
+      if (!existingProperty) {
+        objectLiteralExpression.addPropertyAssignment({
+          name: variable,
+          initializer: validation,
+          leadingTrivia: (writer) => {
+            if (!shouldAddComment) {
+              return
+            }
+
+            shouldAddComment = false
+            return this.#addLeadingComment(writer, definition.leadingComment)
+          },
+        })
+      }
     }
 
     file.formatText(this.#editorSettings)

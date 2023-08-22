@@ -88,7 +88,7 @@ test.group('Code transformer | addMiddlewareToStack', (group) => {
     assert.fileContains('start/kernel.ts', `rand: () => import('@adonisjs/random_middleware')`)
   })
 
-  test('override duplicates when adding router/server middleware', async ({ assert, fs }) => {
+  test('do not add duplicate router/server middleware', async ({ assert, fs }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
 
     await transformer.addMiddlewareToStack('router', [
@@ -112,7 +112,7 @@ test.group('Code transformer | addMiddlewareToStack', (group) => {
     assert.equal(occurrences2, 1)
   })
 
-  test('override duplicates when adding named middelware', async ({ assert, fs }) => {
+  test('do not add duplicate named middleware', async ({ assert, fs }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
 
     await transformer.addMiddlewareToStack('named', [{ name: 'auth', path: '#foo/bar.js' }])
@@ -158,7 +158,7 @@ test.group('Code transformer | defineEnvValidations', (group) => {
     assert.snapshot(file).match()
   })
 
-  test('should replace duplicates', async ({ assert, fs }) => {
+  test('do not add duplicates', async ({ assert, fs }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
 
     await transformer.defineEnvValidations({
@@ -171,7 +171,10 @@ test.group('Code transformer | defineEnvValidations', (group) => {
     const occurrences = (file.match(/NODE_ENV/g) || []).length
 
     assert.equal(occurrences, 1)
-    assert.fileContains('start/env.ts', `NODE_ENV: Env.schema.string.optional()`)
+    assert.fileContains(
+      'start/env.ts',
+      `Env.schema.enum(['development', 'production', 'test'] as const)`
+    )
   })
 })
 

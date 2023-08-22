@@ -87,6 +87,44 @@ test.group('Code transformer | addMiddlewareToStack', (group) => {
     assert.fileContains('start/kernel.ts', `auth: () => import('#foo/bar.js')`)
     assert.fileContains('start/kernel.ts', `rand: () => import('@adonisjs/random_middleware')`)
   })
+
+  test('override duplicates when adding router/server middleware', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addMiddlewareToStack('router', [
+      { path: '@adonisjs/core/bodyparser_middleware' },
+    ])
+
+    await transformer.addMiddlewareToStack('server', [
+      { path: '#middleware/container_bindings_middleware' },
+    ])
+
+    const file = await fs.contents('start/kernel.ts')
+    const occurrences = (
+      file.match(/() => import\('@adonisjs\/core\/bodyparser_middleware'\)/g) || []
+    ).length
+
+    const occurrences2 = (
+      file.match(/() => import\('#middleware\/container_bindings_middleware'\)/g) || []
+    ).length
+
+    assert.equal(occurrences, 1)
+    assert.equal(occurrences2, 1)
+  })
+
+  test('override duplicates when adding named middelware', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addMiddlewareToStack('named', [{ name: 'auth', path: '#foo/bar.js' }])
+
+    await transformer.addMiddlewareToStack('named', [
+      { name: 'auth', path: '#foo/bar2.js' },
+      { name: 'auth', path: '#foo/bar3.js' },
+    ])
+
+    const file = await fs.contents('start/kernel.ts')
+    assert.snapshot(file).match()
+  })
 })
 
 test.group('Code transformer | defineEnvValidations', (group) => {

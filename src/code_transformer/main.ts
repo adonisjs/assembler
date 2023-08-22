@@ -73,6 +73,20 @@ export class CodeTransformer {
 
     const middleware = `() => import('${middlewareEntry.path}')`
 
+    /**
+     * Delete the existing middleware if it exists
+     */
+    const existingMiddleware = arrayLiteralExpression
+      .getElements()
+      .findIndex((element) => element.getText() === middleware)
+
+    if (existingMiddleware !== -1) {
+      arrayLiteralExpression.removeElement(existingMiddleware)
+    }
+
+    /**
+     * Add the middleware to the top or bottom of the array
+     */
     if (middlewareEntry.position === 'before') {
       arrayLiteralExpression.insertElement(0, middleware)
     } else {
@@ -100,6 +114,15 @@ export class CodeTransformer {
       throw new Error('The argument of the named middleware call is not an object literal.')
     }
 
+    /**
+     * Check if property is already defined. If so, remove it
+     */
+    const existingProperty = namedMiddlewareObject.getProperty(middlewareEntry.name)
+    if (existingProperty) existingProperty.remove()
+
+    /**
+     * Add the named middleware
+     */
     const middleware = `${middlewareEntry.name}: () => import('${middlewareEntry.path}')`
     namedMiddlewareObject!.insertProperty(0, middleware)
   }
@@ -185,6 +208,9 @@ export class CodeTransformer {
      * Add each variable validation
      */
     for (const [variable, validation] of Object.entries(definition.variables)) {
+      /**
+       * Check if the variable is already defined. If so, remove it
+       */
       const existingProperty = objectLiteralExpression.getProperty(variable)
       if (existingProperty) existingProperty.remove()
 

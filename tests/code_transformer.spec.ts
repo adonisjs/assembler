@@ -188,8 +188,8 @@ test.group('Code transformer | addCommand', (group) => {
       rcFile.addCommand('#foo/bar.js').addCommand('#foo/bar2.js')
     })
 
-    assert.fileContains('adonisrc.ts', `() => import('#foo/bar.js')`)
-    assert.fileContains('adonisrc.ts', `() => import('#foo/bar2.js')`)
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
   })
 
   test('add command should not add duplicate', async ({ assert, fs }) => {
@@ -222,7 +222,8 @@ test.group('Code transformer | addCommand', (group) => {
       rcFile.addCommand('#foo/bar.js')
     })
 
-    assert.fileContains('adonisrc.ts', `() => import('#foo/bar.js')`)
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
   })
 })
 

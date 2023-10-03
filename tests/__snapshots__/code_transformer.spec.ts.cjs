@@ -314,3 +314,43 @@ export const middleware = router.named({
 })
 "`
 
+exports[`Code transformer | addCommand > add command to rc file 1`] = `"import { defineConfig } from '@adonisjs/core/app'
+
+export default defineConfig({
+  typescript: true,
+  preloads: [
+    () => import('./start/routes.ts'),
+    {
+      file: () => import('./start/ace.ts'),
+      environment: ['console'],
+    },
+  ],
+  providers: [
+    () => import('@adonisjs/core/providers/app_provider'),
+    {
+      file: () => import('@adonisjs/core/providers/repl_provider'),
+      environment: ['repl'],
+    }
+  ],
+  metaFiles: [
+    {
+      pattern: 'public/**',
+      reloadServer: true
+    },
+  ],
+  commands: [
+    () => import('@adonisjs/core/commands'),
+    () => import('#foo/bar.js'),
+    () => import('#foo/bar2.js')
+  ]
+})
+"`
+
+exports[`Code transformer | addCommand > should add command even if commands property is missing 1`] = `"import { defineConfig } from '@adonisjs/core/app'
+
+export default defineConfig({
+  typescript: true,
+  commands: [() => import('#foo/bar.js')]
+})
+"`
+

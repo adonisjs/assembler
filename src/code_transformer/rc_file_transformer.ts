@@ -172,7 +172,7 @@ export class RcFileTransformer {
    * Add a new command to the rcFile
    */
   addCommand(commandPath: string) {
-    const commandsProperty = this.#getPropertyAssignmentInDefineConfigCall('providers', '[]')
+    const commandsProperty = this.#getPropertyAssignmentInDefineConfigCall('commands', '[]')
     const commandsArray = commandsProperty.getInitializerIfKindOrThrow(
       SyntaxKind.ArrayLiteralExpression
     )

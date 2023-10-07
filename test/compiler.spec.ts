@@ -46,7 +46,9 @@ test.group('Compiler', (group) => {
       JSON.stringify({
         include: ['**/*'],
         exclude: ['build'],
-        compilerOptions: {},
+        compilerOptions: {
+          skipLibCheck: true,
+        },
       })
     )
 
@@ -112,6 +114,7 @@ test.group('Compiler', (group) => {
         exclude: ['build'],
         compilerOptions: {
           outDir: 'build',
+          skipLibCheck: true,
         },
       })
     )
@@ -175,6 +178,7 @@ test.group('Compiler', (group) => {
         compilerOptions: {
           rootDir: './',
           outDir: 'build',
+          skipLibCheck: true,
         },
       })
     )
@@ -238,6 +242,7 @@ test.group('Compiler', (group) => {
         compilerOptions: {
           rootDir: './',
           outDir: 'build/dist',
+          skipLibCheck: true,
         },
       })
     )
@@ -302,6 +307,7 @@ test.group('Compiler', (group) => {
           foo: 'bar',
           rootDir: './',
           outDir: 'build/dist',
+          skipLibCheck: true,
         },
       })
     )
@@ -350,6 +356,7 @@ test.group('Compiler', (group) => {
         compilerOptions: {
           rootDir: './',
           outDir: 'build/dist',
+          skipLibCheck: true,
         },
       })
     )
@@ -418,6 +425,7 @@ test.group('Compiler', (group) => {
         compilerOptions: {
           rootDir: './',
           outDir: 'build/dist',
+          skipLibCheck: true,
         },
       })
     )
@@ -487,6 +495,7 @@ test.group('Compiler', (group) => {
           rootDir: './',
           outDir: 'build/dist',
           noEmitOnError: true,
+          skipLibCheck: true,
         },
       })
     )
@@ -556,6 +565,7 @@ test.group('Compiler', (group) => {
         exclude: ['build'],
         compilerOptions: {
           outDir: 'build',
+          skipLibCheck: true,
         },
       })
     )
@@ -634,7 +644,9 @@ test.group('Compiler', (group) => {
       JSON.stringify({
         include: ['**/*'],
         exclude: ['build'],
-        compilerOptions: {},
+        compilerOptions: {
+          skipLibCheck: true,
+        },
       })
     )
 
@@ -705,7 +717,9 @@ test.group('Compiler', (group) => {
       JSON.stringify({
         include: ['**/*'],
         exclude: ['build'],
-        compilerOptions: {},
+        compilerOptions: {
+          skipLibCheck: true,
+        },
       })
     )
 
@@ -769,6 +783,7 @@ test.group('Compiler', (group) => {
         exclude: ['build'],
         compilerOptions: {
           outDir: 'build',
+          skipLibCheck: true,
         },
       })
     )
@@ -814,6 +829,7 @@ test.group('Compiler', (group) => {
         compilerOptions: {
           rootDir: './',
           outDir: 'build/dist',
+          skipLibCheck: true,
         },
       })
     )
@@ -867,6 +883,7 @@ test.group('Compiler', (group) => {
         compilerOptions: {
           rootDir: './',
           outDir: 'build/dist',
+          skipLibCheck: true,
         },
       })
     )

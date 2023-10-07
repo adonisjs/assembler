@@ -215,7 +215,7 @@ export default class Configure extends BaseCommand {
      * Install required dependencies
      */
     const pkgFile = new files.PackageJsonFile(this.application.appRoot)
-    pkgFile.install('@japa/runner')
+    pkgFile.install('@japa/runner@2.5.1')
     pkgFile.install('@japa/preset-adonis')
     pkgFile.useClient(this.getPackageManager())
 

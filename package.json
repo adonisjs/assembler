@@ -23,7 +23,7 @@
     "lint": "eslint . --ext=.ts",
     "clean": "del-cli build",
     "typecheck": "tsc --noEmit",
-    "compile": "npm run lint && npm run clean && tsc",
+    "compile": "npm run lint && npm run clean && tsup-node",
     "build": "npm run compile",
     "release": "np",
     "version": "npm run build",
@@ -57,6 +57,7 @@
     "p-event": "^6.0.0",
     "prettier": "^3.0.0",
     "ts-node": "^10.9.1",
+    "tsup": "^7.2.0",
     "typescript": "^5.1.6"
   },
   "dependencies": {
@@ -122,5 +123,17 @@
       "src/test_runner.ts",
       "src/assets_dev_server.ts"
     ]
+  },
+  "tsup": {
+    "entry": [
+      "./index.ts",
+      "./src/code_transformer/main.ts",
+      "./src/types.ts"
+    ],
+    "outDir": "./build",
+    "clean": true,
+    "format": "esm",
+    "dts": true,
+    "target": "esnext"
   }
 }

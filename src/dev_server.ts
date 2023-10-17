@@ -16,6 +16,7 @@ import type { Watcher } from '@poppinss/chokidar-ts'
 import type { DevServerOptions } from './types.js'
 import { AssetsDevServer } from './assets_dev_server.js'
 import { getPort, isDotEnvFile, isRcFile, runNode, watch } from './helpers.js'
+import prettyHrtime from 'pretty-hrtime'
 
 /**
  * Instance of CLIUI
@@ -101,6 +102,7 @@ export class DevServer {
    * Starts the HTTP server
    */
   #startHTTPServer(port: string, mode: 'blocking' | 'nonblocking') {
+    let initialTime = process.hrtime()
     this.#httpServer = runNode(this.#cwd, {
       script: this.#scriptFile,
       env: { PORT: port, ...this.#options.env },
@@ -110,6 +112,8 @@ export class DevServer {
 
     this.#httpServer.on('message', (message) => {
       if (this.#isAdonisJSReadyMessage(message)) {
+        const readyAt = process.hrtime(initialTime)
+
         ui.sticker()
           .useColors(this.#colors)
           .useRenderer(this.#logger.getRenderer())
@@ -119,6 +123,7 @@ export class DevServer {
               `${this.#isWatching ? 'enabled' : 'disabled'}`
             )}`
           )
+          .add(`Ready in: ${this.#colors.cyan(prettyHrtime(readyAt))}`)
           .render()
       }
     })
@@ -129,6 +134,8 @@ export class DevServer {
           this.#onClose?.(result.exitCode)
           this.#watcher?.close()
           this.#assetsServer?.stop()
+        } else {
+          this.#logger.info('Underlying HTTP server closed. Still watching for changes')
         }
       })
       .catch((error) => {
@@ -136,6 +143,8 @@ export class DevServer {
           this.#onError?.(error)
           this.#watcher?.close()
           this.#assetsServer?.stop()
+        } else {
+          this.#logger.info('Underlying HTTP server died. Still watching for changes')
         }
       })
   }

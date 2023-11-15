@@ -9,7 +9,7 @@
 
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { CodeBlockWriter, Node, Project, SourceFile, SyntaxKind } from 'ts-morph'
+import { CodeBlockWriter, Node, Project, QuoteKind, SourceFile, SyntaxKind } from 'ts-morph'
 
 import { RcFileTransformer } from './rc_file_transformer.js'
 import type { AddMiddlewareEntry, EnvValidationDefinition } from '../types.js'
@@ -41,6 +41,7 @@ export class CodeTransformer {
     this.#cwd = cwd
     this.#project = new Project({
       tsConfigFilePath: join(fileURLToPath(this.#cwd), 'tsconfig.json'),
+      manipulationSettings: { quoteKind: QuoteKind.Single },
     })
   }
 

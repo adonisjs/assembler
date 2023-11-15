@@ -510,7 +510,7 @@ test.group('Code transformer | addPreloadFile', (group) => {
 test.group('Code transformer | addJapaPlugin', (group) => {
   group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
 
-  test('addJapaPlugin with named import', async ({ assert, fs }) => {
+  test('add named import', async ({ assert, fs }) => {
     await fs.create(
       'tests/bootstrap.ts',
       `
@@ -534,7 +534,7 @@ test.group('Code transformer | addJapaPlugin', (group) => {
     assert.snapshot(file).match()
   })
 
-  test('addJapaPlugin with default import', async ({ assert, fs }) => {
+  test('add default import', async ({ assert, fs }) => {
     await fs.create(
       'tests/bootstrap.ts',
       `

@@ -505,4 +505,28 @@ test.group('Code transformer | addPreloadFile', (group) => {
 
     assert.equal(occurrences, 1)
   })
+
+  test('addJapaPlugin should works fine', async ({ assert, fs }) => {
+    await fs.create(
+      'tests/bootstrap.ts',
+      `
+      import app from '@adonisjs/core/services/app'
+      import { assert } from '@japa/assert'
+
+      export const plugins: Config['plugins'] = [
+        assert(),
+      ]`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addJapaPlugin('fooPlugin(app)', {
+      module: '@adonisjs/foo/plugin/japa',
+      identifier: 'fooPlugin',
+      isNamed: true,
+    })
+
+    const file = await fs.contents('tests/bootstrap.ts')
+    assert.snapshot(file).match()
+  })
 })

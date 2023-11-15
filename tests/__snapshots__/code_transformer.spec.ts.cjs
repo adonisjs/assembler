@@ -354,3 +354,14 @@ export default defineConfig({
 })
 "`
 
+exports[`Code transformer | addPreloadFile > addJapaPlugin should works fine 1`] = `"
+import app from '@adonisjs/core/services/app'
+import { assert } from '@japa/assert'
+import { fooPlugin } from \\"@adonisjs/foo/plugin/japa\\";
+
+export const plugins: Config['plugins'] = [
+  assert(),
+  fooPlugin(app)
+]
+"`
+

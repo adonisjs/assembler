@@ -178,6 +178,42 @@ export class CodeTransformer {
   }
 
   /**
+   * Add a new Japa plugin in the `tests/bootstrap.ts` file
+   */
+  async addJapaPlugin(
+    pluginCall: string,
+    importDeclaration: { isNamed: boolean; module: string; identifier: string }
+  ) {
+    /**
+     * Get the `tests/bootstrap.ts` source file
+     */
+    const testBootstrapUrl = fileURLToPath(new URL('./tests/bootstrap.ts', this.#cwd))
+    const file = this.#project.getSourceFileOrThrow(testBootstrapUrl)
+
+    /**
+     * Add the import declaration
+     */
+    file.addImportDeclaration({
+      ...(importDeclaration.isNamed
+        ? { namedImports: [importDeclaration.identifier] }
+        : { defaultImport: importDeclaration.identifier }),
+      moduleSpecifier: importDeclaration.module,
+    })
+
+    /**
+     * Insert the plugin call in the `plugins` array
+     */
+    const pluginsArray = file
+      .getVariableDeclaration('plugins')
+      ?.getInitializerIfKind(SyntaxKind.ArrayLiteralExpression)
+
+    if (pluginsArray) pluginsArray.addElement(pluginCall)
+
+    file.formatText(this.#editorSettings)
+    await file.save()
+  }
+
+  /**
    * Add new env variable validation in the
    * `env.ts` file
    */

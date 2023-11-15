@@ -9,7 +9,15 @@
 
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { CodeBlockWriter, Node, Project, QuoteKind, SourceFile, SyntaxKind } from 'ts-morph'
+import {
+  CodeBlockWriter,
+  FormatCodeSettings,
+  Node,
+  Project,
+  QuoteKind,
+  SourceFile,
+  SyntaxKind,
+} from 'ts-morph'
 
 import { RcFileTransformer } from './rc_file_transformer.js'
 import type { AddMiddlewareEntry, EnvValidationDefinition } from '../types.js'
@@ -31,10 +39,12 @@ export class CodeTransformer {
   /**
    * Settings to use when persisting files
    */
-  #editorSettings = {
+  #editorSettings: FormatCodeSettings = {
     indentSize: 2,
     convertTabsToSpaces: true,
     trimTrailingWhitespace: true,
+    // @ts-expect-error SemicolonPreference doesn't seem to be re-exported from ts-morph
+    semicolons: 'remove',
   }
 
   constructor(cwd: URL) {

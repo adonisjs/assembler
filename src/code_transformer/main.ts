@@ -9,7 +9,15 @@
 
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { CodeBlockWriter, Node, Project, SourceFile, SyntaxKind } from 'ts-morph'
+import {
+  CodeBlockWriter,
+  FormatCodeSettings,
+  Node,
+  Project,
+  QuoteKind,
+  SourceFile,
+  SyntaxKind,
+} from 'ts-morph'
 
 import { RcFileTransformer } from './rc_file_transformer.js'
 import type { AddMiddlewareEntry, EnvValidationDefinition } from '../types.js'
@@ -31,16 +39,19 @@ export class CodeTransformer {
   /**
    * Settings to use when persisting files
    */
-  #editorSettings = {
+  #editorSettings: FormatCodeSettings = {
     indentSize: 2,
     convertTabsToSpaces: true,
     trimTrailingWhitespace: true,
+    // @ts-expect-error SemicolonPreference doesn't seem to be re-exported from ts-morph
+    semicolons: 'remove',
   }
 
   constructor(cwd: URL) {
     this.#cwd = cwd
     this.#project = new Project({
       tsConfigFilePath: join(fileURLToPath(this.#cwd), 'tsconfig.json'),
+      manipulationSettings: { quoteKind: QuoteKind.Single },
     })
   }
 
@@ -172,6 +183,42 @@ export class CodeTransformer {
         this.#addToMiddlewareArray(file!, `${stack}.use`, middlewareEntry)
       }
     }
+
+    file.formatText(this.#editorSettings)
+    await file.save()
+  }
+
+  /**
+   * Add a new Japa plugin in the `tests/bootstrap.ts` file
+   */
+  async addJapaPlugin(
+    pluginCall: string,
+    importDeclaration: { isNamed: boolean; module: string; identifier: string }
+  ) {
+    /**
+     * Get the `tests/bootstrap.ts` source file
+     */
+    const testBootstrapUrl = fileURLToPath(new URL('./tests/bootstrap.ts', this.#cwd))
+    const file = this.#project.getSourceFileOrThrow(testBootstrapUrl)
+
+    /**
+     * Add the import declaration
+     */
+    file.addImportDeclaration({
+      ...(importDeclaration.isNamed
+        ? { namedImports: [importDeclaration.identifier] }
+        : { defaultImport: importDeclaration.identifier }),
+      moduleSpecifier: importDeclaration.module,
+    })
+
+    /**
+     * Insert the plugin call in the `plugins` array
+     */
+    const pluginsArray = file
+      .getVariableDeclaration('plugins')
+      ?.getInitializerIfKind(SyntaxKind.ArrayLiteralExpression)
+
+    if (pluginsArray) pluginsArray.addElement(pluginCall)
 
     file.formatText(this.#editorSettings)
     await file.save()

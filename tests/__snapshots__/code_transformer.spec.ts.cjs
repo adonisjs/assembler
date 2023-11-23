@@ -354,3 +354,25 @@ export default defineConfig({
 })
 "`
 
+exports[`Code transformer | addJapaPlugin > addJapaPlugin with named import 1`] = `"
+import app from '@adonisjs/core/services/app'
+import { assert } from '@japa/assert'
+import { fooPlugin } from '@adonisjs/foo/plugin/japa'
+
+export const plugins: Config['plugins'] = [
+  assert(),
+  fooPlugin(app)
+]
+"`
+
+exports[`Code transformer | addJapaPlugin > addJapaPlugin with default import 1`] = `"
+import app from '@adonisjs/core/services/app'
+import { assert } from '@japa/assert'
+import fooPlugin from '@adonisjs/foo/plugin/japa'
+
+export const plugins: Config['plugins'] = [
+  assert(),
+  fooPlugin()
+]
+"`
+

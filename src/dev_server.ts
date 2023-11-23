@@ -9,6 +9,7 @@
 
 import picomatch from 'picomatch'
 import type tsStatic from 'typescript'
+import prettyHrtime from 'pretty-hrtime'
 import { type ExecaChildProcess } from 'execa'
 import { cliui, type Logger } from '@poppinss/cliui'
 import type { Watcher } from '@poppinss/chokidar-ts'
@@ -16,7 +17,6 @@ import type { Watcher } from '@poppinss/chokidar-ts'
 import type { DevServerOptions } from './types.js'
 import { AssetsDevServer } from './assets_dev_server.js'
 import { getPort, isDotEnvFile, isRcFile, runNode, watch } from './helpers.js'
-import prettyHrtime from 'pretty-hrtime'
 
 /**
  * Instance of CLIUI
@@ -113,11 +113,12 @@ export class DevServer {
     this.#httpServer.on('message', (message) => {
       if (this.#isAdonisJSReadyMessage(message)) {
         const readyAt = process.hrtime(initialTime)
+        const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
 
         ui.sticker()
           .useColors(this.#colors)
           .useRenderer(this.#logger.getRenderer())
-          .add(`Server address: ${this.#colors.cyan(`http://${message.host}:${message.port}`)}`)
+          .add(`Server address: ${this.#colors.cyan(`http://${host}:${message.port}`)}`)
           .add(
             `File system watcher: ${this.#colors.cyan(
               `${this.#isWatching ? 'enabled' : 'disabled'}`

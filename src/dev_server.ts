@@ -77,9 +77,13 @@ export class DevServer {
   /**
    * Inspect if child process message is from AdonisJS HTTP server
    */
-  #isAdonisJSReadyMessage(
-    message: unknown
-  ): message is { isAdonisJS: true; environment: 'web'; port: number; host: string } {
+  #isAdonisJSReadyMessage(message: unknown): message is {
+    isAdonisJS: true
+    environment: 'web'
+    port: number
+    host: string
+    duration?: [number, number]
+  } {
     return (
       message !== null &&
       typeof message === 'object' &&
@@ -102,7 +106,6 @@ export class DevServer {
    * Starts the HTTP server
    */
   #startHTTPServer(port: string, mode: 'blocking' | 'nonblocking') {
-    let initialTime = process.hrtime()
     this.#httpServer = runNode(this.#cwd, {
       script: this.#scriptFile,
       env: { PORT: port, ...this.#options.env },
@@ -112,10 +115,10 @@ export class DevServer {
 
     this.#httpServer.on('message', (message) => {
       if (this.#isAdonisJSReadyMessage(message)) {
-        const readyAt = process.hrtime(initialTime)
         const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
 
-        ui.sticker()
+        const displayMessage = ui
+          .sticker()
           .useColors(this.#colors)
           .useRenderer(this.#logger.getRenderer())
           .add(`Server address: ${this.#colors.cyan(`http://${host}:${message.port}`)}`)
@@ -124,8 +127,12 @@ export class DevServer {
               `${this.#isWatching ? 'enabled' : 'disabled'}`
             )}`
           )
-          .add(`Ready in: ${this.#colors.cyan(prettyHrtime(readyAt))}`)
-          .render()
+
+        if (message.duration) {
+          displayMessage.add(`Ready in: ${this.#colors.cyan(prettyHrtime(message.duration))}`)
+        }
+
+        displayMessage.render()
       }
     })
 

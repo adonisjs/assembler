@@ -20,7 +20,6 @@ import { run, parseConfig, copyFiles } from './helpers.js'
 
 type SupportedPackageManager = 'npm' | 'yarn' | 'pnpm'
 
-
 /**
  * Instance of CLIUI
  */
@@ -128,11 +127,10 @@ export class Bundler {
       pnpm: {
         lockFile: 'pnpm-lock.yaml',
         installCommand: 'pnpm i --prod',
-      }
+      },
     }
 
-
-    const pkgManager = client || await detectPackageManager(this.#cwdPath) || 'npm'
+    const pkgManager = client || (await detectPackageManager(this.#cwdPath)) || 'npm'
     if (!['npm', 'yarn', 'pnpm'].includes(pkgManager)) {
       throw new Error(`Unsupported package manager "${pkgManager}"`)
     }
@@ -151,10 +149,7 @@ export class Bundler {
   /**
    * Bundles the application to be run in production
    */
-  async bundle(
-    stopOnError: boolean = true,
-    client?: SupportedPackageManager
-  ): Promise<boolean> {
+  async bundle(stopOnError: boolean = true, client?: SupportedPackageManager): Promise<boolean> {
     /**
      * Step 1: Parse config file to get the build output directory
      */
@@ -211,7 +206,7 @@ export class Bundler {
     /**
      * Step 5: Copy meta files to the build directory
      */
-    const pkgManager  = await this.#getPackageManager(client)
+    const pkgManager = await this.#getPackageManager(client)
     const pkgFiles = ['package.json', pkgManager.lockFile]
     this.#logger.info('copying meta files to the output directory')
     await this.#copyMetaFiles(outDir, pkgFiles)

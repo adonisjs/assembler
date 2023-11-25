@@ -96,19 +96,6 @@ export class Bundler {
   }
 
   /**
-   * Copy files to destination directory
-   */
-  async #copyFiles(files: string[], outDir: string) {
-    try {
-      await copyFiles(files, this.#cwdPath, outDir)
-    } catch (error) {
-      if (!error.message.includes("the file doesn't exist")) {
-        throw error
-      }
-    }
-  }
-
-  /**
    * Copy meta files to the output directory
    */
   async #copyMetaFiles(outDir: string, additionalFilesToCopy: string[]) {
@@ -116,7 +103,7 @@ export class Bundler {
       .map((file) => file.pattern)
       .concat(additionalFilesToCopy)
 
-    await this.#copyFiles(metaFiles, outDir)
+    await copyFiles(metaFiles, this.#cwdPath, outDir)
   }
 
   /**
@@ -189,7 +176,7 @@ export class Bundler {
      */
     this.#logger.info('compiling typescript source', { suffix: 'tsc' })
     const buildCompleted = await this.#runTsc(outDir)
-    await this.#copyFiles(['ace.js'], outDir)
+    await copyFiles(['ace.js'], this.#cwdPath, outDir)
 
     /**
      * Remove incomplete build directory when tsc build

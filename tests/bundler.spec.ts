@@ -70,5 +70,5 @@ test.group('Bundler', () => {
       assert.fileExists('./build/package.json'),
       assert.fileExists('./build/adonisrc.js'),
     ])
-  }).fails()
+  })
 })

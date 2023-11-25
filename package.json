@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "@adonisjs/env": "^4.2.0-7",
+    "@antfu/install-pkg": "^0.2.0",
     "@poppinss/chokidar-ts": "^4.1.1",
     "@poppinss/cliui": "^6.2.1",
     "cpy": "^11.0.0",

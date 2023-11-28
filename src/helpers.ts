@@ -7,14 +7,15 @@
  * file that was distributed with this source code.
  */
 
-import cpy from 'cpy'
 import { isNotJunk } from 'junk'
 import fastGlob from 'fast-glob'
 import getRandomPort from 'get-port'
+import { existsSync } from 'node:fs'
 import type tsStatic from 'typescript'
 import { fileURLToPath } from 'node:url'
 import { execaNode, execa } from 'execa'
-import { isAbsolute, relative } from 'node:path'
+import { copyFile, mkdir } from 'node:fs/promises'
+import { dirname, isAbsolute, join, relative } from 'node:path'
 import { EnvLoader, EnvParser } from '@adonisjs/env'
 import { ConfigParser, Watcher } from '@poppinss/chokidar-ts'
 
@@ -179,9 +180,18 @@ export async function copyFiles(files: string[], cwd: string, outDir: string) {
    */
   const { paths, patterns } = files.reduce<{ patterns: string[]; paths: string[] }>(
     (result, file) => {
+      /**
+       * If file is a glob pattern, then push it to patterns
+       */
       if (fastGlob.isDynamicPattern(file)) {
         result.patterns.push(file)
-      } else {
+        return result
+      }
+
+      /**
+       * Otherwise, check if file exists and push it to paths to copy
+       */
+      if (existsSync(join(cwd, file))) {
         result.paths.push(file)
       }
 
@@ -198,14 +208,20 @@ export async function copyFiles(files: string[], cwd: string, outDir: string) {
   const filePaths = paths.concat(await fastGlob(patterns, { cwd }))
 
   /**
-   * Computing relative destination. This is because, cpy is buggy when
-   * outDir is an absolute path.
+   * Finally copy files to the destination by keeping the same
+   * directory structure and ignoring junk files
    */
-  const destination = isAbsolute(outDir) ? relative(cwd, outDir) : outDir
-  debug('copying files %O to destination "%s"', filePaths, destination)
+  debug('copying files %O to destination "%s"', filePaths, outDir)
+  const copyPromises = filePaths.map(async (file) => {
+    const isJunkFile = !isNotJunk(file)
+    if (isJunkFile) return
 
-  return cpy(filePaths.filter(isNotJunk), destination, {
-    cwd: cwd,
-    flat: false,
+    const src = isAbsolute(file) ? file : join(cwd, file)
+    const dest = join(outDir, relative(cwd, src))
+
+    await mkdir(dirname(dest), { recursive: true })
+    return copyFile(src, dest)
   })
+
+  return await Promise.all(copyPromises)
 }

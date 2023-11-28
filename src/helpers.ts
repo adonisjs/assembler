@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import { isNotJunk } from 'junk'
+import { isJunk } from 'junk'
 import fastGlob from 'fast-glob'
 import getRandomPort from 'get-port'
 import { existsSync } from 'node:fs'
@@ -198,23 +198,22 @@ export async function copyFiles(files: string[], cwd: string, outDir: string) {
   /**
    * Getting list of relative paths from glob patterns
    */
-  const filePaths = paths.concat(await fastGlob(patterns, { cwd }))
+  const filePaths = paths.concat(await fastGlob(patterns, { cwd, dot: true }))
 
   /**
    * Finally copy files to the destination by keeping the same
    * directory structure and ignoring junk files
    */
   debug('copying files %O to destination "%s"', filePaths, outDir)
-  const copyPromises = filePaths.map(async (file) => {
-    const isJunkFile = !isNotJunk(file)
-    if (isJunkFile) return
+  const copyPromises = filePaths
+    .filter((file) => !isJunk(file))
+    .map(async (file) => {
+      const src = isAbsolute(file) ? file : join(cwd, file)
+      const dest = join(outDir, relative(cwd, src))
 
-    const src = isAbsolute(file) ? file : join(cwd, file)
-    const dest = join(outDir, relative(cwd, src))
-
-    await mkdir(dirname(dest), { recursive: true })
-    return copyFile(src, dest)
-  })
+      await mkdir(dirname(dest), { recursive: true })
+      return copyFile(src, dest)
+    })
 
   return await Promise.all(copyPromises)
 }

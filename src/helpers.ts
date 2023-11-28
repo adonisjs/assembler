@@ -125,13 +125,6 @@ export function isDotEnvFile(filePath: string) {
 }
 
 /**
- * Check if file is .adonisrc.json file
- */
-export function isRcFile(filePath: string) {
-  return filePath === '.adonisrc.json'
-}
-
-/**
  * Returns the port to use after inspect the dot-env files inside
  * a given directory.
  *

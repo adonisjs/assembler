@@ -16,7 +16,7 @@ import type { Watcher } from '@poppinss/chokidar-ts'
 
 import type { DevServerOptions } from './types.js'
 import { AssetsDevServer } from './assets_dev_server.js'
-import { getPort, isDotEnvFile, isRcFile, runNode, watch } from './helpers.js'
+import { getPort, isDotEnvFile, runNode, watch } from './helpers.js'
 
 /**
  * Instance of CLIUI
@@ -182,7 +182,7 @@ export class DevServer {
    * Handles a non TypeScript file change
    */
   #handleFileChange(action: string, port: string, relativePath: string) {
-    if (isDotEnvFile(relativePath) || isRcFile(relativePath)) {
+    if (isDotEnvFile(relativePath)) {
       this.#clearScreen()
       this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
       this.#restartHTTPServer(port)

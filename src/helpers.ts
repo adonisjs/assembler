@@ -15,9 +15,9 @@ import type tsStatic from 'typescript'
 import { fileURLToPath } from 'node:url'
 import { execaNode, execa } from 'execa'
 import { copyFile, mkdir } from 'node:fs/promises'
-import { dirname, isAbsolute, join, relative } from 'node:path'
 import { EnvLoader, EnvParser } from '@adonisjs/env'
 import { ConfigParser, Watcher } from '@poppinss/chokidar-ts'
+import { basename, dirname, isAbsolute, join, relative } from 'node:path'
 
 import type { RunOptions, WatchOptions } from './types.js'
 import debug from './debug.js'
@@ -198,22 +198,22 @@ export async function copyFiles(files: string[], cwd: string, outDir: string) {
   /**
    * Getting list of relative paths from glob patterns
    */
-  const filePaths = paths.concat(await fastGlob(patterns, { cwd, dot: true }))
+  const filePaths = paths.concat(await fastGlob(patterns, { cwd, dot: true })).filter((file) => {
+    return !isJunk(basename(file))
+  })
 
   /**
    * Finally copy files to the destination by keeping the same
    * directory structure and ignoring junk files
    */
   debug('copying files %O to destination "%s"', filePaths, outDir)
-  const copyPromises = filePaths
-    .filter((file) => !isJunk(file))
-    .map(async (file) => {
-      const src = isAbsolute(file) ? file : join(cwd, file)
-      const dest = join(outDir, relative(cwd, src))
+  const copyPromises = filePaths.map(async (file) => {
+    const src = isAbsolute(file) ? file : join(cwd, file)
+    const dest = join(outDir, relative(cwd, src))
 
-      await mkdir(dirname(dest), { recursive: true })
-      return copyFile(src, dest)
-    })
+    await mkdir(dirname(dest), { recursive: true })
+    return copyFile(src, dest)
+  })
 
   return await Promise.all(copyPromises)
 }

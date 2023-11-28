@@ -19,7 +19,7 @@ test.group('Copy files', () => {
 
     await assert.fileExists('build/resources/views/welcome.edge')
     await assert.fileExists('build/resources/views/about.edge')
-    await assert.fileExists('build/resources/views/contact/main.edge')
+    await assert.fileNotExists('build/resources/views/contact/main.edge')
 
     await assert.fileExists('build/public/foo/test/a.json')
     await assert.fileExists('build/public/foo/test/b/a.json')

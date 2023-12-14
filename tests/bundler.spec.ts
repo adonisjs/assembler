@@ -71,4 +71,60 @@ test.group('Bundler', () => {
       assert.fileExists('./build/adonisrc.js'),
     ])
   })
+
+  test('use npm by default if not specified', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('package.json', '{}'),
+      fs.create('package-lock.json', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, {
+      metaFiles: [
+        {
+          pattern: 'resources/views/**/*.edge',
+          reloadServer: false,
+        },
+      ],
+    })
+
+    await bundler.bundle(true)
+
+    await Promise.all([
+      assert.fileExists('./build/package.json'),
+      assert.fileExists('./build/package-lock.json'),
+    ])
+  })
+
+  test('detect package manager if not specified', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('package.json', '{}'),
+      fs.create('pnpm-lock.yaml', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, {
+      metaFiles: [
+        {
+          pattern: 'resources/views/**/*.edge',
+          reloadServer: false,
+        },
+      ],
+    })
+
+    await bundler.bundle(true)
+
+    await Promise.all([
+      assert.fileExists('./build/package.json'),
+      assert.fileExists('./build/pnpm-lock.yaml'),
+    ])
+  })
 })

@@ -13,9 +13,12 @@ import { relative } from 'node:path'
 import type tsStatic from 'typescript'
 import { fileURLToPath } from 'node:url'
 import { cliui, type Logger } from '@poppinss/cliui'
+import { detectPackageManager } from '@antfu/install-pkg'
 
 import type { BundlerOptions } from './types.js'
 import { run, parseConfig, copyFiles } from './helpers.js'
+
+type SupportedPackageManager = 'npm' | 'yarn' | 'pnpm'
 
 /**
  * Instance of CLIUI
@@ -107,31 +110,32 @@ export class Bundler {
   }
 
   /**
-   * Returns the lock file name for a given packages client
+   * Detect the package manager used by the project
+   * and return the lockfile name and install command
+   * related to it.
    */
-  #getClientLockFile(client: 'npm' | 'yarn' | 'pnpm') {
-    switch (client) {
-      case 'npm':
-        return 'package-lock.json'
-      case 'yarn':
-        return 'yarn.lock'
-      case 'pnpm':
-        return 'pnpm-lock.yaml'
+  async #getPackageManager(client?: SupportedPackageManager) {
+    const pkgManagerInfo = {
+      npm: {
+        lockFile: 'package-lock.json',
+        installCommand: 'npm ci --omit="dev"',
+      },
+      yarn: {
+        lockFile: 'yarn.lock',
+        installCommand: 'yarn install --production',
+      },
+      pnpm: {
+        lockFile: 'pnpm-lock.yaml',
+        installCommand: 'pnpm i --prod',
+      },
     }
-  }
 
-  /**
-   * Returns the installation command for a given packages client
-   */
-  #getClientInstallCommand(client: 'npm' | 'yarn' | 'pnpm') {
-    switch (client) {
-      case 'npm':
-        return 'npm ci --omit="dev"'
-      case 'yarn':
-        return 'yarn install --production'
-      case 'pnpm':
-        return 'pnpm i --prod'
+    const pkgManager = client || (await detectPackageManager(this.#cwdPath)) || 'npm'
+    if (!['npm', 'yarn', 'pnpm'].includes(pkgManager)) {
+      throw new Error(`Unsupported package manager "${pkgManager}"`)
     }
+
+    return pkgManagerInfo[pkgManager as SupportedPackageManager]
   }
 
   /**
@@ -145,10 +149,7 @@ export class Bundler {
   /**
    * Bundles the application to be run in production
    */
-  async bundle(
-    stopOnError: boolean = true,
-    client: 'npm' | 'yarn' | 'pnpm' = 'npm'
-  ): Promise<boolean> {
+  async bundle(stopOnError: boolean = true, client?: SupportedPackageManager): Promise<boolean> {
     /**
      * Step 1: Parse config file to get the build output directory
      */
@@ -205,7 +206,8 @@ export class Bundler {
     /**
      * Step 5: Copy meta files to the build directory
      */
-    const pkgFiles = ['package.json', this.#getClientLockFile(client)]
+    const pkgManager = await this.#getPackageManager(client)
+    const pkgFiles = ['package.json', pkgManager.lockFile]
     this.#logger.info('copying meta files to the output directory')
     await this.#copyMetaFiles(outDir, pkgFiles)
 
@@ -219,7 +221,7 @@ export class Bundler {
       .useRenderer(this.#logger.getRenderer())
       .heading('Run the following commands to start the server in production')
       .add(this.#colors.cyan(`cd ${this.#getRelativeName(outDir)}`))
-      .add(this.#colors.cyan(this.#getClientInstallCommand(client)))
+      .add(this.#colors.cyan(pkgManager.installCommand))
       .add(this.#colors.cyan('node bin/server.js'))
       .render()
 

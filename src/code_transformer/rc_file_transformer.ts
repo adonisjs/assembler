@@ -1,14 +1,14 @@
 import { fileURLToPath } from 'node:url'
+import type { AppEnvironments } from '@adonisjs/application/types'
 import {
-  ArrayLiteralExpression,
-  CallExpression,
   Node,
   Project,
-  PropertyAssignment,
   SourceFile,
   SyntaxKind,
+  CallExpression,
+  PropertyAssignment,
+  ArrayLiteralExpression,
 } from 'ts-morph'
-import type { AppEnvironments } from '@adonisjs/application/types'
 
 /**
  * RcFileTransformer is used to transform the `adonisrc.ts` file

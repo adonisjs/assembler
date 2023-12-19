@@ -9,14 +9,15 @@
 
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { installPackage, detectPackageManager } from '@antfu/install-pkg'
 import {
-  CodeBlockWriter,
-  FormatCodeSettings,
   Node,
   Project,
   QuoteKind,
   SourceFile,
   SyntaxKind,
+  CodeBlockWriter,
+  FormatCodeSettings,
 } from 'ts-morph'
 
 import { RcFileTransformer } from './rc_file_transformer.js'
@@ -26,6 +27,13 @@ import type { AddMiddlewareEntry, EnvValidationDefinition } from '../types.js'
  * This class is responsible for updating
  */
 export class CodeTransformer {
+  /**
+   * Exporting utilities to install package and detect
+   * the package manager
+   */
+  installPackage = installPackage
+  detectPackageManager = detectPackageManager
+
   /**
    * Directory of the adonisjs project
    */
@@ -53,15 +61,6 @@ export class CodeTransformer {
       tsConfigFilePath: join(fileURLToPath(this.#cwd), 'tsconfig.json'),
       manipulationSettings: { quoteKind: QuoteKind.Single },
     })
-  }
-
-  /**
-   * Update the `adonisrc.ts` file
-   */
-  async updateRcFile(callback: (transformer: RcFileTransformer) => void) {
-    const rcFileTransformer = new RcFileTransformer(this.#cwd, this.#project)
-    callback(rcFileTransformer)
-    await rcFileTransformer.save()
   }
 
   /**
@@ -156,75 +155,6 @@ export class CodeTransformer {
   }
 
   /**
-   * Define new middlewares inside the `start/kernel.ts`
-   * file
-   *
-   * This function is highly based on some assumptions
-   * and will not work if you significantly tweaked
-   * your `start/kernel.ts` file.
-   */
-  async addMiddlewareToStack(
-    stack: 'server' | 'router' | 'named',
-    middleware: AddMiddlewareEntry[]
-  ) {
-    /**
-     * Get the `start/kernel.ts` source file
-     */
-    const kernelUrl = fileURLToPath(new URL('./start/kernel.ts', this.#cwd))
-    const file = this.#project.getSourceFileOrThrow(kernelUrl)
-
-    /**
-     * Process each middleware entry
-     */
-    for (const middlewareEntry of middleware) {
-      if (stack === 'named') {
-        this.#addToNamedMiddleware(file, middlewareEntry)
-      } else {
-        this.#addToMiddlewareArray(file!, `${stack}.use`, middlewareEntry)
-      }
-    }
-
-    file.formatText(this.#editorSettings)
-    await file.save()
-  }
-
-  /**
-   * Add a new Japa plugin in the `tests/bootstrap.ts` file
-   */
-  async addJapaPlugin(
-    pluginCall: string,
-    importDeclaration: { isNamed: boolean; module: string; identifier: string }
-  ) {
-    /**
-     * Get the `tests/bootstrap.ts` source file
-     */
-    const testBootstrapUrl = fileURLToPath(new URL('./tests/bootstrap.ts', this.#cwd))
-    const file = this.#project.getSourceFileOrThrow(testBootstrapUrl)
-
-    /**
-     * Add the import declaration
-     */
-    file.addImportDeclaration({
-      ...(importDeclaration.isNamed
-        ? { namedImports: [importDeclaration.identifier] }
-        : { defaultImport: importDeclaration.identifier }),
-      moduleSpecifier: importDeclaration.module,
-    })
-
-    /**
-     * Insert the plugin call in the `plugins` array
-     */
-    const pluginsArray = file
-      .getVariableDeclaration('plugins')
-      ?.getInitializerIfKind(SyntaxKind.ArrayLiteralExpression)
-
-    if (pluginsArray) pluginsArray.addElement(pluginCall)
-
-    file.formatText(this.#editorSettings)
-    await file.save()
-  }
-
-  /**
    * Add new env variable validation in the
    * `env.ts` file
    */
@@ -288,6 +218,84 @@ export class CodeTransformer {
         })
       }
     }
+
+    file.formatText(this.#editorSettings)
+    await file.save()
+  }
+
+  /**
+   * Define new middlewares inside the `start/kernel.ts`
+   * file
+   *
+   * This function is highly based on some assumptions
+   * and will not work if you significantly tweaked
+   * your `start/kernel.ts` file.
+   */
+  async addMiddlewareToStack(
+    stack: 'server' | 'router' | 'named',
+    middleware: AddMiddlewareEntry[]
+  ) {
+    /**
+     * Get the `start/kernel.ts` source file
+     */
+    const kernelUrl = fileURLToPath(new URL('./start/kernel.ts', this.#cwd))
+    const file = this.#project.getSourceFileOrThrow(kernelUrl)
+
+    /**
+     * Process each middleware entry
+     */
+    for (const middlewareEntry of middleware) {
+      if (stack === 'named') {
+        this.#addToNamedMiddleware(file, middlewareEntry)
+      } else {
+        this.#addToMiddlewareArray(file!, `${stack}.use`, middlewareEntry)
+      }
+    }
+
+    file.formatText(this.#editorSettings)
+    await file.save()
+  }
+
+  /**
+   * Update the `adonisrc.ts` file
+   */
+  async updateRcFile(callback: (transformer: RcFileTransformer) => void) {
+    const rcFileTransformer = new RcFileTransformer(this.#cwd, this.#project)
+    callback(rcFileTransformer)
+    await rcFileTransformer.save()
+  }
+
+  /**
+   * Add a new Japa plugin in the `tests/bootstrap.ts` file
+   */
+  async addJapaPlugin(
+    pluginCall: string,
+    importDeclaration: { isNamed: boolean; module: string; identifier: string }
+  ) {
+    /**
+     * Get the `tests/bootstrap.ts` source file
+     */
+    const testBootstrapUrl = fileURLToPath(new URL('./tests/bootstrap.ts', this.#cwd))
+    const file = this.#project.getSourceFileOrThrow(testBootstrapUrl)
+
+    /**
+     * Add the import declaration
+     */
+    file.addImportDeclaration({
+      ...(importDeclaration.isNamed
+        ? { namedImports: [importDeclaration.identifier] }
+        : { defaultImport: importDeclaration.identifier }),
+      moduleSpecifier: importDeclaration.module,
+    })
+
+    /**
+     * Insert the plugin call in the `plugins` array
+     */
+    const pluginsArray = file
+      .getVariableDeclaration('plugins')
+      ?.getInitializerIfKind(SyntaxKind.ArrayLiteralExpression)
+
+    if (pluginsArray) pluginsArray.addElement(pluginCall)
 
     file.formatText(this.#editorSettings)
     await file.save()

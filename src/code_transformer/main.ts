@@ -22,7 +22,6 @@ import {
 
 import { RcFileTransformer } from './rc_file_transformer.js'
 import type { MiddlewareNode, EnvValidationNode } from '../types.js'
-import { exists } from 'node:fs'
 
 /**
  * This class is responsible for updating
@@ -285,7 +284,7 @@ export class CodeTransformer {
 
     importDeclarations.forEach((importDeclaration) => {
       const existingImport = existingImports.find(
-        (existingImport) => existingImport.getModuleSpecifierValue() === importDeclaration.module
+        (mod) => mod.getModuleSpecifierValue() === importDeclaration.module
       )
 
       /**

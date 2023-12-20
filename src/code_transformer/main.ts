@@ -21,7 +21,8 @@ import {
 } from 'ts-morph'
 
 import { RcFileTransformer } from './rc_file_transformer.js'
-import type { AddMiddlewareEntry, EnvValidationDefinition } from '../types.js'
+import type { MiddlewareNode, EnvValidationNode } from '../types.js'
+import { exists } from 'node:fs'
 
 /**
  * This class is responsible for updating
@@ -51,6 +52,8 @@ export class CodeTransformer {
     indentSize: 2,
     convertTabsToSpaces: true,
     trimTrailingWhitespace: true,
+    ensureNewLineAtEndOfFile: true,
+    indentStyle: 2,
     // @ts-expect-error SemicolonPreference doesn't seem to be re-exported from ts-morph
     semicolons: 'remove',
   }
@@ -67,7 +70,7 @@ export class CodeTransformer {
    * Add a new middleware to the middleware array of the
    * given file
    */
-  #addToMiddlewareArray(file: SourceFile, target: string, middlewareEntry: AddMiddlewareEntry) {
+  #addToMiddlewareArray(file: SourceFile, target: string, middlewareEntry: MiddlewareNode) {
     const callExpressions = file
       .getDescendantsOfKind(SyntaxKind.CallExpression)
       .filter((statement) => statement.getExpression().getText() === target)
@@ -105,7 +108,7 @@ export class CodeTransformer {
   /**
    * Add a new middleware to the named middleware of the given file
    */
-  #addToNamedMiddleware(file: SourceFile, middlewareEntry: AddMiddlewareEntry) {
+  #addToNamedMiddleware(file: SourceFile, middlewareEntry: MiddlewareNode) {
     if (!middlewareEntry.name) {
       throw new Error('Named middleware requires a name.')
     }
@@ -158,7 +161,7 @@ export class CodeTransformer {
    * Add new env variable validation in the
    * `env.ts` file
    */
-  async defineEnvValidations(definition: EnvValidationDefinition) {
+  async defineEnvValidations(definition: EnvValidationNode) {
     /**
      * Get the `start/env.ts` source file
      */
@@ -231,10 +234,7 @@ export class CodeTransformer {
    * and will not work if you significantly tweaked
    * your `start/kernel.ts` file.
    */
-  async addMiddlewareToStack(
-    stack: 'server' | 'router' | 'named',
-    middleware: AddMiddlewareEntry[]
-  ) {
+  async addMiddlewareToStack(stack: 'server' | 'router' | 'named', middleware: MiddlewareNode[]) {
     /**
      * Get the `start/kernel.ts` source file
      */
@@ -270,7 +270,7 @@ export class CodeTransformer {
    */
   async addJapaPlugin(
     pluginCall: string,
-    importDeclaration: { isNamed: boolean; module: string; identifier: string }
+    importDeclarations: { isNamed: boolean; module: string; identifier: string }[]
   ) {
     /**
      * Get the `tests/bootstrap.ts` source file
@@ -281,11 +281,43 @@ export class CodeTransformer {
     /**
      * Add the import declaration
      */
-    file.addImportDeclaration({
-      ...(importDeclaration.isNamed
-        ? { namedImports: [importDeclaration.identifier] }
-        : { defaultImport: importDeclaration.identifier }),
-      moduleSpecifier: importDeclaration.module,
+    const existingImports = file.getImportDeclarations()
+
+    importDeclarations.forEach((importDeclaration) => {
+      const existingImport = existingImports.find(
+        (existingImport) => existingImport.getModuleSpecifierValue() === importDeclaration.module
+      )
+
+      /**
+       * Add a new named import to existing import for the
+       * same module
+       */
+      if (existingImport && importDeclaration.isNamed) {
+        if (
+          !existingImport
+            .getNamedImports()
+            .find((namedImport) => namedImport.getName() === importDeclaration.identifier)
+        ) {
+          existingImport.addNamedImport(importDeclaration.identifier)
+        }
+        return
+      }
+
+      /**
+       * Ignore default import when the same module is already imported.
+       * The chances are the existing default import and the importDeclaration
+       * identifiers are not the same. But we should not modify existing source
+       */
+      if (existingImport) {
+        return
+      }
+
+      file.addImportDeclaration({
+        ...(importDeclaration.isNamed
+          ? { namedImports: [importDeclaration.identifier] }
+          : { defaultImport: importDeclaration.identifier }),
+        moduleSpecifier: importDeclaration.module,
+      })
     })
 
     /**
@@ -295,7 +327,14 @@ export class CodeTransformer {
       .getVariableDeclaration('plugins')
       ?.getInitializerIfKind(SyntaxKind.ArrayLiteralExpression)
 
-    if (pluginsArray) pluginsArray.addElement(pluginCall)
+    /**
+     * Add plugin call to the plugins array
+     */
+    if (pluginsArray) {
+      if (!pluginsArray.getElements().find((element) => element.getText() === pluginCall)) {
+        pluginsArray.addElement(pluginCall)
+      }
+    }
 
     file.formatText(this.#editorSettings)
     await file.save()

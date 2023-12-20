@@ -1,8 +1,16 @@
+/*
+ * @adonisjs/assembler
+ *
+ * (c) AdonisJS
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 import dedent from 'dedent'
 import { test } from '@japa/runner'
 import { readFile } from 'node:fs/promises'
 import type { FileSystem } from '@japa/file-system'
-
 import { CodeTransformer } from '../src/code_transformer/main.js'
 
 async function setupFakeAdonisproject(fs: FileSystem) {
@@ -162,19 +170,69 @@ test.group('Code transformer | defineEnvValidations', (group) => {
     const transformer = new CodeTransformer(fs.baseUrl)
 
     await transformer.defineEnvValidations({
+      leadingComment: 'Redis configuration',
       variables: {
-        NODE_ENV: 'Env.schema.string.optional()',
+        REDIS_HOST: 'Env.schema.string.optional()',
+        REDIS_PORT: 'Env.schema.number()',
       },
     })
 
-    const file = await fs.contents('start/env.ts')
-    const occurrences = (file.match(/NODE_ENV/g) || []).length
+    await transformer.defineEnvValidations({
+      leadingComment: 'Redis configuration',
+      variables: {
+        REDIS_HOST: 'Env.schema.string.optional()',
+        REDIS_PORT: 'Env.schema.number()',
+      },
+    })
 
-    assert.equal(occurrences, 1)
-    assert.fileContains(
-      'start/env.ts',
-      `Env.schema.enum(['development', 'production', 'test'] as const)`
-    )
+    assert.snapshot(await fs.contents('start/env.ts')).matchInline(`
+      "import { Env } from '@adonisjs/core/env'
+
+      export default await Env.create(new URL('../', import.meta.url), {
+        NODE_ENV: Env.schema.enum(['development', 'production', 'test'] as const),
+        PORT: Env.schema.number(),
+
+        /*
+        |----------------------------------------------------------
+        | Redis configuration
+        |----------------------------------------------------------
+        */
+        REDIS_HOST: Env.schema.string.optional(),
+        REDIS_PORT: Env.schema.number()
+      })
+      "
+    `)
+  })
+
+  test('do not overwrite validation for existing variable', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.defineEnvValidations({
+      variables: {
+        REDIS_HOST: 'Env.schema.string.optional()',
+        REDIS_PORT: 'Env.schema.number()',
+      },
+    })
+
+    await transformer.defineEnvValidations({
+      variables: {
+        REDIS_HOST: 'Env.schema.string()',
+        REDIS_PORT: 'Env.schema.number()',
+      },
+    })
+
+    assert.snapshot(await fs.contents('start/env.ts')).matchInline(`
+      "import { Env } from '@adonisjs/core/env'
+
+      export default await Env.create(new URL('../', import.meta.url), {
+        NODE_ENV: Env.schema.enum(['development', 'production', 'test'] as const),
+        PORT: Env.schema.number(),
+
+        REDIS_HOST: Env.schema.string.optional(),
+        REDIS_PORT: Env.schema.number()
+      })
+      "
+    `)
   })
 })
 
@@ -524,14 +582,32 @@ test.group('Code transformer | addJapaPlugin', (group) => {
 
     const transformer = new CodeTransformer(fs.baseUrl)
 
-    await transformer.addJapaPlugin('fooPlugin(app)', {
-      module: '@adonisjs/foo/plugin/japa',
-      identifier: 'fooPlugin',
-      isNamed: true,
-    })
+    await transformer.addJapaPlugin('fooPlugin(app)', [
+      {
+        module: '@adonisjs/foo/plugin/japa',
+        identifier: 'fooPlugin',
+        isNamed: true,
+      },
+      {
+        module: '@adonisjs/core/services/app',
+        identifier: 'app',
+        isNamed: false,
+      },
+    ])
 
     const file = await fs.contents('tests/bootstrap.ts')
-    assert.snapshot(file).match()
+    assert.snapshot(file).matchInline(`
+      "
+      import app from '@adonisjs/core/services/app'
+      import { assert } from '@japa/assert'
+      import { fooPlugin } from '@adonisjs/foo/plugin/japa'
+
+      export const plugins: Config['plugins'] = [
+        assert(),
+        fooPlugin(app)
+      ]
+      "
+    `)
   })
 
   test('add default import', async ({ assert, fs }) => {
@@ -548,13 +624,81 @@ test.group('Code transformer | addJapaPlugin', (group) => {
 
     const transformer = new CodeTransformer(fs.baseUrl)
 
-    await transformer.addJapaPlugin('fooPlugin()', {
-      module: '@adonisjs/foo/plugin/japa',
-      identifier: 'fooPlugin',
-      isNamed: false,
-    })
+    await transformer.addJapaPlugin('fooPlugin()', [
+      {
+        module: '@adonisjs/foo/plugin/japa',
+        identifier: 'fooPlugin',
+        isNamed: false,
+      },
+    ])
 
     const file = await fs.contents('tests/bootstrap.ts')
-    assert.snapshot(file).match()
+    assert.snapshot(file).matchInline(`
+      "
+      import app from '@adonisjs/core/services/app'
+      import { assert } from '@japa/assert'
+      import fooPlugin from '@adonisjs/foo/plugin/japa'
+
+      export const plugins: Config['plugins'] = [
+        assert(),
+        fooPlugin()
+      ]
+      "
+    `)
+  })
+
+  test('ignore duplicate imports', async ({ assert, fs }) => {
+    await fs.create(
+      'tests/bootstrap.ts',
+      `
+      import app from '@adonisjs/core/services/app'
+      import { assert } from '@japa/assert'
+
+      export const plugins: Config['plugins'] = [
+        assert(),
+      ]`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addJapaPlugin('fooPlugin(app)', [
+      {
+        module: '@adonisjs/foo/plugin/japa',
+        identifier: 'fooPlugin',
+        isNamed: true,
+      },
+      {
+        module: '@adonisjs/core/services/app',
+        identifier: 'app',
+        isNamed: false,
+      },
+    ])
+
+    await transformer.addJapaPlugin('fooPlugin(app)', [
+      {
+        module: '@adonisjs/foo/plugin/japa',
+        identifier: 'fooPlugin',
+        isNamed: true,
+      },
+      {
+        module: '@adonisjs/core/services/app',
+        identifier: 'app',
+        isNamed: false,
+      },
+    ])
+
+    const file = await fs.contents('tests/bootstrap.ts')
+    assert.snapshot(file).matchInline(`
+      "
+      import app from '@adonisjs/core/services/app'
+      import { assert } from '@japa/assert'
+      import { fooPlugin } from '@adonisjs/foo/plugin/japa'
+
+      export const plugins: Config['plugins'] = [
+        assert(),
+        fooPlugin(app)
+      ]
+      "
+    `)
   })
 })

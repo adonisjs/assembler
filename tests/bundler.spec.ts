@@ -1,6 +1,15 @@
+/*
+ * @adonisjs/assembler
+ *
+ * (c) AdonisJS
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+import ts from 'typescript'
 import { test } from '@japa/runner'
 import { Bundler } from '../index.js'
-import ts from 'typescript'
 
 test.group('Bundler', () => {
   test('should copy metafiles to the build directory', async ({ assert, fs }) => {

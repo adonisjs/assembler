@@ -122,6 +122,8 @@
     "exclude": [
       "tests/**",
       "build/**",
+      "bin/**",
+      "tmp/**",
       "examples/**",
       "src/dev_server.ts",
       "src/test_runner.ts",

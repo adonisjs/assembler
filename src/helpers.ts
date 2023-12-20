@@ -29,7 +29,7 @@ import debug from './debug.js'
 const DEFAULT_NODE_ARGS = [
   // Use ts-node/esm loader. The project must install it
   '--loader=ts-node/esm',
-  // Disable annonying warnings
+  // Disable annoying warnings
   '--no-warnings',
   // Enable expiremental meta resolve for cases where someone uses magic import string
   '--experimental-import-meta-resolve',
@@ -133,8 +133,8 @@ export function isDotEnvFile(filePath: string) {
  *
  * - The "process.env.PORT" value is used if exists.
  * - The dot-env files are loaded using the "EnvLoader" and the PORT
- *   value is by iterating over all the loaded files. The iteration
- *   stops after first find.
+ *   value is used by iterating over all the loaded files. The
+ *   iteration stops after first find.
  */
 export async function getPort(cwd: URL): Promise<number> {
   /**

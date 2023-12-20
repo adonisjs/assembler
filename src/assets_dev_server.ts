@@ -55,16 +55,6 @@ export class AssetsDevServer {
     const lines = dataString.split('\n')
 
     /**
-     * Logging VITE ready in message with proper
-     * spaces and newlines
-     */
-    if (dataString.includes('ready in')) {
-      console.log('')
-      console.log(dataString.trim())
-      return
-    }
-
-    /**
      * Put a wrapper around vite network address log
      */
     if (dataString.includes('Local') && dataString.includes('Network')) {
@@ -77,6 +67,16 @@ export class AssetsDevServer {
       })
 
       sticker.render()
+      return
+    }
+
+    /**
+     * Logging VITE ready in message with proper
+     * spaces and newlines
+     */
+    if (dataString.includes('ready in')) {
+      console.log('')
+      console.log(dataString.trim())
       return
     }
 
@@ -117,7 +117,7 @@ export class AssetsDevServer {
    * any cleanup if it dies.
    */
   start() {
-    if (!this.#options?.serve) {
+    if (!this.#options?.enabled) {
       return
     }
 

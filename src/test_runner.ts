@@ -23,24 +23,50 @@ import { getPort, isDotEnvFile, runNode, watch } from './helpers.js'
 const ui = cliui()
 
 /**
- * Exposes the API to start the development. Optionally, the watch API can be
- * used to watch for file changes and restart the development server.
+ * Exposes the API to run Japa tests and optionally watch for file
+ * changes to re-run the tests.
  *
- * The Dev server performs the following actions
+ * The watch mode functions as follows.
  *
- * - Assigns a random PORT, when PORT inside .env file is in use
- * - Uses tsconfig.json file to collect a list of files to watch.
- * - Uses metaFiles from .adonisrc.json file to collect a list of files to watch.
- * - Restart HTTP server on every file change.
+ *  - If the changed file is a test file, then only tests for that file
+ *    will be re-run.
+ *  - Otherwise, all tests will re-run with respect to the initial
+ *    filters applied when running the `node ace test` command.
+ *
  */
 export class TestRunner {
   #cwd: URL
   #logger = ui.logger
   #options: TestRunnerOptions
+
+  /**
+   * The script file to run as a child process
+   */
   #scriptFile: string = 'bin/test.js'
+
+  /**
+   * Pico matcher function to check if the filepath is
+   * part of the `metaFiles` glob patterns
+   */
   #isMetaFile: picomatch.Matcher
+
+  /**
+   * Pico matcher function to check if the filepath is
+   * part of a test file.
+   */
   #isTestFile: picomatch.Matcher
+
+  /**
+   * Arguments to pass to the "bin/test.js" file.
+   */
   #scriptArgs: string[]
+
+  /**
+   * Set of initial filters applied when running the test
+   * command. In watch mode, we will append an additional
+   * filter to run tests only for the file that has been
+   * changed.
+   */
   #initialFiltersArgs: string[]
 
   /**
@@ -51,11 +77,26 @@ export class TestRunner {
    */
   #isBusy: boolean = false
 
+  /**
+   * External listeners that are invoked when child process
+   * gets an error or closes
+   */
   #onError?: (error: any) => any
   #onClose?: (exitCode: number) => any
 
+  /**
+   * Reference to the test script child process
+   */
   #testScript?: ExecaChildProcess<string>
+
+  /**
+   * Reference to the watcher
+   */
   #watcher?: ReturnType<Watcher['watch']>
+
+  /**
+   * Reference to the assets server
+   */
   #assetsServer?: AssetsDevServer
 
   /**
@@ -68,14 +109,21 @@ export class TestRunner {
   constructor(cwd: URL, options: TestRunnerOptions) {
     this.#cwd = cwd
     this.#options = options
+
     this.#isMetaFile = picomatch((this.#options.metaFiles || []).map(({ pattern }) => pattern))
+
+    /**
+     * Create a test file watch by collection all the globs
+     * used by all the suites. However, if a suite filter
+     * was used, then we only collect glob for the mentioned
+     * suites.
+     */
     this.#isTestFile = picomatch(
       this.#options.suites
         .filter((suite) => {
           if (this.#options.filters.suites) {
             return this.#options.filters.suites.includes(suite.name)
           }
-
           return true
         })
         .map((suite) => suite.files)
@@ -87,7 +135,7 @@ export class TestRunner {
   }
 
   /**
-   * Converts options to CLI args
+   * Convert test runner options to the CLI args
    */
   #convertOptionsToArgs() {
     const args: string[] = []
@@ -170,6 +218,10 @@ export class TestRunner {
   ) {
     this.#isBusy = true
 
+    /**
+     * If inline filters are defined, then we ignore the
+     * initial filters
+     */
     const scriptArgs = filters
       ? this.#convertFiltersToArgs(filters).concat(this.#scriptArgs)
       : this.#initialFiltersArgs.concat(this.#scriptArgs)
@@ -200,7 +252,8 @@ export class TestRunner {
   }
 
   /**
-   * Restarts the HTTP server
+   * Re-run tests with additional inline filters. Should be
+   * executed in watch mode only.
    */
   #rerunTests(port: string, filters?: TestRunnerOptions['filters']) {
     if (this.#testScript) {

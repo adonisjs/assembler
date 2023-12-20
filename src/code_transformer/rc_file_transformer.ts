@@ -1,3 +1,12 @@
+/*
+ * @adonisjs/assembler
+ *
+ * (c) AdonisJS
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 import { fileURLToPath } from 'node:url'
 import type { AppEnvironments } from '@adonisjs/application/types'
 import {
@@ -7,6 +16,7 @@ import {
   SyntaxKind,
   CallExpression,
   PropertyAssignment,
+  FormatCodeSettings,
   ArrayLiteralExpression,
 } from 'ts-morph'
 
@@ -21,10 +31,14 @@ export class RcFileTransformer {
   /**
    * Settings to use when persisting files
    */
-  #editorSettings = {
+  #editorSettings: FormatCodeSettings = {
     indentSize: 2,
     convertTabsToSpaces: true,
     trimTrailingWhitespace: true,
+    ensureNewLineAtEndOfFile: true,
+    indentStyle: 2,
+    // @ts-expect-error SemicolonPreference doesn't seem to be re-exported from ts-morph
+    semicolons: 'remove',
   }
 
   constructor(cwd: URL, project: Project) {
@@ -44,7 +58,9 @@ export class RcFileTransformer {
    * Check if environments array has a subset of available environments
    */
   #isInSpecificEnvironment(environments?: AppEnvironments[]): boolean {
-    if (!environments) return false
+    if (!environments) {
+      return false
+    }
 
     return !!(['web', 'console', 'test', 'repl'] as const).find(
       (env) => !environments.includes(env)

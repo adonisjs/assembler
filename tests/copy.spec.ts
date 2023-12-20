@@ -1,6 +1,15 @@
+/*
+ * @adonisjs/assembler
+ *
+ * (c) AdonisJS
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+import { join } from 'node:path'
 import { test } from '@japa/runner'
 import { copyFiles } from '../src/helpers.js'
-import { join } from 'node:path'
 
 test.group('Copy files', () => {
   test('expand glob patterns and copy files to the destination', async ({ assert, fs }) => {

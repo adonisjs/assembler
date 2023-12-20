@@ -18,7 +18,35 @@ import { detectPackageManager } from '@antfu/install-pkg'
 import type { BundlerOptions } from './types.js'
 import { run, parseConfig, copyFiles } from './helpers.js'
 
-type SupportedPackageManager = 'npm' | 'yarn' | 'pnpm'
+type SupportedPackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun'
+
+/**
+ * List of package managers we support in order to
+ * copy lockfiles
+ */
+const SUPPORT_PACKAGE_MANAGERS: {
+  [K in SupportedPackageManager]: {
+    lockFile: string
+    installCommand: string
+  }
+} = {
+  npm: {
+    lockFile: 'package-lock.json',
+    installCommand: 'npm ci --omit="dev"',
+  },
+  yarn: {
+    lockFile: 'yarn.lock',
+    installCommand: 'yarn install --production',
+  },
+  pnpm: {
+    lockFile: 'pnpm-lock.yaml',
+    installCommand: 'pnpm i --prod',
+  },
+  bun: {
+    lockFile: 'bun.lockb',
+    installCommand: 'bun install --production',
+  },
+}
 
 /**
  * Instance of CLIUI
@@ -49,6 +77,10 @@ export class Bundler {
     this.#options = options
   }
 
+  /**
+   * Returns the relative unix path for an absolute
+   * file path
+   */
   #getRelativeName(filePath: string) {
     return slash(relative(this.#cwdPath, filePath))
   }
@@ -61,11 +93,11 @@ export class Bundler {
   }
 
   /**
-   * Runs assets bundler command to build assets.
+   * Runs assets bundler command to build assets
    */
   async #buildAssets(): Promise<boolean> {
     const assetsBundler = this.#options.assets
-    if (!assetsBundler?.serve) {
+    if (!assetsBundler?.enabled) {
       return true
     }
 
@@ -115,27 +147,20 @@ export class Bundler {
    * related to it.
    */
   async #getPackageManager(client?: SupportedPackageManager) {
-    const pkgManagerInfo = {
-      npm: {
-        lockFile: 'package-lock.json',
-        installCommand: 'npm ci --omit="dev"',
-      },
-      yarn: {
-        lockFile: 'yarn.lock',
-        installCommand: 'yarn install --production',
-      },
-      pnpm: {
-        lockFile: 'pnpm-lock.yaml',
-        installCommand: 'pnpm i --prod',
-      },
+    let pkgManager: string | null | undefined = client
+
+    if (!pkgManager) {
+      pkgManager = await detectPackageManager(this.#cwdPath)
+    }
+    if (!pkgManager) {
+      pkgManager = 'npm'
     }
 
-    const pkgManager = client || (await detectPackageManager(this.#cwdPath)) || 'npm'
-    if (!['npm', 'yarn', 'pnpm'].includes(pkgManager)) {
-      throw new Error(`Unsupported package manager "${pkgManager}"`)
+    if (!Object.keys(SUPPORT_PACKAGE_MANAGERS).includes(pkgManager)) {
+      return null
     }
 
-    return pkgManagerInfo[pkgManager as SupportedPackageManager]
+    return SUPPORT_PACKAGE_MANAGERS[pkgManager as SupportedPackageManager]
   }
 
   /**
@@ -207,7 +232,7 @@ export class Bundler {
      * Step 5: Copy meta files to the build directory
      */
     const pkgManager = await this.#getPackageManager(client)
-    const pkgFiles = ['package.json', pkgManager.lockFile]
+    const pkgFiles = pkgManager ? ['package.json', pkgManager.lockFile] : ['package.json']
     this.#logger.info('copying meta files to the output directory')
     await this.#copyMetaFiles(outDir, pkgFiles)
 
@@ -221,7 +246,11 @@ export class Bundler {
       .useRenderer(this.#logger.getRenderer())
       .heading('Run the following commands to start the server in production')
       .add(this.#colors.cyan(`cd ${this.#getRelativeName(outDir)}`))
-      .add(this.#colors.cyan(pkgManager.installCommand))
+      .add(
+        this.#colors.cyan(
+          pkgManager ? pkgManager.installCommand : 'Install production dependencies'
+        )
+      )
       .add(this.#colors.cyan('node bin/server.js'))
       .render()
 

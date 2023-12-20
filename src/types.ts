@@ -11,10 +11,29 @@
  * Options needed to run a script file
  */
 export type RunOptions = {
+  /**
+   * Script to run
+   */
   script: string
+
+  /**
+   * Arguments to pass to the script
+   */
   scriptArgs: string[]
+
+  /**
+   * Arguments to pass to NodeJS CLI
+   */
   nodeArgs: string[]
+
+  /**
+   * Standard input ouput stream options
+   */
   stdio?: 'pipe' | 'inherit'
+
+  /**
+   * Environment variables to pass to the child process
+   */
   env?: NodeJS.ProcessEnv
 }
 
@@ -26,7 +45,7 @@ export type WatchOptions = {
 }
 
 /**
- * Meta file config defined in ".adonisrc.json" file
+ * Meta file config defined in "adonisrc.ts" file
  */
 export type MetaFile = {
   pattern: string
@@ -34,11 +53,11 @@ export type MetaFile = {
 }
 
 /**
- * Test suite defined in ".adonisrc.json" file
+ * Test suite defined in "adonisrc.ts" file
  */
 export type Suite = {
-  files: string | string[]
   name: string
+  files: string | string[]
 }
 
 /**
@@ -46,27 +65,54 @@ export type Suite = {
  */
 export type AssetsBundlerOptions =
   | {
-      serve: false
-      args?: string[]
+      enabled: false
       driver?: string
       cmd?: string
+      args?: string[]
     }
   | {
-      serve: true
-      args: string[]
+      enabled: true
       driver: string
       cmd: string
+      args: string[]
     }
 
 /**
- * Options accepted by the dev server
+ * Options accepted when starting the dev
+ * server
  */
 export type DevServerOptions = {
+  /**
+   * Arguments to pass to the "bin/server.js" file
+   * executed a child process
+   */
   scriptArgs: string[]
+
+  /**
+   * Arguments to pass to Node.js CLI when executing
+   * the "bin/server.js" file
+   */
   nodeArgs: string[]
+
+  /**
+   * Clear screen after every file change
+   */
   clearScreen?: boolean
+
+  /**
+   * Environment variables to share with the "bin/server.js"
+   * file.
+   */
   env?: NodeJS.ProcessEnv
+
+  /**
+   * An array of metaFiles glob patterns to watch
+   */
   metaFiles?: MetaFile[]
+
+  /**
+   * Assets bundler options to start its dev server
+   */
   assets?: AssetsBundlerOptions
 }
 
@@ -74,6 +120,64 @@ export type DevServerOptions = {
  * Options accepted by the test runner
  */
 export type TestRunnerOptions = {
+  /**
+   * Arguments to pass to the "bin/server.js" file
+   * executed a child process
+   */
+  scriptArgs: string[]
+
+  /**
+   * Arguments to pass to Node.js CLI when executing
+   * the "bin/server.js" file
+   */
+  nodeArgs: string[]
+
+  /**
+   * Clear screen after every file change
+   */
+  clearScreen?: boolean
+
+  /**
+   * Environment variables to share with the "bin/server.js"
+   * file.
+   */
+  env?: NodeJS.ProcessEnv
+
+  /**
+   * An array of metaFiles glob patterns to watch
+   */
+  metaFiles?: MetaFile[]
+
+  /**
+   * Assets bundler options to start its dev server
+   */
+  assets?: AssetsBundlerOptions
+
+  /**
+   * An array of suites for which to run tests
+   */
+  suites: Suite[]
+
+  /**
+   * Set the tests runner reporter via the CLI flag
+   */
+  reporters?: string[]
+
+  /**
+   * Set the tests global timeout via the CLI flag
+   */
+  timeout?: number
+
+  /**
+   * Define retries via the CLI flag
+   */
+  retries?: number
+
+  /**
+   * Run only failed tests
+   */
+  failed?: boolean
+
   /**
    * Filter arguments are provided as a key-value
    * pair, so that we can mutate them (if needed)
@@ -85,30 +189,22 @@ export type TestRunnerOptions = {
     files: string[]
     tags: string[]
   }>
-
-  reporters?: string[]
-  timeout?: number
-  retries?: number
-  failed?: boolean
-
-  /**
-   * All other tags are provided as a collection of
-   * arguments
-   */
-  scriptArgs: string[]
-  nodeArgs: string[]
-  clearScreen?: boolean
-  env?: NodeJS.ProcessEnv
-  metaFiles?: MetaFile[]
-  assets?: AssetsBundlerOptions
-  suites: Suite[]
 }
 
 /**
  * Options accepted by the project bundler
  */
 export type BundlerOptions = {
+  /**
+   * An array of metaFiles glob patterns to copy the
+   * files to the build folder
+   */
   metaFiles?: MetaFile[]
+
+  /**
+   * Assets bundler options to create the production build
+   * for assets
+   */
   assets?: AssetsBundlerOptions
 }
 
@@ -116,7 +212,7 @@ export type BundlerOptions = {
  * Entry to add a middleware to a given middleware stack
  * via the CodeTransformer
  */
-export type AddMiddlewareEntry = {
+export type MiddlewareNode = {
   /**
    * If you are adding a named middleware, then you must
    * define the name.
@@ -146,7 +242,7 @@ export type AddMiddlewareEntry = {
  * Defines the structure of an environment variable validation
  * definition
  */
-export type EnvValidationDefinition = {
+export type EnvValidationNode = {
   /**
    * Write a leading comment on top of your variables
    */

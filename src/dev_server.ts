@@ -29,25 +29,59 @@ const ui = cliui()
  *
  * The Dev server performs the following actions
  *
- * - Assigns a random PORT, when PORT inside .env file is in use
+ * - Assigns a random PORT, when PORT inside .env file is in use.
  * - Uses tsconfig.json file to collect a list of files to watch.
- * - Uses metaFiles from .adonisrc.json file to collect a list of files to watch.
+ * - Uses metaFiles from adonisrc.ts file to collect a list of files to watch.
  * - Restart HTTP server on every file change.
  */
 export class DevServer {
   #cwd: URL
   #logger = ui.logger
   #options: DevServerOptions
+
+  /**
+   * Flag to know if the dev server is running in watch
+   * mode
+   */
   #isWatching: boolean = false
+
+  /**
+   * Script file to start the development server
+   */
   #scriptFile: string = 'bin/server.js'
+
+  /**
+   * Picomatch matcher function to know if a file path is a
+   * meta file with reloadServer option enabled
+   */
   #isMetaFileWithReloadsEnabled: picomatch.Matcher
+
+  /**
+   * Picomatch matcher function to know if a file path is a
+   * meta file with reloadServer option disabled
+   */
   #isMetaFileWithReloadsDisabled: picomatch.Matcher
 
+  /**
+   * External listeners that are invoked when child process
+   * gets an error or closes
+   */
   #onError?: (error: any) => any
   #onClose?: (exitCode: number) => any
 
+  /**
+   * Reference to the child process
+   */
   #httpServer?: ExecaChildProcess<string>
+
+  /**
+   * Reference to the watcher
+   */
   #watcher?: ReturnType<Watcher['watch']>
+
+  /**
+   * Reference to the assets server
+   */
   #assetsServer?: AssetsDevServer
 
   /**
@@ -167,7 +201,8 @@ export class DevServer {
   }
 
   /**
-   * Restarts the HTTP server
+   * Restarts the HTTP server in the watch mode. Do not call this
+   * method when not in watch mode
    */
   #restartHTTPServer(port: string) {
     if (this.#httpServer) {

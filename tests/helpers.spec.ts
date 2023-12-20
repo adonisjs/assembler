@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import slash from 'slash'
 import ts from 'typescript'
 import { join } from 'node:path'
 import { test } from '@japa/runner'
@@ -34,7 +35,7 @@ test.group('Helpers | Parse config', () => {
     await fs.create('foo.ts', '')
 
     const result = parseConfig(fs.baseUrl, ts)
-    assert.deepEqual(result?.fileNames, [join(fs.basePath, 'foo.ts')])
+    assert.deepEqual(result?.fileNames, [slash(join(fs.basePath, 'foo.ts'))])
   })
 })
 

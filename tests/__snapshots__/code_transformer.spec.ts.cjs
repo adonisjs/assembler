@@ -1,5 +1,4 @@
-exports[`Code transformer | addMiddlewareToStack > set correct position when defined 1`] =
-  `"import router from '@adonisjs/core/services/router'
+exports[`Code transformer | addMiddlewareToStack > set correct position when defined 1`] = `"import router from '@adonisjs/core/services/router'
 import server from '@adonisjs/core/services/server'
 
 server.errorHandler(() => import('#exceptions/handler'))
@@ -20,8 +19,7 @@ router.use([
 export const middleware = router.named({})
 "`
 
-exports[`Code transformer | addMiddlewareToStack > add a route middleware 1`] =
-  `"import router from '@adonisjs/core/services/router'
+exports[`Code transformer | addMiddlewareToStack > add a route middleware 1`] = `"import router from '@adonisjs/core/services/router'
 import server from '@adonisjs/core/services/server'
 
 server.errorHandler(() => import('#exceptions/handler'))
@@ -41,8 +39,7 @@ router.use([
 export const middleware = router.named({})
 "`
 
-exports[`Code transformer | addMiddlewareToStack > add route and server middleware 1`] =
-  `"import router from '@adonisjs/core/services/router'
+exports[`Code transformer | addMiddlewareToStack > add route and server middleware 1`] = `"import router from '@adonisjs/core/services/router'
 import server from '@adonisjs/core/services/server'
 
 server.errorHandler(() => import('#exceptions/handler'))
@@ -62,8 +59,7 @@ router.use([
 export const middleware = router.named({})
 "`
 
-exports[`Code transformer | defineEnvValidations > add leading comment 1`] =
-  `"import { Env } from '@adonisjs/core/env'
+exports[`Code transformer | defineEnvValidations > add leading comment 1`] = `"import { Env } from '@adonisjs/core/env'
 
 export default await Env.create(new URL('../', import.meta.url), {
   NODE_ENV: Env.schema.enum(['development', 'production', 'test'] as const),
@@ -79,8 +75,7 @@ export default await Env.create(new URL('../', import.meta.url), {
 })
 "`
 
-exports[`Code transformer | addProvider > add provider to rc file with specific environments 1`] =
-  `"import { defineConfig } from '@adonisjs/core/app'
+exports[`Code transformer | addProvider > add provider to rc file with specific environments 1`] = `"import { defineConfig } from '@adonisjs/core/app'
 
 export default defineConfig({
   typescript: true,
@@ -114,8 +109,7 @@ export default defineConfig({
 })
 "`
 
-exports[`Code transformer | addProvider > do no add environments when they are all specified 1`] =
-  `"import { defineConfig } from '@adonisjs/core/app'
+exports[`Code transformer | addProvider > do no add environments when they are all specified 1`] = `"import { defineConfig } from '@adonisjs/core/app'
 
 export default defineConfig({
   typescript: true,
@@ -146,8 +140,7 @@ export default defineConfig({
 })
 "`
 
-exports[`Code transformer | addMetaFile > add meta files to rc file with reload server 1`] =
-  `"import { defineConfig } from '@adonisjs/core/app'
+exports[`Code transformer | addMetaFile > add meta files to rc file with reload server 1`] = `"import { defineConfig } from '@adonisjs/core/app'
 
 export default defineConfig({
   typescript: true,
@@ -181,8 +174,7 @@ export default defineConfig({
 })
 "`
 
-exports[`Code transformer | setDirectory > set directory in rc file 1`] =
-  `"import { defineConfig } from '@adonisjs/core/app'
+exports[`Code transformer | setDirectory > set directory in rc file 1`] = `"import { defineConfig } from '@adonisjs/core/app'
 
 export default defineConfig({
   typescript: true,
@@ -215,8 +207,7 @@ export default defineConfig({
 })
 "`
 
-exports[`Code transformer | setCommandAlias > set command alias in rc file 1`] =
-  `"import { defineConfig } from '@adonisjs/core/app'
+exports[`Code transformer | setCommandAlias > set command alias in rc file 1`] = `"import { defineConfig } from '@adonisjs/core/app'
 
 export default defineConfig({
   typescript: true,
@@ -249,8 +240,7 @@ export default defineConfig({
 })
 "`
 
-exports[`Code transformer | addPreloadFile > add preload file with specific environments 1`] =
-  `"import { defineConfig } from '@adonisjs/core/app'
+exports[`Code transformer | addPreloadFile > add preload file with specific environments 1`] = `"import { defineConfig } from '@adonisjs/core/app'
 
 export default defineConfig({
   typescript: true,
@@ -284,9 +274,7 @@ export default defineConfig({
 })
 "`
 
-exports[
-  `Code transformer | addMiddlewareToStack > override duplicates when adding named middelware 1`
-] = `"import router from '@adonisjs/core/services/router'
+exports[`Code transformer | addMiddlewareToStack > override duplicates when adding named middelware 1`] = `"import router from '@adonisjs/core/services/router'
 import server from '@adonisjs/core/services/server'
 
 server.errorHandler(() => import('#exceptions/handler'))
@@ -306,8 +294,7 @@ export const middleware = router.named({
 })
 "`
 
-exports[`Code transformer | addMiddlewareToStack > do not add duplicate named middleware 1`] =
-  `"import router from '@adonisjs/core/services/router'
+exports[`Code transformer | addMiddlewareToStack > do not add duplicate named middleware 1`] = `"import router from '@adonisjs/core/services/router'
 import server from '@adonisjs/core/services/server'
 
 server.errorHandler(() => import('#exceptions/handler'))
@@ -327,8 +314,7 @@ export const middleware = router.named({
 })
 "`
 
-exports[`Code transformer | addCommand > add command to rc file 1`] =
-  `"import { defineConfig } from '@adonisjs/core/app'
+exports[`Code transformer | addCommand > add command to rc file 1`] = `"import { defineConfig } from '@adonisjs/core/app'
 
 export default defineConfig({
   typescript: true,
@@ -360,9 +346,7 @@ export default defineConfig({
 })
 "`
 
-exports[
-  `Code transformer | addCommand > should add command even if commands property is missing 1`
-] = `"import { defineConfig } from '@adonisjs/core/app'
+exports[`Code transformer | addCommand > should add command even if commands property is missing 1`] = `"import { defineConfig } from '@adonisjs/core/app'
 
 export default defineConfig({
   typescript: true,
@@ -413,3 +397,4 @@ export const plugins: Config['plugins'] = [
   fooPlugin()
 ]
 "`
+

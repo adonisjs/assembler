@@ -239,6 +239,21 @@ export type MiddlewareNode = {
 }
 
 /**
+ * Policy node to be added to the list of policies.
+ */
+export type BouncerPolicyNode = {
+  /**
+   * Policy name
+   */
+  name: string
+
+  /**
+   * Policy import path
+   */
+  path: string
+}
+
+/**
  * Defines the structure of an environment variable validation
  * definition
  */

@@ -390,6 +390,36 @@ export const plugins: Config['plugins'] = [
 ]
 ```
 
+### addPolicy
+Register AdonisJS bouncer policy to the list of `policies` object exported from the `app/policies/main.ts` file.
+
+> [!IMPORTANT]
+> This codemod expects the `app/policies/main.ts` file to exist and must export a `policies` object from it.
+
+```ts
+const transformer = new CodeTransformer(appRoot)
+
+try {
+  await transformer.addPolicy([
+    {
+      name: 'PostPolicy',
+      path: '#policies/post_policy'
+    }
+  ])
+} catch (error) {
+  console.error('Unable to register policy')
+  console.error(error)
+}
+```
+
+Output
+
+```ts
+export const policies = {
+  UserPolicy: () => import('#policies/post_policy')
+}
+```
+
 ## Contributing
 One of the primary goals of AdonisJS is to have a vibrant community of users and contributors who believe in the framework's principles.
 

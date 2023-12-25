@@ -21,7 +21,7 @@ import {
 } from 'ts-morph'
 
 import { RcFileTransformer } from './rc_file_transformer.js'
-import type { MiddlewareNode, EnvValidationNode } from '../types.js'
+import type { MiddlewareNode, EnvValidationNode, BouncerPolicyNode } from '../types.js'
 
 /**
  * This class is responsible for updating
@@ -136,6 +136,25 @@ export class CodeTransformer {
        */
       const middleware = `${middlewareEntry.name}: () => import('${middlewareEntry.path}')`
       namedMiddlewareObject!.insertProperty(0, middleware)
+    }
+  }
+
+  /**
+   * Add a policy to the list of pre-registered policy
+   */
+  #addToPoliciesList(file: SourceFile, policyEntry: BouncerPolicyNode) {
+    const policiesObject = file
+      .getVariableDeclarationOrThrow('policies')
+      .getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression)
+
+    /**
+     * Only define policy when one with the existing name does not
+     * exist.
+     */
+    const existingProperty = policiesObject.getProperty(policyEntry.name)
+    if (!existingProperty) {
+      const policy = `${policyEntry.name}: () => import('${policyEntry.path}')`
+      policiesObject!.insertProperty(0, policy)
     }
   }
 
@@ -333,6 +352,28 @@ export class CodeTransformer {
       if (!pluginsArray.getElements().find((element) => element.getText() === pluginCall)) {
         pluginsArray.addElement(pluginCall)
       }
+    }
+
+    file.formatText(this.#editorSettings)
+    await file.save()
+  }
+
+  /**
+   * Adds a policy to the list of `policies` object configured
+   * inside the `app/policies/main.ts` file.
+   */
+  async addPolicies(policies: BouncerPolicyNode[]) {
+    /**
+     * Get the `app/policies/main.ts` source file
+     */
+    const kernelUrl = fileURLToPath(new URL('./app/policies/main.ts', this.#cwd))
+    const file = this.#project.getSourceFileOrThrow(kernelUrl)
+
+    /**
+     * Process each middleware entry
+     */
+    for (const policy of policies) {
+      this.#addToPoliciesList(file, policy)
     }
 
     file.formatText(this.#editorSettings)

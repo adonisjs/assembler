@@ -702,3 +702,80 @@ test.group('Code transformer | addJapaPlugin', (group) => {
     `)
   })
 })
+
+test.group('Code transformer | addPolicies', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add policies to polices/main.ts file', async ({ assert, fs }) => {
+    await fs.create('app/policies/main.ts', `export const policies = {}`)
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addPolicies([
+      {
+        name: 'PostPolicy',
+        path: '#policies/post_policy',
+      },
+      {
+        name: 'UserPolicy',
+        path: '#policies/user_policy',
+      },
+    ])
+
+    const file = await fs.contents('app/policies/main.ts')
+    assert.snapshot(file).matchInline(`
+      "export const policies = {
+        UserPolicy: () => import('#policies/user_policy'),
+        PostPolicy: () => import('#policies/post_policy')
+      }
+      "
+    `)
+  })
+
+  test('throw error when policies/main.ts file is missing', async ({ fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addPolicies([
+      {
+        name: 'PostPolicy',
+        path: '#policies/post_policy',
+      },
+      {
+        name: 'UserPolicy',
+        path: '#policies/user_policy',
+      },
+    ])
+  }).throws(/Could not find source file in project at the provided path:/)
+
+  test('throw error when policies object is not defined', async ({ fs }) => {
+    await fs.create('app/policies/main.ts', `export const foo = {}`)
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addPolicies([
+      {
+        name: 'PostPolicy',
+        path: '#policies/post_policy',
+      },
+      {
+        name: 'UserPolicy',
+        path: '#policies/user_policy',
+      },
+    ])
+  }).throws(`Expected to find variable declaration named 'policies'.`)
+
+  test('throw error when policies declaration is not an object', async ({ fs }) => {
+    await fs.create('app/policies/main.ts', `export const policies = []`)
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addPolicies([
+      {
+        name: 'PostPolicy',
+        path: '#policies/post_policy',
+      },
+      {
+        name: 'UserPolicy',
+        path: '#policies/user_policy',
+      },
+    ])
+  }).throws(/Expected to find an initializer of kind \'ObjectLiteralExpression\'./)
+})

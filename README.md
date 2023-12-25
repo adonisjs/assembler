@@ -390,8 +390,8 @@ export const plugins: Config['plugins'] = [
 ]
 ```
 
-### addPolicy
-Register AdonisJS bouncer policy to the list of `policies` object exported from the `app/policies/main.ts` file.
+### addPolicies
+Register AdonisJS bouncer policies to the list of `policies` object exported from the `app/policies/main.ts` file.
 
 > [!IMPORTANT]
 > This codemod expects the `app/policies/main.ts` file to exist and must export a `policies` object from it.
@@ -400,7 +400,7 @@ Register AdonisJS bouncer policy to the list of `policies` object exported from 
 const transformer = new CodeTransformer(appRoot)
 
 try {
-  await transformer.addPolicy([
+  await transformer.addPolicies([
     {
       name: 'PostPolicy',
       path: '#policies/post_policy'

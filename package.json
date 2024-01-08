@@ -133,6 +133,7 @@
   "tsup": {
     "entry": [
       "./index.ts",
+      "./src/types.ts",
       "./src/code_transformer/main.ts"
     ],
     "outDir": "./build",

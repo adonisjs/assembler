@@ -14,3 +14,4 @@ yarn.lock
 shrinkwrap.yaml
 test/__app/
 test/__app
+tmp

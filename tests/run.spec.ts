@@ -68,13 +68,7 @@ test.group('Child process', () => {
 
     assert.equal(childProcess.exitCode, 0)
     assert.deepEqual(payload, {
-      args: [
-        '--loader=ts-node/esm',
-        '--no-warnings',
-        '--experimental-import-meta-resolve',
-        '--enable-source-maps',
-        '--throw-deprecation',
-      ],
+      args: ['--loader=ts-node/esm', '--enable-source-maps', '--throw-deprecation'],
     })
   })
 

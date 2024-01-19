@@ -34,6 +34,19 @@ const DEFAULT_NODE_ARGS = [
 ]
 
 /**
+ * Disable experimental warnings, since the ts-node loader hook
+ * uses an expiremental feature. We are waiting for them to
+ * cut a new release and support the newer `--import` flag
+ * instead
+ */
+if (process.allowedNodeEnvironmentFlags.has('--disable-warning')) {
+  // supported in node>=v21.13.0
+  DEFAULT_NODE_ARGS.push('--disable-warning=ExperimentalWarning')
+} else {
+  DEFAULT_NODE_ARGS.push('--no-warnings')
+}
+
+/**
  * Parses tsconfig.json and prints errors using typescript compiler
  * host
  */

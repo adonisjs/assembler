@@ -136,4 +136,22 @@ test.group('Bundler', () => {
       assert.fileExists('./build/pnpm-lock.yaml'),
     ])
   })
+
+  test('remove ts-node reference in builded ace.js file', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create('ace.js', 'foo'),
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('package.json', '{}'),
+      fs.create('package-lock.json', '{}'),
+    ])
+
+    await new Bundler(fs.baseUrl, ts, {}).bundle()
+
+    const aceFile = await fs.contents('./build/ace.js')
+    assert.notInclude(aceFile, 'ts-node')
+  })
 })

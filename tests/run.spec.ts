@@ -71,7 +71,9 @@ test.group('Child process', () => {
       args: [
         '--loader=ts-node/esm',
         '--enable-source-maps',
-        '--disable-warning=ExperimentalWarning',
+        process.allowedNodeEnvironmentFlags.has('--disable-warning')
+          ? '--disable-warning=ExperimentalWarning'
+          : '--no-warnings',
         '--throw-deprecation',
       ],
     })

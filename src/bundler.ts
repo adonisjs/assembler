@@ -180,7 +180,7 @@ export class Bundler {
 
       await import('./bin/console.js')
     `)
-    await fs.mkdirSync(outDir, { recursive: true })
+    await fs.mkdir(outDir, { recursive: true })
     await fs.writeFile(aceFileLocation, aceFileContent)
     this.#logger.info('rewrited ace file', { suffix: this.#getRelativeName(aceFileLocation) })
   }

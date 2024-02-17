@@ -159,6 +159,54 @@ export class CodeTransformer {
   }
 
   /**
+   * Add the given import declarations to the source file
+   * and merge named imports with the existing import
+   */
+  #addImportDeclarations(
+    file: SourceFile,
+    importDeclarations: { isNamed: boolean; module: string; identifier: string }[]
+  ) {
+    const existingImports = file.getImportDeclarations()
+
+    importDeclarations.forEach((importDeclaration) => {
+      const existingImport = existingImports.find(
+        (mod) => mod.getModuleSpecifierValue() === importDeclaration.module
+      )
+
+      /**
+       * Add a new named import to existing import for the
+       * same module
+       */
+      if (existingImport && importDeclaration.isNamed) {
+        if (
+          !existingImport
+            .getNamedImports()
+            .find((namedImport) => namedImport.getName() === importDeclaration.identifier)
+        ) {
+          existingImport.addNamedImport(importDeclaration.identifier)
+        }
+        return
+      }
+
+      /**
+       * Ignore default import when the same module is already imported.
+       * The chances are the existing default import and the importDeclaration
+       * identifiers are not the same. But we should not modify existing source
+       */
+      if (existingImport) {
+        return
+      }
+
+      file.addImportDeclaration({
+        ...(importDeclaration.isNamed
+          ? { namedImports: [importDeclaration.identifier] }
+          : { defaultImport: importDeclaration.identifier }),
+        moduleSpecifier: importDeclaration.module,
+      })
+    })
+  }
+
+  /**
    * Write a leading comment
    */
   #addLeadingComment(writer: CodeBlockWriter, comment?: string) {
@@ -297,46 +345,9 @@ export class CodeTransformer {
     const file = this.#project.getSourceFileOrThrow(testBootstrapUrl)
 
     /**
-     * Add the import declaration
+     * Add the import declarations
      */
-    const existingImports = file.getImportDeclarations()
-
-    importDeclarations.forEach((importDeclaration) => {
-      const existingImport = existingImports.find(
-        (mod) => mod.getModuleSpecifierValue() === importDeclaration.module
-      )
-
-      /**
-       * Add a new named import to existing import for the
-       * same module
-       */
-      if (existingImport && importDeclaration.isNamed) {
-        if (
-          !existingImport
-            .getNamedImports()
-            .find((namedImport) => namedImport.getName() === importDeclaration.identifier)
-        ) {
-          existingImport.addNamedImport(importDeclaration.identifier)
-        }
-        return
-      }
-
-      /**
-       * Ignore default import when the same module is already imported.
-       * The chances are the existing default import and the importDeclaration
-       * identifiers are not the same. But we should not modify existing source
-       */
-      if (existingImport) {
-        return
-      }
-
-      file.addImportDeclaration({
-        ...(importDeclaration.isNamed
-          ? { namedImports: [importDeclaration.identifier] }
-          : { defaultImport: importDeclaration.identifier }),
-        moduleSpecifier: importDeclaration.module,
-      })
-    })
+    this.#addImportDeclarations(file, importDeclarations)
 
     /**
      * Insert the plugin call in the `plugins` array
@@ -352,6 +363,57 @@ export class CodeTransformer {
       if (!pluginsArray.getElements().find((element) => element.getText() === pluginCall)) {
         pluginsArray.addElement(pluginCall)
       }
+    }
+
+    file.formatText(this.#editorSettings)
+    await file.save()
+  }
+
+  /**
+   * Add a new Vite plugin
+   */
+  async addVitePlugin(
+    pluginCall: string,
+    importDeclarations: { isNamed: boolean; module: string; identifier: string }[]
+  ) {
+    /**
+     * Get the `vite.config.ts` source file
+     */
+    const viteConfigTsUrl = fileURLToPath(new URL('./vite.config.ts', this.#cwd))
+
+    const file = this.#project.getSourceFile(viteConfigTsUrl)
+    if (!file) {
+      throw new Error(
+        'Cannot find vite.config.ts file. Make sure to rename vite.config.js to vite.config.ts'
+      )
+    }
+
+    /**
+     * Add the import declarations
+     */
+    this.#addImportDeclarations(file, importDeclarations)
+
+    /**
+     * Get the default export options
+     */
+    const defaultExport = file.getDefaultExportSymbol()
+    if (!defaultExport) {
+      throw new Error('Cannot find the default export in vite.config.ts')
+    }
+
+    const options = defaultExport
+      .getDeclarations()[0]
+      .getChildrenOfKind(SyntaxKind.ObjectLiteralExpression)[0]
+
+    const pluginsArray = options
+      .getPropertyOrThrow('plugins')
+      .getFirstChildByKindOrThrow(SyntaxKind.ArrayLiteralExpression)
+
+    /**
+     * Add plugin call to the plugins array
+     */
+    if (!pluginsArray.getElements().find((element) => element.getText() === pluginCall)) {
+      pluginsArray.addElement(pluginCall)
     }
 
     file.formatText(this.#editorSettings)

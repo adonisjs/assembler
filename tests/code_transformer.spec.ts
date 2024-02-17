@@ -779,3 +779,86 @@ test.group('Code transformer | addPolicies', (group) => {
     ])
   }).throws(/Expected to find an initializer of kind \'ObjectLiteralExpression\'./)
 })
+
+test.group('Code transformer | addVitePlugin', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add vite plugin to vite.config.ts file', async ({ assert, fs }) => {
+    await fs.create(
+      'vite.config.ts',
+      `export default {
+        plugins: [],
+      }`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addVitePlugin('vue({ foo: 32 })', [
+      { identifier: 'vue', module: 'vue', isNamed: false },
+      { identifier: 'foo', module: 'foo', isNamed: true },
+    ])
+
+    const file = await fs.contents('vite.config.ts')
+    assert.snapshot(file).matchInline(`
+      "import vue from 'vue'
+      import { foo } from 'foo'
+
+      export default {
+        plugins: [vue({ foo: 32 })],
+      }
+      "
+    `)
+  })
+
+  test('ignore duplicates when adding vite plugin', async ({ assert, fs }) => {
+    await fs.create(
+      'vite.config.ts',
+      `export default {
+        plugins: [],
+      }`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addVitePlugin('vue({ foo: 32 })', [
+      { identifier: 'vue', module: 'vue', isNamed: false },
+      { identifier: 'foo', module: 'foo', isNamed: true },
+    ])
+
+    await transformer.addVitePlugin('vue({ foo: 32 })', [
+      { identifier: 'vue', module: 'vue', isNamed: false },
+      { identifier: 'foo', module: 'foo', isNamed: true },
+    ])
+
+    const file = await fs.contents('vite.config.ts')
+    assert.snapshot(file).matchInline(`
+      "import vue from 'vue'
+      import { foo } from 'foo'
+
+      export default {
+        plugins: [vue({ foo: 32 })],
+      }
+      "
+    `)
+  })
+
+  test('throw error when vite.config.ts file is missing', async ({ fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addVitePlugin('vue()', [{ identifier: 'vue', module: 'vue', isNamed: false }])
+  }).throws(/Cannot find vite\.config\.ts file/)
+
+  test('throw if no default export found', async ({ fs }) => {
+    await fs.create('vite.config.ts', `export const plugins = []`)
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addVitePlugin('vue()', [{ identifier: 'vue', module: 'vue', isNamed: false }])
+  }).throws(/Cannot find the default export/)
+
+  test('throw if plugins property is not found', async ({ fs }) => {
+    await fs.create('vite.config.ts', `export default {}`)
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addVitePlugin('vue()', [{ identifier: 'vue', module: 'vue', isNamed: false }])
+  }).throws(/Expected to find property named 'plugins'/)
+})

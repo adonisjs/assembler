@@ -390,6 +390,45 @@ export const plugins: Config['plugins'] = [
 ]
 ```
 
+### addVitePlugin
+
+Register a Vite plugin to the `vite.config.ts` file.
+
+> [!IMPORTANT]
+> This codemod expects the `vite.config.ts` file to exist and must have the `export default defineConfig` function call.
+
+```ts
+const transformer = new CodeTransformer(appRoot)
+const imports = [
+  {
+    isNamed: false,
+    module: '@vitejs/plugin-vue',
+    identifier: 'vue'
+  },
+]
+const pluginUsage = 'vue({ jsx: true })'
+
+try {
+  await transformer.addVitePlugin(pluginUsage, imports)
+} catch (error) {
+  console.error('Unable to register vite plugin')
+  console.error(error)
+}
+```
+
+Output
+
+```ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [
+    vue({ jsx: true })
+  ]
+})
+```
+
 ### addPolicies
 Register AdonisJS bouncer policies to the list of `policies` object exported from the `app/policies/main.ts` file.
 

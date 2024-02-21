@@ -42,7 +42,7 @@ export class CodeTransformer {
   /**
    * The TsMorph project
    */
-  #project: Project
+  project: Project
 
   /**
    * Settings to use when persisting files
@@ -59,7 +59,7 @@ export class CodeTransformer {
 
   constructor(cwd: URL) {
     this.#cwd = cwd
-    this.#project = new Project({
+    this.project = new Project({
       tsConfigFilePath: join(fileURLToPath(this.#cwd), 'tsconfig.json'),
       manipulationSettings: { quoteKind: QuoteKind.Single },
     })
@@ -232,7 +232,7 @@ export class CodeTransformer {
      * Get the `start/env.ts` source file
      */
     const kernelUrl = fileURLToPath(new URL('./start/env.ts', this.#cwd))
-    const file = this.#project.getSourceFileOrThrow(kernelUrl)
+    const file = this.project.getSourceFileOrThrow(kernelUrl)
 
     /**
      * Get the `Env.create` call expression
@@ -305,7 +305,7 @@ export class CodeTransformer {
      * Get the `start/kernel.ts` source file
      */
     const kernelUrl = fileURLToPath(new URL('./start/kernel.ts', this.#cwd))
-    const file = this.#project.getSourceFileOrThrow(kernelUrl)
+    const file = this.project.getSourceFileOrThrow(kernelUrl)
 
     /**
      * Process each middleware entry
@@ -326,7 +326,7 @@ export class CodeTransformer {
    * Update the `adonisrc.ts` file
    */
   async updateRcFile(callback: (transformer: RcFileTransformer) => void) {
-    const rcFileTransformer = new RcFileTransformer(this.#cwd, this.#project)
+    const rcFileTransformer = new RcFileTransformer(this.#cwd, this.project)
     callback(rcFileTransformer)
     await rcFileTransformer.save()
   }
@@ -342,7 +342,7 @@ export class CodeTransformer {
      * Get the `tests/bootstrap.ts` source file
      */
     const testBootstrapUrl = fileURLToPath(new URL('./tests/bootstrap.ts', this.#cwd))
-    const file = this.#project.getSourceFileOrThrow(testBootstrapUrl)
+    const file = this.project.getSourceFileOrThrow(testBootstrapUrl)
 
     /**
      * Add the import declarations
@@ -381,7 +381,7 @@ export class CodeTransformer {
      */
     const viteConfigTsUrl = fileURLToPath(new URL('./vite.config.ts', this.#cwd))
 
-    const file = this.#project.getSourceFile(viteConfigTsUrl)
+    const file = this.project.getSourceFile(viteConfigTsUrl)
     if (!file) {
       throw new Error(
         'Cannot find vite.config.ts file. Make sure to rename vite.config.js to vite.config.ts'
@@ -429,7 +429,7 @@ export class CodeTransformer {
      * Get the `app/policies/main.ts` source file
      */
     const kernelUrl = fileURLToPath(new URL('./app/policies/main.ts', this.#cwd))
-    const file = this.#project.getSourceFileOrThrow(kernelUrl)
+    const file = this.project.getSourceFileOrThrow(kernelUrl)
 
     /**
      * Process each middleware entry

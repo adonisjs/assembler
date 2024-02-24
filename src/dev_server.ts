@@ -300,6 +300,8 @@ export class DevServer {
    * Start the development server
    */
   async start() {
+    await this.#hooks.registerDevServerHooks()
+
     this.#clearScreen()
     this.#logger.info('starting HTTP server...')
     this.#startHTTPServer(String(await getPort(this.#cwd)), 'nonblocking')
@@ -310,6 +312,8 @@ export class DevServer {
    * Start the development server in watch mode
    */
   async startAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
+    await this.#hooks.registerDevServerHooks()
+
     const port = String(await getPort(this.#cwd))
     this.#isWatching = true
 

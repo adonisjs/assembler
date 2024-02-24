@@ -170,19 +170,21 @@ test.group('Bundler', () => {
 
     const bundler = new Bundler(fs.baseUrl, ts, {
       hooks: {
-        onBuildStarting: [async () => ({
-          default: () => {
-            assert.isTrue(true)
-          }
-        })],
+        onBuildStarting: [
+          async () => ({
+            default: () => {
+              assert.isTrue(true)
+            },
+          }),
+        ],
         onBuildCompleted: [
           async () => ({
             default: () => {
               assert.isTrue(true)
             },
           }),
-        ]
-      }
+        ],
+      },
     })
 
     await bundler.bundle()

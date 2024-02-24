@@ -11,10 +11,10 @@ export class AssemblerHooks {
   #config: RcFile['unstable_assembler']
 
   #hooks = new Hooks<{
-    onDevServerStarted: [Parameters<AssemblerHookHandler>,[]]
-    onSourceFileChanged: [Parameters<SourceFileChangedHookHandler>,[]]
-    onBuildStarting: [Parameters<AssemblerHookHandler>,[]]
-    onBuildCompleted: [Parameters<AssemblerHookHandler>,[]]
+    onDevServerStarted: [Parameters<AssemblerHookHandler>, []]
+    onSourceFileChanged: [Parameters<SourceFileChangedHookHandler>, []]
+    onBuildStarting: [Parameters<AssemblerHookHandler>, []]
+    onBuildCompleted: [Parameters<AssemblerHookHandler>, []]
   }>()
 
   constructor(config: RcFile['unstable_assembler']) {

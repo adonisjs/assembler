@@ -13,9 +13,11 @@ import { DevServer } from '../index.js'
 import { setTimeout as sleep } from 'node:timers/promises'
 
 test.group('DevServer', () => {
-  test('start() execute onDevServerStarted hook', async ({ assert, fs }) => {
+  test('start() execute onDevServerStarted hook', async ({ assert, fs, cleanup }) => {
     assert.plan(1)
+
     await fs.create('bin/server.js', `process.send({ isAdonisJS: true, environment: 'web' })`)
+    await fs.create('.env', 'PORT=3334')
 
     const devServer = new DevServer(fs.baseUrl, {
       assets: {
@@ -35,12 +37,15 @@ test.group('DevServer', () => {
     })
 
     await devServer.start()
+    cleanup(() => devServer.close())
     await sleep(600)
   })
 
   test('startAndWatch() execute onDevServerStarted hook', async ({ assert, fs, cleanup }) => {
     assert.plan(1)
+
     await fs.create('bin/server.js', `process.send({ isAdonisJS: true, environment: 'web' })`)
+    await fs.create('.env', 'PORT=3334')
 
     const devServer = new DevServer(fs.baseUrl, {
       assets: {
@@ -73,11 +78,10 @@ test.group('DevServer', () => {
     })
     await fs.create('index.ts', 'console.log("hey")')
     await fs.create('bin/server.js', `process.send({ isAdonisJS: true, environment: 'web' })`)
+    await fs.create('.env', 'PORT=3334')
 
     const devServer = new DevServer(fs.baseUrl, {
-      assets: {
-        enabled: false,
-      },
+      assets: { enabled: false },
       nodeArgs: [],
       scriptArgs: [],
       hooks: {
@@ -95,7 +99,7 @@ test.group('DevServer', () => {
     cleanup(() => devServer.close())
 
     await sleep(100)
-    await fs.create('index.ts', 'sdf')
+    await fs.create('index.ts', 'foo')
     await sleep(10)
   })
 })

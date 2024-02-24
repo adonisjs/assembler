@@ -14,6 +14,7 @@ import { type ExecaChildProcess } from 'execa'
 import { cliui, type Logger } from '@poppinss/cliui'
 import type { Watcher } from '@poppinss/chokidar-ts'
 
+import { AssemblerHooks } from './hooks.js'
 import type { DevServerOptions } from './types.js'
 import { AssetsDevServer } from './assets_dev_server.js'
 import { getPort, isDotEnvFile, runNode, watch } from './helpers.js'
@@ -85,6 +86,11 @@ export class DevServer {
   #assetsServer?: AssetsDevServer
 
   /**
+   * Hooks to execute custom actions during the dev server lifecycle
+   */
+  #hooks: AssemblerHooks
+
+  /**
    * Getting reference to colors library from logger
    */
   get #colors() {
@@ -94,6 +100,7 @@ export class DevServer {
   constructor(cwd: URL, options: DevServerOptions) {
     this.#cwd = cwd
     this.#options = options
+    this.#hooks = new AssemblerHooks(options.hooks)
 
     this.#isMetaFileWithReloadsEnabled = picomatch(
       (this.#options.metaFiles || [])
@@ -147,7 +154,7 @@ export class DevServer {
       scriptArgs: this.#options.scriptArgs,
     })
 
-    this.#httpServer.on('message', (message) => {
+    this.#httpServer.on('message', async (message) => {
       if (this.#isAdonisJSReadyMessage(message)) {
         const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
 
@@ -167,6 +174,8 @@ export class DevServer {
         }
 
         displayMessage.render()
+
+        await this.#hooks.onDevServerStarted({ colors: ui.colors, logger: this.#logger })
       }
     })
 
@@ -241,6 +250,8 @@ export class DevServer {
    * Handles TypeScript source file change
    */
   #handleSourceFileChange(action: string, port: string, relativePath: string) {
+    void this.#hooks.onSourceFileChanged({ colors: ui.colors, logger: this.#logger }, relativePath)
+
     this.#clearScreen()
     this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
     this.#restartHTTPServer(port)

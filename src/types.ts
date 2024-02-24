@@ -7,6 +7,8 @@
  * file that was distributed with this source code.
  */
 
+import type { RcFile } from '@adonisjs/application/types'
+
 /**
  * Options needed to run a script file
  */
@@ -114,6 +116,13 @@ export type DevServerOptions = {
    * Assets bundler options to start its dev server
    */
   assets?: AssetsBundlerOptions
+  /**
+   * Hooks to execute at different stages
+   */
+  hooks?: Pick<
+    NonNullable<RcFile['unstable_assembler']>,
+    'onDevServerStarted' | 'onSourceFileChanged'
+  >
 }
 
 /**
@@ -206,6 +215,11 @@ export type BundlerOptions = {
    * for assets
    */
   assets?: AssetsBundlerOptions
+
+  /**
+   * Hooks to execute at different stages
+   */
+  hooks?: Pick<NonNullable<RcFile['unstable_assembler']>, 'onBuildCompleted' | 'onBuildStarting'>
 }
 
 /**

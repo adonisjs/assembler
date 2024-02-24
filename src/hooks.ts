@@ -37,7 +37,7 @@ export class AssemblerHooks {
   /**
    * Resolve hooks needed for dev-time and register them to the Hooks instance
    */
-  async addDevServerHooks() {
+  async registerDevServerHooks() {
     await Promise.all([
       this.#config?.onDevServerStarted?.map(async (node) =>
         this.#hooks.add('onDevServerStarted', await this.#resolveHookNode(node))
@@ -51,7 +51,7 @@ export class AssemblerHooks {
   /**
    * Resolve hooks needed for build-time and register them to the Hooks instance
    */
-  async addBuildHooks() {
+  async registerBuildHooks() {
     await Promise.all([
       this.#config?.onBuildStarting?.map(async (node) =>
         this.#hooks.add('onBuildStarting', await this.#resolveHookNode(node))

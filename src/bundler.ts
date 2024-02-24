@@ -200,7 +200,7 @@ export class Bundler {
    * Bundles the application to be run in production
    */
   async bundle(stopOnError: boolean = true, client?: SupportedPackageManager): Promise<boolean> {
-    await this.#hooks.addBuildHooks()
+    await this.#hooks.registerBuildHooks()
 
     /**
      * Step 1: Parse config file to get the build output directory

@@ -154,4 +154,39 @@ test.group('Bundler', () => {
     const aceFile = await fs.contents('./build/ace.js')
     assert.notInclude(aceFile, 'ts-node')
   })
+
+  test('execute hooks', async ({ assert, fs }) => {
+    assert.plan(2)
+
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+      ),
+      fs.create('adonisrc.ts', 'export default { hooks: { onBuildStarting: [() => {}] } }'),
+      fs.create('package.json', '{}'),
+      fs.create('package-lock.json', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, {
+      hooks: {
+        onBuildStarting: [
+          async () => ({
+            default: () => {
+              assert.isTrue(true)
+            },
+          }),
+        ],
+        onBuildCompleted: [
+          async () => ({
+            default: () => {
+              assert.isTrue(true)
+            },
+          }),
+        ],
+      },
+    })
+
+    await bundler.bundle()
+  })
 })

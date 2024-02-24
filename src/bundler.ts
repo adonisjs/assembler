@@ -16,6 +16,7 @@ import { join, relative } from 'node:path'
 import { cliui, type Logger } from '@poppinss/cliui'
 import { detectPackageManager } from '@antfu/install-pkg'
 
+import { AssemblerHooks } from './hooks.js'
 import type { BundlerOptions } from './types.js'
 import { run, parseConfig, copyFiles } from './helpers.js'
 
@@ -62,6 +63,7 @@ export class Bundler {
   #cwdPath: string
   #ts: typeof tsStatic
   #logger = ui.logger
+  #hooks: AssemblerHooks
   #options: BundlerOptions
 
   /**
@@ -76,6 +78,7 @@ export class Bundler {
     this.#cwdPath = fileURLToPath(this.#cwd)
     this.#ts = ts
     this.#options = options
+    this.#hooks = new AssemblerHooks(options.hooks)
   }
 
   /**
@@ -197,6 +200,8 @@ export class Bundler {
    * Bundles the application to be run in production
    */
   async bundle(stopOnError: boolean = true, client?: SupportedPackageManager): Promise<boolean> {
+    await this.#hooks.registerBuildHooks()
+
     /**
      * Step 1: Parse config file to get the build output directory
      */
@@ -220,7 +225,12 @@ export class Bundler {
     }
 
     /**
-     * Step 4: Build typescript source code
+     * Step 4: Execute build starting hook
+     */
+    await this.#hooks.onBuildStarting({ colors: ui.colors, logger: this.#logger })
+
+    /**
+     * Step 5: Build typescript source code
      */
     this.#logger.info('compiling typescript source', { suffix: 'tsc' })
     const buildCompleted = await this.#runTsc(outDir)
@@ -251,7 +261,7 @@ export class Bundler {
     }
 
     /**
-     * Step 5: Copy meta files to the build directory
+     * Step 6: Copy meta files to the build directory
      */
     const pkgManager = await this.#getPackageManager(client)
     const pkgFiles = pkgManager ? ['package.json', pkgManager.lockFile] : ['package.json']
@@ -260,6 +270,11 @@ export class Bundler {
 
     this.#logger.success('build completed')
     this.#logger.log('')
+
+    /**
+     * Step 7: Execute build completed hook
+     */
+    await this.#hooks.onBuildCompleted({ colors: ui.colors, logger: this.#logger })
 
     /**
      * Next steps

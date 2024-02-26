@@ -9,6 +9,8 @@
 
 import ts from 'typescript'
 import { test } from '@japa/runner'
+import { setTimeout as sleep } from 'node:timers/promises'
+
 import { Bundler } from '../index.js'
 
 test.group('Bundler', () => {
@@ -183,6 +185,35 @@ test.group('Bundler', () => {
               assert.isTrue(true)
             },
           }),
+        ],
+      },
+    })
+
+    await bundler.bundle()
+  })
+
+  test('wait for hooks to be registered', async ({ assert, fs }) => {
+    assert.plan(1)
+
+    await fs.createJson('tsconfig.json', {
+      include: ['**/*'],
+      exclude: [],
+    })
+    await fs.create('index.ts', 'console.log("hey")')
+    await fs.create('bin/server.js', `process.send({ isAdonisJS: true, environment: 'web' })`)
+    await fs.create('.env', 'PORT=3334')
+
+    const bundler = new Bundler(fs.baseUrl, ts, {
+      hooks: {
+        onBuildStarting: [
+          async () => {
+            await sleep(1000)
+            return {
+              default: () => {
+                assert.isTrue(true)
+              },
+            }
+          },
         ],
       },
     })

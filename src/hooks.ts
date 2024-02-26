@@ -48,10 +48,10 @@ export class AssemblerHooks {
    */
   async registerDevServerHooks() {
     await Promise.all([
-      this.#config?.onDevServerStarted?.map(async (node) =>
+      ...(this.#config?.onDevServerStarted || []).map(async (node) =>
         this.#hooks.add('onDevServerStarted', await this.#resolveHookNode(node))
       ),
-      this.#config?.onSourceFileChanged?.map(async (node) =>
+      ...(this.#config?.onSourceFileChanged || []).map(async (node) =>
         this.#hooks.add('onSourceFileChanged', await this.#resolveHookNode(node))
       ),
     ])
@@ -62,10 +62,10 @@ export class AssemblerHooks {
    */
   async registerBuildHooks() {
     await Promise.all([
-      this.#config?.onBuildStarting?.map(async (node) =>
+      ...(this.#config?.onBuildStarting || []).map(async (node) =>
         this.#hooks.add('onBuildStarting', await this.#resolveHookNode(node))
       ),
-      this.#config?.onBuildCompleted?.map(async (node) =>
+      ...(this.#config?.onBuildCompleted || []).map(async (node) =>
         this.#hooks.add('onBuildCompleted', await this.#resolveHookNode(node))
       ),
     ])

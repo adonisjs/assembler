@@ -102,4 +102,39 @@ test.group('DevServer', () => {
     await fs.create('index.ts', 'foo')
     await sleep(10)
   })
+
+  test('wait for hooks to be registered', async ({ assert, fs, cleanup }) => {
+    assert.plan(1)
+
+    await fs.createJson('tsconfig.json', {
+      include: ['**/*'],
+      exclude: [],
+    })
+    await fs.create('index.ts', 'console.log("hey")')
+    await fs.create('bin/server.js', `process.send({ isAdonisJS: true, environment: 'web' })`)
+    await fs.create('.env', 'PORT=3334')
+
+    const devServer = new DevServer(fs.baseUrl, {
+      assets: { enabled: false },
+      nodeArgs: [],
+      scriptArgs: [],
+      hooks: {
+        onDevServerStarted: [
+          async () => {
+            await sleep(400)
+            return {
+              default: () => {
+                assert.isTrue(true)
+              },
+            }
+          },
+        ],
+      },
+    })
+
+    await devServer.startAndWatch(ts)
+    cleanup(() => devServer.close())
+
+    await sleep(500)
+  })
 })

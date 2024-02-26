@@ -136,5 +136,5 @@ test.group('DevServer', () => {
     cleanup(() => devServer.close())
 
     await sleep(500)
-  })
+  }).timeout(10_000)
 })

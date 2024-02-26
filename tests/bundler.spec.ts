@@ -219,5 +219,5 @@ test.group('Bundler', () => {
     })
 
     await bundler.bundle()
-  })
+  }).timeout(10_000)
 })

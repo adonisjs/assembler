@@ -842,6 +842,38 @@ test.group('Code transformer | addVitePlugin', (group) => {
     `)
   })
 
+  test('insert in defineConfig call', async ({ assert, fs }) => {
+    await fs.create(
+      'vite.config.ts',
+      `export default defineConfig({
+          plugins: [],
+        })`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addVitePlugin('vue({ foo: 32 })', [
+      { identifier: 'vue', module: 'vue', isNamed: false },
+      { identifier: 'foo', module: 'foo', isNamed: true },
+    ])
+
+    await transformer.addVitePlugin('vue({ foo: 32 })', [
+      { identifier: 'vue', module: 'vue', isNamed: false },
+      { identifier: 'foo', module: 'foo', isNamed: true },
+    ])
+
+    const file = await fs.contents('vite.config.ts')
+    assert.snapshot(file).matchInline(`
+      "import vue from 'vue'
+      import { foo } from 'foo'
+
+      export default defineConfig({
+        plugins: [vue({ foo: 32 })],
+      })
+      "
+    `)
+  })
+
   test('throw error when vite.config.ts file is missing', async ({ fs }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
 

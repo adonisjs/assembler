@@ -401,9 +401,15 @@ export class CodeTransformer {
       throw new Error('Cannot find the default export in vite.config.ts')
     }
 
-    const options = defaultExport
-      .getDeclarations()[0]
-      .getChildrenOfKind(SyntaxKind.ObjectLiteralExpression)[0]
+    /**
+     * Get the options object
+     * - Either the first argument of `defineConfig` call : `export default defineConfig({})`
+     * - Or child literal expression of the default export : `export default {}`
+     */
+    const declaration = defaultExport.getDeclarations()[0]
+    const options =
+      declaration.getChildrenOfKind(SyntaxKind.ObjectLiteralExpression)[0] ||
+      declaration.getChildrenOfKind(SyntaxKind.CallExpression)[0].getArguments()[0]
 
     const pluginsArray = options
       .getPropertyOrThrow('plugins')

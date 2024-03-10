@@ -175,7 +175,7 @@ export class AssetsDevServer {
   stop() {
     if (this.#devServer) {
       this.#devServer.removeAllListeners()
-      this.#devServer.kill('SIGKILL')
+      this.#devServer.kill('SIGTERM')
       this.#devServer = undefined
     }
   }

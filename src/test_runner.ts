@@ -258,7 +258,7 @@ export class TestRunner {
   #rerunTests(port: string, filters?: TestRunnerOptions['filters']) {
     if (this.#testScript) {
       this.#testScript.removeAllListeners()
-      this.#testScript.kill('SIGKILL')
+      this.#testScript.kill('SIGTERM')
     }
 
     this.#runTests(port, 'blocking', filters)
@@ -349,7 +349,7 @@ export class TestRunner {
     this.#assetsServer?.stop()
     if (this.#testScript) {
       this.#testScript.removeAllListeners()
-      this.#testScript.kill('SIGKILL')
+      this.#testScript.kill('SIGTERM')
     }
   }
 

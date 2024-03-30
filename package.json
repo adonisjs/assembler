@@ -3,7 +3,7 @@
   "description": "Provides utilities to run AdonisJS development server and build project for production",
   "version": "7.2.3",
   "engines": {
-    "node": ">=18.16.0"
+    "node": ">=20.6.0"
   },
   "main": "build/index.js",
   "type": "module",

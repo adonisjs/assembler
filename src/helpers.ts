@@ -159,7 +159,7 @@ export async function getPort(cwd: URL): Promise<number> {
    */
   const files = await new EnvLoader(cwd).load()
   for (let file of files) {
-    const envVariables = new EnvParser(file.contents).parse()
+    const envVariables = await new EnvParser(file.contents).parse()
     if (envVariables.PORT) {
       return getRandomPort({ port: Number(envVariables.PORT) })
     }

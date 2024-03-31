@@ -121,7 +121,7 @@ export type DevServerOptions = {
    */
   hooks?: Pick<
     NonNullable<RcFile['unstable_assembler']>,
-    'onDevServerStarted' | 'onSourceFileChanged'
+    'onDevServerStarted' | 'onSourceFileChanged' | 'onHttpServerMessage'
   >
 }
 

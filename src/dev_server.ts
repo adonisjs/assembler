@@ -155,6 +155,12 @@ export class DevServer {
     })
 
     this.#httpServer.on('message', async (message) => {
+      void this.#hooks.onHttpServerMessage({ colors: ui.colors, logger: this.#logger }, message, {
+        restartServer: () => {
+          this.#restartHTTPServer(port)
+        },
+      })
+
       if (this.#isAdonisJSReadyMessage(message)) {
         const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
 

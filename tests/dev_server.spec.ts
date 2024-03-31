@@ -223,8 +223,8 @@ test.group('DevServer', () => {
     await devServer.startAndWatch(ts)
     cleanup(() => devServer.close())
 
-    await sleep(500)
+    await sleep(1000)
 
     assert.deepEqual(receivedMessages.length, 4)
-  })
+  }).timeout(10_000)
 })

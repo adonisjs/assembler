@@ -9,8 +9,10 @@
 
 import ts from 'typescript'
 import { test } from '@japa/runner'
-import { DevServer } from '../index.js'
+import { cliui } from '@poppinss/cliui'
 import { setTimeout as sleep } from 'node:timers/promises'
+
+import { DevServer } from '../index.js'
 
 test.group('DevServer', () => {
   test('start() execute onDevServerStarted hook', async ({ assert, fs, cleanup }) => {
@@ -110,7 +112,6 @@ test.group('DevServer', () => {
       include: ['**/*'],
       exclude: [],
     })
-    await fs.create('index.ts', 'console.log("hey")')
     await fs.create('bin/server.js', `process.send({ isAdonisJS: true, environment: 'web' })`)
     await fs.create('.env', 'PORT=3334')
 
@@ -145,7 +146,6 @@ test.group('DevServer', () => {
       include: ['**/*'],
       exclude: [],
     })
-    await fs.create('index.ts', 'console.log("hey")')
     await fs.create(
       'bin/server.js',
       `
@@ -188,7 +188,6 @@ test.group('DevServer', () => {
       include: ['**/*'],
       exclude: [],
     })
-    await fs.create('index.ts', 'console.log("hey")')
     await fs.create(
       'bin/server.js',
       `
@@ -227,4 +226,72 @@ test.group('DevServer', () => {
 
     assert.deepEqual(receivedMessages.length, 4)
   }).timeout(10_000)
+
+  test('should restart server if receive hot-hook message', async ({ assert, fs }) => {
+    await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
+    await fs.create(
+      'bin/server.js',
+      `process.send({ type: 'hot-hook:full-reload', path: '/foo' });`
+    )
+    await fs.create('.env', 'PORT=3334')
+
+    const { logger } = cliui({ mode: 'raw' })
+    const devServer = new DevServer(fs.baseUrl, {
+      hmr: true,
+      nodeArgs: [],
+      scriptArgs: [],
+    }).setLogger(logger)
+
+    await devServer.start()
+    await sleep(1000)
+    await devServer.close()
+
+    const logMessages = logger.getLogs().map(({ message }) => message)
+    assert.isAtLeast(logMessages.filter((message) => message.includes('full-reload')).length, 1)
+  })
+
+  test('trigger onDevServerStarted and onSourceFileChanged when hot-hook message is received', async ({
+    assert,
+    fs,
+  }) => {
+    let onDevServerStartedCalled = false
+    let onSourceFileChangedCalled = false
+
+    await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
+    await fs.create(
+      'bin/server.js',
+      `process.send({ type: 'hot-hook:full-reload', path: '/foo' });`
+    )
+    await fs.create('.env', 'PORT=3334')
+
+    const { logger } = cliui({ mode: 'raw' })
+    const devServer = new DevServer(fs.baseUrl, {
+      hmr: true,
+      nodeArgs: [],
+      scriptArgs: [],
+      hooks: {
+        onDevServerStarted: [
+          async () => ({
+            default: () => {
+              onDevServerStartedCalled = true
+            },
+          }),
+        ],
+        onSourceFileChanged: [
+          async () => ({
+            default: () => {
+              onSourceFileChangedCalled = true
+            },
+          }),
+        ],
+      },
+    }).setLogger(logger)
+
+    await devServer.start()
+    await sleep(1000)
+    await devServer.close()
+
+    assert.isTrue(onDevServerStartedCalled)
+    assert.isTrue(onSourceFileChangedCalled)
+  })
 })

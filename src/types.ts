@@ -85,6 +85,11 @@ export type AssetsBundlerOptions =
  */
 export type DevServerOptions = {
   /**
+   * If the dev server should use HMR
+   */
+  hmr?: boolean
+
+  /**
    * Arguments to pass to the "bin/server.js" file
    * executed a child process
    */

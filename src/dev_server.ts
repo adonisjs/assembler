@@ -8,6 +8,7 @@
  */
 
 import picomatch from 'picomatch'
+import { relative } from 'node:path'
 import type tsStatic from 'typescript'
 import prettyHrtime from 'pretty-hrtime'
 import { type ExecaChildProcess } from 'execa'
@@ -101,6 +102,9 @@ export class DevServer {
     this.#cwd = cwd
     this.#options = options
     this.#hooks = new AssemblerHooks(options.hooks)
+    if (this.#options.hmr) {
+      this.#options.nodeArgs = this.#options.nodeArgs.concat(['--import=hot-hook/register'])
+    }
 
     this.#isMetaFileWithReloadsEnabled = picomatch(
       (this.#options.metaFiles || [])
@@ -135,6 +139,23 @@ export class DevServer {
   }
 
   /**
+   * Inspect if child process message is coming from Hot Hook
+   */
+  #isHotHookMessage(message: unknown): message is {
+    type: string
+    path: string
+    paths?: string[]
+  } {
+    return (
+      message !== null &&
+      typeof message === 'object' &&
+      'type' in message &&
+      typeof message.type === 'string' &&
+      message.type.startsWith('hot-hook:')
+    )
+  }
+
+  /**
    * Conditionally clear the terminal screen
    */
   #clearScreen() {
@@ -147,6 +168,7 @@ export class DevServer {
    * Starts the HTTP server
    */
   #startHTTPServer(port: string, mode: 'blocking' | 'nonblocking') {
+    const hooksArgs = { colors: ui.colors, logger: this.#logger }
     this.#httpServer = runNode(this.#cwd, {
       script: this.#scriptFile,
       env: { PORT: port, ...this.#options.env },
@@ -155,12 +177,30 @@ export class DevServer {
     })
 
     this.#httpServer.on('message', async (message) => {
-      void this.#hooks.onHttpServerMessage({ colors: ui.colors, logger: this.#logger }, message, {
-        restartServer: () => {
-          this.#restartHTTPServer(port)
-        },
+      this.#hooks.onHttpServerMessage(hooksArgs, message, {
+        restartServer: () => this.#restartHTTPServer(port),
       })
 
+      /**
+       * Handle Hot-Hook messages
+       */
+      if (this.#isHotHookMessage(message)) {
+        const path = relative(this.#cwd.pathname, message.path || message.paths?.[0]!)
+        this.#hooks.onSourceFileChanged(hooksArgs, path)
+
+        if (message.type === 'hot-hook:full-reload') {
+          this.#clearScreen()
+          this.#logger.log(`${ui.colors.green('full-reload')} ${path}`)
+          this.#restartHTTPServer(port)
+          this.#hooks.onDevServerStarted(hooksArgs)
+        } else if (message.type === 'hot-hook:invalidated') {
+          this.#logger.log(`${ui.colors.green('invalidated')} ${path}`)
+        }
+      }
+
+      /**
+       * Handle AdonisJS ready message
+       */
       if (this.#isAdonisJSReadyMessage(message)) {
         const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
 

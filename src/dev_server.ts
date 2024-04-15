@@ -295,8 +295,9 @@ export class DevServer {
   /**
    * Handles TypeScript source file change
    */
-  #handleSourceFileChange(action: string, port: string, relativePath: string) {
-    void this.#hooks.onSourceFileChanged({ colors: ui.colors, logger: this.#logger }, relativePath)
+  async #handleSourceFileChange(action: string, port: string, relativePath: string) {
+    console.log({ relativePath })
+    await this.#hooks.onSourceFileChanged({ colors: ui.colors, logger: this.#logger }, relativePath)
 
     this.#clearScreen()
     this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)

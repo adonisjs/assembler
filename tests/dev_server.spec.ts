@@ -15,9 +15,7 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import { DevServer } from '../index.js'
 
 test.group('DevServer', () => {
-  test('start() execute onDevServerStarted hook', async ({ assert, fs, cleanup }) => {
-    assert.plan(1)
-
+  test('start() execute onDevServerStarted hook', async ({ fs, cleanup }, done) => {
     await fs.create('bin/server.js', `process.send({ isAdonisJS: true, environment: 'web' })`)
     await fs.create('.env', 'PORT=3334')
 
@@ -31,7 +29,7 @@ test.group('DevServer', () => {
         onDevServerStarted: [
           async () => ({
             default: () => {
-              assert.isTrue(true)
+              done()
             },
           }),
         ],
@@ -40,12 +38,9 @@ test.group('DevServer', () => {
 
     await devServer.start()
     cleanup(() => devServer.close())
-    await sleep(600)
-  })
+  }).waitForDone()
 
-  test('startAndWatch() execute onDevServerStarted hook', async ({ assert, fs, cleanup }) => {
-    assert.plan(1)
-
+  test('startAndWatch() execute onDevServerStarted hook', async ({ fs, cleanup }, done) => {
     await fs.create('bin/server.js', `process.send({ isAdonisJS: true, environment: 'web' })`)
     await fs.create('.env', 'PORT=3334')
 
@@ -59,7 +54,7 @@ test.group('DevServer', () => {
         onDevServerStarted: [
           async () => ({
             default: () => {
-              assert.isTrue(true)
+              done()
             },
           }),
         ],
@@ -68,12 +63,9 @@ test.group('DevServer', () => {
 
     await devServer.startAndWatch(ts)
     cleanup(() => devServer.close())
-    await sleep(600)
-  })
+  }).waitForDone()
 
-  test('execute onSourceFileChanged hook', async ({ assert, fs, cleanup }) => {
-    assert.plan(1)
-
+  test('execute onSourceFileChanged hook', async ({ fs, cleanup }, done) => {
     await fs.createJson('tsconfig.json', {
       include: ['**/*'],
       exclude: [],
@@ -90,7 +82,7 @@ test.group('DevServer', () => {
         onSourceFileChanged: [
           async () => ({
             default: () => {
-              assert.isTrue(true)
+              done()
             },
           }),
         ],
@@ -102,12 +94,9 @@ test.group('DevServer', () => {
 
     await sleep(100)
     await fs.create('index.ts', 'foo')
-    await sleep(10)
-  })
+  }).waitForDone()
 
-  test('wait for hooks to be registered', async ({ assert, fs, cleanup }) => {
-    assert.plan(1)
-
+  test('wait for hooks to be registered', async ({ fs, cleanup }, done) => {
     await fs.createJson('tsconfig.json', {
       include: ['**/*'],
       exclude: [],
@@ -125,7 +114,7 @@ test.group('DevServer', () => {
             await sleep(400)
             return {
               default: () => {
-                assert.isTrue(true)
+                done()
               },
             }
           },
@@ -135,9 +124,7 @@ test.group('DevServer', () => {
 
     await devServer.startAndWatch(ts)
     cleanup(() => devServer.close())
-
-    await sleep(500)
-  }).timeout(10_000)
+  })
 
   test('onHttpServerMessage hook should be executed', async ({ assert, fs, cleanup }) => {
     let receivedMessages: any[] = []

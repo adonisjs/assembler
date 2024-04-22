@@ -11,6 +11,7 @@ import picomatch from 'picomatch'
 import { relative } from 'node:path'
 import type tsStatic from 'typescript'
 import prettyHrtime from 'pretty-hrtime'
+import { fileURLToPath } from 'node:url'
 import { type ExecaChildProcess } from 'execa'
 import { cliui, type Logger } from '@poppinss/cliui'
 import type { Watcher } from '@poppinss/chokidar-ts'
@@ -168,7 +169,7 @@ export class DevServer {
    * Starts the HTTP server
    */
   #startHTTPServer(port: string, mode: 'blocking' | 'nonblocking') {
-    const hooksArgs = { colors: ui.colors, logger: this.#logger }
+    const hooksArgs = { colors: this.#colors, logger: this.#logger }
     this.#httpServer = runNode(this.#cwd, {
       script: this.#scriptFile,
       env: { PORT: port, ...this.#options.env },
@@ -185,16 +186,16 @@ export class DevServer {
        * Handle Hot-Hook messages
        */
       if (this.#isHotHookMessage(message)) {
-        const path = relative(this.#cwd.pathname, message.path || message.paths?.[0]!)
+        const path = relative(fileURLToPath(this.#cwd), message.path || message.paths?.[0]!)
         this.#hooks.onSourceFileChanged(hooksArgs, path)
 
         if (message.type === 'hot-hook:full-reload') {
           this.#clearScreen()
-          this.#logger.log(`${ui.colors.green('full-reload')} ${path}`)
+          this.#logger.log(`${this.#colors.green('full-reload')} ${path}`)
           this.#restartHTTPServer(port)
           this.#hooks.onDevServerStarted(hooksArgs)
         } else if (message.type === 'hot-hook:invalidated') {
-          this.#logger.log(`${ui.colors.green('invalidated')} ${path}`)
+          this.#logger.log(`${this.#colors.green('invalidated')} ${path}`)
         }
       }
 
@@ -296,7 +297,6 @@ export class DevServer {
    * Handles TypeScript source file change
    */
   async #handleSourceFileChange(action: string, port: string, relativePath: string) {
-    console.log({ relativePath })
     await this.#hooks.onSourceFileChanged({ colors: ui.colors, logger: this.#logger }, relativePath)
 
     this.#clearScreen()

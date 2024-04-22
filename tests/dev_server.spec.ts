@@ -10,6 +10,7 @@
 import ts from 'typescript'
 import { test } from '@japa/runner'
 import { cliui } from '@poppinss/cliui'
+import { relative, resolve } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 
 import { DevServer } from '../index.js'
@@ -92,7 +93,7 @@ test.group('DevServer', () => {
     await devServer.startAndWatch(ts)
     cleanup(() => devServer.close())
 
-    await sleep(100)
+    await sleep(1000)
     await fs.create('index.ts', 'foo')
   }).waitForDone()
 
@@ -281,4 +282,46 @@ test.group('DevServer', () => {
     assert.isTrue(onDevServerStartedCalled)
     assert.isTrue(onSourceFileChangedCalled)
   })
+
+  test('should correctly display a relative path when a hot-hook message is received', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
+    await fs.createJson('package.json', { type: 'module', hotHook: { boundaries: ['./app/**'] } })
+    await fs.create('app/controllers/app_controller.ts', 'console.log("foo")')
+    await fs.create(
+      'bin/server.js',
+      `
+      import { resolve } from 'path';
+      import '../app/controllers/app_controller.js';
+      `
+    )
+    await fs.create('.env', 'PORT=3334')
+
+    const { logger } = cliui({ mode: 'raw' })
+    const devServer = new DevServer(fs.baseUrl, {
+      hmr: true,
+      nodeArgs: [],
+      scriptArgs: [],
+    }).setLogger(logger)
+
+    await devServer.start()
+    await sleep(2000)
+    await fs.create('app/controllers/app_controller.ts', 'console.log("bar")')
+    await sleep(2000)
+    await devServer.close()
+
+    const logMessages = logger.getLogs().map(({ message }) => message)
+
+    const relativePath = relative(
+      fs.basePath,
+      resolve(fs.basePath, 'app/controllers/app_controller.ts')
+    )
+
+    console.log({ relativePath })
+    console.log(logMessages)
+    const expectedMessage = `green(invalidated) ${relativePath}`
+    assert.isAtLeast(logMessages.filter((message) => message.includes(expectedMessage)).length, 1)
+  }).timeout(10_000)
 })

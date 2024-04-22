@@ -319,8 +319,6 @@ test.group('DevServer', () => {
       resolve(fs.basePath, 'app/controllers/app_controller.ts')
     )
 
-    console.log({ relativePath })
-    console.log(logMessages)
     const expectedMessage = `green(invalidated) ${relativePath}`
     assert.isAtLeast(logMessages.filter((message) => message.includes(expectedMessage)).length, 1)
   }).timeout(10_000)

@@ -210,11 +210,9 @@ export class DevServer {
           .useColors(this.#colors)
           .useRenderer(this.#logger.getRenderer())
           .add(`Server address: ${this.#colors.cyan(`http://${host}:${message.port}`)}`)
-          .add(
-            `File system watcher: ${this.#colors.cyan(
-              `${this.#isWatching ? 'enabled' : 'disabled'}`
-            )}`
-          )
+
+        const watchMode = this.#options.hmr ? 'HMR' : this.#isWatching ? 'Watching' : 'Non-Watching'
+        displayMessage.add(`Mode: ${this.#colors.cyan(watchMode)}`)
 
         if (message.duration) {
           displayMessage.add(`Ready in: ${this.#colors.cyan(prettyHrtime(message.duration))}`)

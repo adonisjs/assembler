@@ -60,7 +60,7 @@ test.group('Child process', () => {
     const childProcess = runNode(fs.basePath, {
       script: 'foo.ts',
       scriptArgs: ['--watch', '--foo=bar'],
-      nodeArgs: ['--throw-deprecation'],
+      nodeArgs: ['--conditions=dev'],
     })
 
     const payload = await pEvent(childProcess, 'message', { rejectionEvents: ['error'] })
@@ -74,7 +74,7 @@ test.group('Child process', () => {
         process.allowedNodeEnvironmentFlags.has('--disable-warning')
           ? '--disable-warning=ExperimentalWarning'
           : '--no-warnings',
-        '--throw-deprecation',
+        '--conditions=dev',
       ],
     })
   })

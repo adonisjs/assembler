@@ -211,8 +211,8 @@ export class DevServer {
           .useRenderer(this.#logger.getRenderer())
           .add(`Server address: ${this.#colors.cyan(`http://${host}:${message.port}`)}`)
 
-        const watchMode = this.#options.hmr ? 'HMR' : this.#isWatching ? 'Watching' : 'Non-Watching'
-        displayMessage.add(`Mode: ${this.#colors.cyan(watchMode)}`)
+        const watchMode = this.#options.hmr ? 'HMR' : this.#isWatching ? 'Legacy' : 'None'
+        displayMessage.add(`Watch Mode: ${this.#colors.cyan(watchMode)}`)
 
         if (message.duration) {
           displayMessage.add(`Ready in: ${this.#colors.cyan(prettyHrtime(message.duration))}`)

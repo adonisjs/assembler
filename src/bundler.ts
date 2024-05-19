@@ -20,7 +20,7 @@ import { AssemblerHooks } from './hooks.js'
 import type { BundlerOptions } from './types.js'
 import { run, parseConfig, copyFiles } from './helpers.js'
 
-type SupportedPackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun'
+type SupportedPackageManager = 'npm' | 'yarn' | 'yarn@berry' | 'pnpm' | 'bun'
 
 /**
  * List of package managers we support in order to
@@ -28,24 +28,28 @@ type SupportedPackageManager = 'npm' | 'yarn' | 'pnpm' | 'bun'
  */
 const SUPPORT_PACKAGE_MANAGERS: {
   [K in SupportedPackageManager]: {
-    lockFile: string
+    packageManagerFiles: string[]
     installCommand: string
   }
 } = {
-  npm: {
-    lockFile: 'package-lock.json',
+  'npm': {
+    packageManagerFiles: ['package-lock.json'],
     installCommand: 'npm ci --omit="dev"',
   },
-  yarn: {
-    lockFile: 'yarn.lock',
+  'yarn': {
+    packageManagerFiles: ['yarn.lock'],
     installCommand: 'yarn install --production',
   },
-  pnpm: {
-    lockFile: 'pnpm-lock.yaml',
+  'yarn@berry': {
+    packageManagerFiles: ['yarn.lock', '.yarn/**/*'],
+    installCommand: 'yarn workspaces focus --production',
+  },
+  'pnpm': {
+    packageManagerFiles: ['pnpm-lock.yaml'],
     installCommand: 'pnpm i --prod',
   },
-  bun: {
-    lockFile: 'bun.lockb',
+  'bun': {
+    packageManagerFiles: ['bun.lockb'],
     installCommand: 'bun install --production',
   },
 }
@@ -264,7 +268,9 @@ export class Bundler {
      * Step 6: Copy meta files to the build directory
      */
     const pkgManager = await this.#getPackageManager(client)
-    const pkgFiles = pkgManager ? ['package.json', pkgManager.lockFile] : ['package.json']
+    const pkgFiles = pkgManager
+      ? ['package.json', ...pkgManager.packageManagerFiles]
+      : ['package.json']
     this.#logger.info('copying meta files to the output directory')
     await this.#copyMetaFiles(outDir, pkgFiles)
 

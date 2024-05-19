@@ -41,7 +41,7 @@ const SUPPORT_PACKAGE_MANAGERS: {
     installCommand: 'yarn install --production',
   },
   'yarn@berry': {
-    packageManagerFiles: ['yarn.lock', '.yarn/**/*'],
+    packageManagerFiles: ['yarn.lock', '.yarn/**/*', '.yarnrc.yml'],
     installCommand: 'yarn workspaces focus --production',
   },
   'pnpm': {

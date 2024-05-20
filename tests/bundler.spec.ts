@@ -139,6 +139,38 @@ test.group('Bundler', () => {
     ])
   })
 
+  test('detect yarn@berry and move all its files if not specified', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('package.json', '{ "packageManager": "yarn@4.2.1" }'),
+      fs.create('yarn.lock', '{}'),
+      fs.create('.yarnrc.yml', '{}'),
+      fs.create('.yarn/install-state.gz', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, {
+      metaFiles: [
+        {
+          pattern: 'resources/views/**/*.edge',
+          reloadServer: false,
+        },
+      ],
+    })
+
+    await bundler.bundle(true)
+
+    await Promise.all([
+      assert.fileExists('./build/package.json'),
+      assert.fileExists('./build/yarn.lock'),
+      assert.fileExists('./build/.yarnrc.yml'),
+      assert.fileExists('./build/.yarn/install-state.gz'),
+    ])
+  })
+
   test('remove ts-node reference in builded ace.js file', async ({ assert, fs }) => {
     await Promise.all([
       fs.create('ace.js', 'foo'),

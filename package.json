@@ -1,7 +1,7 @@
 {
   "name": "@adonisjs/assembler",
   "description": "Provides utilities to run AdonisJS development server and build project for production",
-  "version": "7.5.2",
+  "version": "7.6.0",
   "engines": {
     "node": ">=20.6.0"
   },

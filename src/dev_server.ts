@@ -178,10 +178,6 @@ export class DevServer {
     })
 
     this.#httpServer.on('message', async (message) => {
-      this.#hooks.onHttpServerMessage(hooksArgs, message, {
-        restartServer: () => this.#restartHTTPServer(port),
-      })
-
       /**
        * Handle Hot-Hook messages
        */

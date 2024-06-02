@@ -11,24 +11,22 @@ import {
   RcFile,
   AssemblerHookNode,
   AssemblerHookHandler,
-  HttpServerMessageHookHandler,
   SourceFileChangedHookHandler,
 } from '@adonisjs/application/types'
 import { RuntimeException } from '@poppinss/utils'
 import Hooks from '@poppinss/hooks'
 
 export class AssemblerHooks {
-  #config: RcFile['unstable_assembler']
+  #config: RcFile['hooks']
 
   #hooks = new Hooks<{
     onBuildStarting: [Parameters<AssemblerHookHandler>, []]
     onBuildCompleted: [Parameters<AssemblerHookHandler>, []]
     onDevServerStarted: [Parameters<AssemblerHookHandler>, []]
     onSourceFileChanged: [Parameters<SourceFileChangedHookHandler>, []]
-    onHttpServerMessage: [Parameters<HttpServerMessageHookHandler>, []]
   }>()
 
-  constructor(config: RcFile['unstable_assembler']) {
+  constructor(config: RcFile['hooks']) {
     this.#config = config
   }
 
@@ -55,9 +53,6 @@ export class AssemblerHooks {
       ),
       ...(this.#config?.onSourceFileChanged || []).map(async (node) =>
         this.#hooks.add('onSourceFileChanged', await this.#resolveHookNode(node))
-      ),
-      ...(this.#config?.onHttpServerMessage || []).map(async (node) =>
-        this.#hooks.add('onHttpServerMessage', await this.#resolveHookNode(node))
       ),
     ])
   }
@@ -102,12 +97,5 @@ export class AssemblerHooks {
    */
   async onBuildCompleted(...args: Parameters<AssemblerHookHandler>) {
     await this.#hooks.runner('onBuildCompleted').run(...args)
-  }
-
-  /**
-   * When a message is received from the HTTP server process
-   */
-  async onHttpServerMessage(...args: Parameters<HttpServerMessageHookHandler>) {
-    await this.#hooks.runner('onHttpServerMessage').run(...args)
   }
 }

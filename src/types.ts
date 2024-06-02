@@ -124,10 +124,7 @@ export type DevServerOptions = {
   /**
    * Hooks to execute at different stages
    */
-  hooks?: Pick<
-    NonNullable<RcFile['unstable_assembler']>,
-    'onDevServerStarted' | 'onSourceFileChanged' | 'onHttpServerMessage'
-  >
+  hooks?: Pick<NonNullable<RcFile['hooks']>, 'onDevServerStarted' | 'onSourceFileChanged'>
 }
 
 /**
@@ -224,7 +221,7 @@ export type BundlerOptions = {
   /**
    * Hooks to execute at different stages
    */
-  hooks?: Pick<NonNullable<RcFile['unstable_assembler']>, 'onBuildCompleted' | 'onBuildStarting'>
+  hooks?: Pick<NonNullable<RcFile['hooks']>, 'onBuildCompleted' | 'onBuildStarting'>
 }
 
 /**

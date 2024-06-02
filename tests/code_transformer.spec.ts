@@ -894,3 +894,32 @@ test.group('Code transformer | addVitePlugin', (group) => {
     await transformer.addVitePlugin('vue()', [{ identifier: 'vue', module: 'vue', isNamed: false }])
   }).throws(/Expected to find property named 'plugins'/)
 })
+
+test.group('Code Transformer | addAssemblerHook', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add assembler hook to the assembler file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) =>
+      rcFile.addAssemblerHook('onBuildCompleted', '@adonisjs/vite/hooks/onBuildCompleted')
+    )
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
+  })
+
+  test('dont add duplicate assembler hooks', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) => {
+      rcFile.addAssemblerHook('onBuildCompleted', '@adonisjs/vite/hooks/onBuildCompleted')
+      rcFile.addAssemblerHook('onBuildCompleted', '@adonisjs/vite/hooks/onBuildCompleted')
+    })
+
+    const file = await fs.contents('adonisrc.ts')
+    const occurrences = (file.match(/@adonisjs\/vite\/hooks\/onBuildCompleted/g) || []).length
+
+    assert.equal(occurrences, 1)
+  })
+})

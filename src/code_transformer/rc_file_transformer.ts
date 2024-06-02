@@ -8,7 +8,7 @@
  */
 
 import { fileURLToPath } from 'node:url'
-import type { AppEnvironments } from '@adonisjs/application/types'
+import type { AppEnvironments, RcFile } from '@adonisjs/application/types'
 import {
   Node,
   Project,
@@ -342,6 +342,30 @@ export class RcFileTransformer {
         timeout: ${timeout ?? 2000},
       }`
     )
+
+    return this
+  }
+
+  /**
+   * Add a new assembler hook
+   */
+  addAssemblerHook(type: keyof NonNullable<RcFile['hooks']>, path: string) {
+    const hooksProperty = this.#getPropertyAssignmentInDefineConfigCall('hooks', '{}')
+
+    const hooks = hooksProperty.getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression)
+    let hookArray = hooks.getProperty(type) as PropertyAssignment
+    if (!hookArray) {
+      hooks.addPropertyAssignment({ name: type, initializer: '[]' })
+      hookArray = hooks.getProperty(type) as PropertyAssignment
+    }
+
+    const hooksArray = hookArray.getInitializerIfKindOrThrow(SyntaxKind.ArrayLiteralExpression)
+    const existingHooks = this.#extractModulesFromArray(hooksArray)
+    if (existingHooks.includes(path)) {
+      return this
+    }
+
+    hooksArray.addElement(`() => import('${path}')`)
 
     return this
   }

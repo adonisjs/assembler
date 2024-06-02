@@ -398,3 +398,36 @@ export const plugins: Config['plugins'] = [
 ]
 "`
 
+exports[`Code Transformer | addAssemblerHook > add assembler hook to the assembler file 1`] = `"import { defineConfig } from '@adonisjs/core/app'
+
+export default defineConfig({
+  typescript: true,
+  preloads: [
+    () => import('./start/routes.ts'),
+    {
+      file: () => import('./start/ace.ts'),
+      environment: ['console'],
+    },
+  ],
+  providers: [
+    () => import('@adonisjs/core/providers/app_provider'),
+    {
+      file: () => import('@adonisjs/core/providers/repl_provider'),
+      environment: ['repl'],
+    }
+  ],
+  metaFiles: [
+    {
+      pattern: 'public/**',
+      reloadServer: true
+    },
+  ],
+  commands: [
+    () => import('@adonisjs/core/commands')
+  ],
+  hooks: {
+    onBuildCompleted: [() => import('@adonisjs/vite/hooks/onBuildCompleted')]
+  }
+})
+"`
+

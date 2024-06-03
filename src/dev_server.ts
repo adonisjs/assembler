@@ -257,7 +257,7 @@ export class DevServer {
   #restartHTTPServer(port: string) {
     if (this.#httpServer) {
       this.#httpServer.removeAllListeners()
-      this.#httpServer.kill('SIGKILL')
+      this.#httpServer.kill('SIGTERM')
     }
 
     this.#startHTTPServer(port, 'blocking')
@@ -333,7 +333,7 @@ export class DevServer {
     this.#assetsServer?.stop()
     if (this.#httpServer) {
       this.#httpServer.removeAllListeners()
-      this.#httpServer.kill('SIGKILL')
+      this.#httpServer.kill('SIGTERM')
     }
   }
 

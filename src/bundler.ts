@@ -189,6 +189,10 @@ export class Bundler {
       await import('./bin/console.js')
     `)
 
+    /**
+     *  <project>/build directory may not exist
+     */
+    await fs.mkdir(outDir, { recursive: true })
     await fs.writeFile(aceFileLocation, aceFileContent)
     this.#logger.info('created ace file', { suffix: this.#getRelativeName(aceFileLocation) })
   }

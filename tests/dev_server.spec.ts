@@ -231,7 +231,7 @@ test.group('DevServer', () => {
       resolve(fs.basePath, 'app/controllers/app_controller.ts')
     )
 
-    const expectedMessage = `green(invalidated) ${relativePath}`
+    const expectedMessage = `green(full-reload) ${relativePath}`
     assert.isAtLeast(logMessages.filter((message) => message.includes(expectedMessage)).length, 1)
   }).timeout(10_000)
 })

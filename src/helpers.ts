@@ -19,34 +19,14 @@ import { EnvLoader, EnvParser } from '@adonisjs/env'
 import { ConfigParser, Watcher } from '@poppinss/chokidar-ts'
 import { basename, dirname, isAbsolute, join, relative } from 'node:path'
 
-import type { RunOptions, WatchOptions } from './types.js'
 import debug from './debug.js'
+import type { RunOptions, WatchOptions } from './types.js'
 
 /**
  * Default set of args to pass in order to run TypeScript
  * source. Used by "run" and "runNode" scripts
  */
-const DEFAULT_NODE_ARGS = [
-  // Use ts-node/esm loader. The project must install it
-  process.versions.tsNodeMaintained
-    ? '--import=ts-node-maintained/register/esm'
-    : '--loader=ts-node/esm',
-  // Enable source maps, since TSNode source maps are broken
-  '--enable-source-maps',
-]
-
-/**
- * Disable experimental warnings, since the ts-node loader hook
- * uses an expiremental feature. We are waiting for them to
- * cut a new release and support the newer `--import` flag
- * instead
- */
-if (process.allowedNodeEnvironmentFlags.has('--disable-warning')) {
-  // supported in node>=v21.13.0
-  DEFAULT_NODE_ARGS.push('--disable-warning=ExperimentalWarning')
-} else {
-  DEFAULT_NODE_ARGS.push('--no-warnings')
-}
+const DEFAULT_NODE_ARGS = ['--import=@poppinss/ts-exec', '--enable-source-maps']
 
 /**
  * Parses tsconfig.json and prints errors using typescript compiler

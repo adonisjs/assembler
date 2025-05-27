@@ -26,7 +26,7 @@ type SupportedPackageManager = 'npm' | 'yarn' | 'yarn@berry' | 'pnpm' | 'bun'
  * List of package managers we support in order to
  * copy lockfiles
  */
-const SUPPORT_PACKAGE_MANAGERS: {
+const SUPPORTED_PACKAGE_MANAGERS: {
   [K in SupportedPackageManager]: {
     packageManagerFiles: string[]
     installCommand: string
@@ -165,11 +165,11 @@ export class Bundler {
       pkgManager = 'npm'
     }
 
-    if (!Object.keys(SUPPORT_PACKAGE_MANAGERS).includes(pkgManager)) {
+    if (!Object.keys(SUPPORTED_PACKAGE_MANAGERS).includes(pkgManager)) {
       return null
     }
 
-    return SUPPORT_PACKAGE_MANAGERS[pkgManager as SupportedPackageManager]
+    return SUPPORTED_PACKAGE_MANAGERS[pkgManager as SupportedPackageManager]
   }
 
   /**

@@ -68,14 +68,7 @@ test.group('Child process', () => {
 
     assert.equal(childProcess.exitCode, 0)
     assert.deepEqual(payload, {
-      args: [
-        '--import=ts-node-maintained/register/esm',
-        '--enable-source-maps',
-        process.allowedNodeEnvironmentFlags.has('--disable-warning')
-          ? '--disable-warning=ExperimentalWarning'
-          : '--no-warnings',
-        '--conditions=dev',
-      ],
+      args: ['--import=@poppinss/ts-exec', '--enable-source-maps', '--conditions=dev'],
     })
   })
 

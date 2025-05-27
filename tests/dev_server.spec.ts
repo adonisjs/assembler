@@ -21,9 +21,6 @@ test.group('DevServer', () => {
     await fs.create('.env', 'PORT=3334')
 
     const devServer = new DevServer(fs.baseUrl, {
-      assets: {
-        enabled: false,
-      },
       nodeArgs: [],
       scriptArgs: [],
       hooks: {
@@ -46,9 +43,6 @@ test.group('DevServer', () => {
     await fs.create('.env', 'PORT=3334')
 
     const devServer = new DevServer(fs.baseUrl, {
-      assets: {
-        enabled: false,
-      },
       nodeArgs: [],
       scriptArgs: [],
       hooks: {
@@ -76,7 +70,6 @@ test.group('DevServer', () => {
     await fs.create('.env', 'PORT=3334')
 
     const devServer = new DevServer(fs.baseUrl, {
-      assets: { enabled: false },
       nodeArgs: [],
       scriptArgs: [],
       hooks: {
@@ -106,7 +99,6 @@ test.group('DevServer', () => {
     await fs.create('.env', 'PORT=3334')
 
     const devServer = new DevServer(fs.baseUrl, {
-      assets: { enabled: false },
       nodeArgs: [],
       scriptArgs: [],
       hooks: {

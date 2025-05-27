@@ -69,29 +69,13 @@ export type Suite = {
 }
 
 /**
- * Options accepted by assets bundler
- */
-export type AssetsBundlerOptions =
-  | {
-      enabled: false
-      driver?: string
-      cmd?: string
-      args?: string[]
-    }
-  | {
-      enabled: true
-      driver: string
-      cmd: string
-      args: string[]
-    }
-
-/**
- * Options accepted when starting the dev
- * server
+ * Options accepted when starting the dev server
  */
 export type DevServerOptions = {
   /**
-   * If the dev server should use HMR
+   * If the dev server should use HMR.
+   *
+   * Default:true
    */
   hmr?: boolean
 
@@ -123,10 +107,6 @@ export type DevServerOptions = {
    */
   metaFiles?: MetaFile[]
 
-  /**
-   * Assets bundler options to start its dev server
-   */
-  assets?: AssetsBundlerOptions
   /**
    * Hooks to execute at different stages
    */
@@ -164,11 +144,6 @@ export type TestRunnerOptions = {
    * An array of metaFiles glob patterns to watch
    */
   metaFiles?: MetaFile[]
-
-  /**
-   * Assets bundler options to start its dev server
-   */
-  assets?: AssetsBundlerOptions
 
   /**
    * An array of suites for which to run tests
@@ -217,12 +192,6 @@ export type BundlerOptions = {
    * files to the build folder
    */
   metaFiles?: MetaFile[]
-
-  /**
-   * Assets bundler options to create the production build
-   * for assets
-   */
-  assets?: AssetsBundlerOptions
 
   /**
    * Hooks to execute at different stages

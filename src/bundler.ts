@@ -101,29 +101,6 @@ export class Bundler {
   }
 
   /**
-   * Runs assets bundler command to build assets
-   */
-  async #buildAssets(): Promise<boolean> {
-    const assetsBundler = this.#options.assets
-    if (!assetsBundler?.enabled) {
-      return true
-    }
-
-    try {
-      this.#logger.info('compiling frontend assets', { suffix: assetsBundler.cmd })
-      await run(this.#cwd, {
-        stdio: 'inherit',
-        reject: true,
-        script: assetsBundler.cmd,
-        scriptArgs: assetsBundler.args,
-      })
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  /**
    * Runs tsc command to build the source.
    */
   async #runTsc(outDir: string): Promise<boolean> {
@@ -221,13 +198,6 @@ export class Bundler {
     const outDir = config.options.outDir || fileURLToPath(new URL('build/', this.#cwd))
     this.#logger.info('cleaning up output directory', { suffix: this.#getRelativeName(outDir) })
     await this.#cleanupBuildDirectory(outDir)
-
-    /**
-     * Step 3: Build frontend assets
-     */
-    if (!(await this.#buildAssets())) {
-      return false
-    }
 
     /**
      * Step 4: Execute build starting hook

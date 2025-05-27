@@ -14,7 +14,6 @@ import { cliui, type Logger } from '@poppinss/cliui'
 import type { Watcher } from '@poppinss/chokidar-ts'
 
 import type { TestRunnerOptions } from './types.js'
-import { AssetsDevServer } from './assets_dev_server.js'
 import { getPort, isDotEnvFile, runNode, watch } from './helpers.js'
 
 /**
@@ -93,11 +92,6 @@ export class TestRunner {
    * Reference to the watcher
    */
   #watcher?: ReturnType<Watcher['watch']>
-
-  /**
-   * Reference to the assets server
-   */
-  #assetsServer?: AssetsDevServer
 
   /**
    * Getting reference to colors library from logger
@@ -266,15 +260,6 @@ export class TestRunner {
   }
 
   /**
-   * Starts the assets server
-   */
-  #startAssetsServer() {
-    this.#assetsServer = new AssetsDevServer(this.#cwd, this.#options.assets)
-    this.#assetsServer.setLogger(this.#logger)
-    this.#assetsServer.start()
-  }
-
-  /**
    * Handles a non TypeScript file change
    */
   #handleFileChange(action: string, port: string, relativePath: string) {
@@ -320,7 +305,6 @@ export class TestRunner {
    */
   setLogger(logger: Logger) {
     this.#logger = logger
-    this.#assetsServer?.setLogger(logger)
     return this
   }
 
@@ -347,7 +331,6 @@ export class TestRunner {
    */
   async close() {
     await this.#watcher?.close()
-    this.#assetsServer?.stop()
     if (this.#testScript) {
       this.#testScript.removeAllListeners()
       this.#testScript.kill('SIGKILL')
@@ -361,7 +344,6 @@ export class TestRunner {
     const port = String(await getPort(this.#cwd))
 
     this.#clearScreen()
-    this.#startAssetsServer()
 
     this.#logger.info('booting application to run tests...')
     this.#runTests(port, 'nonblocking')
@@ -374,7 +356,6 @@ export class TestRunner {
     const port = String(await getPort(this.#cwd))
 
     this.#clearScreen()
-    this.#startAssetsServer()
 
     this.#logger.info('booting application to run tests...')
     this.#runTests(port, 'blocking')
@@ -406,7 +387,7 @@ export class TestRunner {
      */
     output.chokidar.on('error', (error) => {
       this.#logger.warning('file system watcher failure')
-      this.#logger.fatal(error)
+      this.#logger.fatal(error as any)
       this.#onError?.(error)
       output.chokidar.close()
     })

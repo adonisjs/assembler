@@ -18,7 +18,6 @@ import type { Watcher } from '@poppinss/chokidar-ts'
 
 import { AssemblerHooks } from './hooks.js'
 import type { DevServerOptions } from './types.js'
-import { AssetsDevServer } from './assets_dev_server.js'
 import { getPort, isDotEnvFile, runNode, watch } from './helpers.js'
 
 /**
@@ -81,11 +80,6 @@ export class DevServer {
    * Reference to the watcher
    */
   #watcher?: ReturnType<Watcher['watch']>
-
-  /**
-   * Reference to the assets server
-   */
-  #assetsServer?: AssetsDevServer
 
   /**
    * Hooks to execute custom actions during the dev server lifecycle
@@ -226,7 +220,6 @@ export class DevServer {
         if (mode === 'nonblocking') {
           this.#onClose?.(result.exitCode!)
           this.#watcher?.close()
-          this.#assetsServer?.stop()
         } else {
           this.#logger.info('Underlying HTTP server closed. Still watching for changes')
         }
@@ -235,20 +228,10 @@ export class DevServer {
         if (mode === 'nonblocking') {
           this.#onError?.(error)
           this.#watcher?.close()
-          this.#assetsServer?.stop()
         } else {
           this.#logger.info('Underlying HTTP server died. Still watching for changes')
         }
       })
-  }
-
-  /**
-   * Starts the assets server
-   */
-  #startAssetsServer() {
-    this.#assetsServer = new AssetsDevServer(this.#cwd, this.#options.assets)
-    this.#assetsServer.setLogger(this.#logger)
-    this.#assetsServer.start()
   }
 
   /**
@@ -304,7 +287,6 @@ export class DevServer {
    */
   setLogger(logger: Logger) {
     this.#logger = logger
-    this.#assetsServer?.setLogger(logger)
     return this
   }
 
@@ -331,7 +313,6 @@ export class DevServer {
    */
   async close() {
     await this.#watcher?.close()
-    this.#assetsServer?.stop()
     if (this.#httpServer) {
       this.#httpServer.removeAllListeners()
       this.#httpServer.kill('SIGKILL')
@@ -347,7 +328,6 @@ export class DevServer {
     this.#clearScreen()
     this.#logger.info('starting HTTP server...')
     this.#startHTTPServer(String(await getPort(this.#cwd)), 'nonblocking')
-    this.#startAssetsServer()
   }
 
   /**
@@ -363,8 +343,6 @@ export class DevServer {
 
     this.#logger.info('starting HTTP server...')
     this.#startHTTPServer(port, 'blocking')
-
-    this.#startAssetsServer()
 
     /**
      * Create watcher using tsconfig.json file
@@ -393,7 +371,8 @@ export class DevServer {
      */
     output.chokidar.on('error', (error) => {
       this.#logger.warning('file system watcher failure')
-      this.#logger.fatal(error)
+      this.#logger.fatal(error as any)
+
       this.#onError?.(error)
       output.chokidar.close()
     })

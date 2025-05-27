@@ -9,10 +9,12 @@
 
 import ts from 'typescript'
 import { test } from '@japa/runner'
-import { watch } from '../src/helpers.js'
+import { watch } from '../../src/utils.js'
 
 test.group('Watcher', (group) => {
-  group.tap((t) => t.disableTimeout())
+  group.tap((t) =>
+    t.disableTimeout().skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
+  )
 
   test('watch files included by the tsconfig.json', async ({ fs, assert, cleanup }, done) => {
     assert.plan(1)
@@ -36,9 +38,7 @@ test.group('Watcher', (group) => {
     output!.watcher.on('watcher:ready', async () => {
       await fs.create('bar.ts', '')
     })
-  })
-    .waitForDone()
-    .skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
+  }).waitForDone()
 
   test('emit source:change when file is changed', async ({ fs, assert, cleanup }, done) => {
     assert.plan(1)
@@ -62,9 +62,7 @@ test.group('Watcher', (group) => {
     output!.watcher.on('watcher:ready', async () => {
       await fs.create('foo.ts', 'hello world')
     })
-  })
-    .waitForDone()
-    .skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
+  }).waitForDone()
 
   test('emit source:unlink when file is deleted', async ({ fs, assert, cleanup }, done) => {
     assert.plan(1)
@@ -88,9 +86,7 @@ test.group('Watcher', (group) => {
     output!.watcher.on('watcher:ready', async () => {
       await fs.remove('foo.ts')
     })
-  })
-    .waitForDone()
-    .skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
+  }).waitForDone()
 
   test('do not emit source:add when file is excluded by tsconfig.json', async ({
     fs,
@@ -117,7 +113,7 @@ test.group('Watcher', (group) => {
       await fs.create('baz.ts', '')
     })
     await new Promise((resolve) => setTimeout(resolve, 1000))
-  }).skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
+  })
 
   test('emit add when files other than typescript source files are created', async ({
     fs,
@@ -145,7 +141,5 @@ test.group('Watcher', (group) => {
     output!.watcher.on('watcher:ready', async () => {
       await fs.create('foo.md', '')
     })
-  })
-    .waitForDone()
-    .skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
+  }).waitForDone()
 })

@@ -11,7 +11,7 @@ import slash from 'slash'
 import ts from 'typescript'
 import { join } from 'node:path'
 import { test } from '@japa/runner'
-import { getPort, isDotEnvFile, parseConfig } from '../src/helpers.js'
+import { getPort, isDotEnvFile, parseConfig } from '../src/utils.js'
 
 test.group('Helpers | Parse config', () => {
   test('report error when config file is missing', async ({ assert, fs }) => {

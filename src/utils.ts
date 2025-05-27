@@ -32,7 +32,10 @@ const DEFAULT_NODE_ARGS = ['--import=@poppinss/ts-exec', '--enable-source-maps']
  * Parses tsconfig.json and prints errors using typescript compiler
  * host
  */
-export function parseConfig(cwd: string | URL, ts: typeof tsStatic) {
+export function parseConfig(
+  cwd: string | URL,
+  ts: typeof tsStatic
+): tsStatic.ParsedCommandLine | undefined {
   const { config, error } = new ConfigParser(cwd, 'tsconfig.json', ts).parse()
   if (error) {
     const compilerHost = ts.createCompilerHost({})

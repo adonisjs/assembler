@@ -14,7 +14,7 @@ import { cliui, type Logger } from '@poppinss/cliui'
 import type { Watcher } from '@poppinss/chokidar-ts'
 
 import type { TestRunnerOptions } from './types.js'
-import { getPort, isDotEnvFile, runNode, watch } from './helpers.js'
+import { getPort, isDotEnvFile, runNode, watch } from './utils.js'
 
 /**
  * Instance of CLIUI

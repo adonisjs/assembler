@@ -18,7 +18,7 @@ import type { Watcher } from '@poppinss/chokidar-ts'
 
 import { AssemblerHooks } from './hooks.js'
 import type { DevServerOptions } from './types.js'
-import { getPort, isDotEnvFile, runNode, watch } from './helpers.js'
+import { getPort, isDotEnvFile, runNode, watch } from './utils.js'
 
 /**
  * Instance of CLIUI

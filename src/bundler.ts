@@ -18,7 +18,7 @@ import { detectPackageManager } from '@antfu/install-pkg'
 
 import { AssemblerHooks } from './hooks.js'
 import type { BundlerOptions } from './types.js'
-import { run, parseConfig, copyFiles } from './helpers.js'
+import { run, parseConfig, copyFiles } from './utils.js'
 
 type SupportedPackageManager = 'npm' | 'yarn' | 'yarn@berry' | 'pnpm' | 'bun'
 

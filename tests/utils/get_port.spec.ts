@@ -8,7 +8,7 @@
  */
 
 import { test } from '@japa/runner'
-import { getPort } from '../../src/utils.js'
+import { getPort } from '../../src/utils.ts'
 
 test.group('Helpers | getPort', () => {
   test('use port set via process.env.PORT', async ({ fs, assert, cleanup }) => {
@@ -26,8 +26,8 @@ test.group('Helpers | getPort', () => {
 
   test('give preference to .env.local file', async ({ fs, assert }) => {
     await fs.create('.env', 'PORT=3000')
-    await fs.create('.env.local', 'PORT=5000')
-    assert.equal(await getPort(fs.baseUrl), 5000)
+    await fs.create('.env.local', 'PORT=4333')
+    assert.equal(await getPort(fs.baseUrl), 4333)
   })
 
   test('use port 3333 when no environment variable or files exists', async ({ fs, assert }) => {

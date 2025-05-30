@@ -7,20 +7,30 @@
  * file that was distributed with this source code.
  */
 
+import Cache from 'tmp-cache'
 import { isJunk } from 'junk'
 import fastGlob from 'fast-glob'
-import getRandomPort from 'get-port'
+import Hooks from '@poppinss/hooks'
 import { existsSync } from 'node:fs'
+import getRandomPort from 'get-port'
 import type tsStatic from 'typescript'
 import { fileURLToPath } from 'node:url'
 import { execaNode, execa } from 'execa'
+import { importDefault } from '@poppinss/utils'
 import { copyFile, mkdir } from 'node:fs/promises'
 import { EnvLoader, EnvParser } from '@adonisjs/env'
-import { ConfigParser, Watcher } from '@poppinss/chokidar-ts'
+import chokidar, { type ChokidarOptions } from 'chokidar'
+import { type UnWrapLazyImport } from '@poppinss/utils/types'
 import { basename, dirname, isAbsolute, join, relative } from 'node:path'
 
-import debug from './debug.js'
-import type { RunOptions, WatchOptions } from './types.js'
+import debug from './debug.ts'
+import type { RunScriptOptions } from './types/common.ts'
+import {
+  type WatcherHooks,
+  type BundlerHooks,
+  type DevServerHooks,
+  type TestRunnerHooks,
+} from './types/hooks.ts'
 
 /**
  * Default set of args to pass in order to run TypeScript
@@ -33,29 +43,44 @@ const DEFAULT_NODE_ARGS = ['--import=@poppinss/ts-exec', '--enable-source-maps']
  * host
  */
 export function parseConfig(
-  cwd: string | URL,
+  cwd: URL | string,
   ts: typeof tsStatic
 ): tsStatic.ParsedCommandLine | undefined {
-  const { config, error } = new ConfigParser(cwd, 'tsconfig.json', ts).parse()
-  if (error) {
+  const cwdPath = typeof cwd === 'string' ? cwd : fileURLToPath(cwd)
+  const configFile = join(cwdPath, 'tsconfig.json')
+  debug('parsing config file "%s"', configFile)
+
+  let hardException: null | tsStatic.Diagnostic = null
+  const parsedConfig = ts.getParsedCommandLineOfConfigFile(
+    configFile,
+    {},
+    {
+      ...ts.sys,
+      useCaseSensitiveFileNames: true,
+      getCurrentDirectory: () => cwdPath,
+      onUnRecoverableConfigFileDiagnostic: (error) => (hardException = error),
+    }
+  )
+
+  if (hardException) {
     const compilerHost = ts.createCompilerHost({})
-    console.log(ts.formatDiagnosticsWithColorAndContext([error], compilerHost))
+    console.log(ts.formatDiagnosticsWithColorAndContext([hardException], compilerHost))
     return
   }
 
-  if (config!.errors.length) {
+  if (parsedConfig!.errors.length) {
     const compilerHost = ts.createCompilerHost({})
-    console.log(ts.formatDiagnosticsWithColorAndContext(config!.errors, compilerHost))
+    console.log(ts.formatDiagnosticsWithColorAndContext(parsedConfig!.errors, compilerHost))
     return
   }
 
-  return config
+  return parsedConfig
 }
 
 /**
  * Runs a Node.js script as a child process and inherits the stdio streams
  */
-export function runNode(cwd: string | URL, options: RunOptions) {
+export function runNode(cwd: string | URL, options: RunScriptOptions) {
   const childProcess = execaNode(options.script, options.scriptArgs, {
     nodeOptions: DEFAULT_NODE_ARGS.concat(options.nodeArgs),
     preferLocal: true,
@@ -77,7 +102,7 @@ export function runNode(cwd: string | URL, options: RunOptions) {
 /**
  * Runs a script as a child process and inherits the stdio streams
  */
-export function run(cwd: string | URL, options: Omit<RunOptions, 'nodeArgs'>) {
+export function run(cwd: string | URL, options: Omit<RunScriptOptions, 'nodeArgs'>) {
   const childProcess = execa(options.script, options.scriptArgs, {
     preferLocal: true,
     windowsHide: false,
@@ -97,19 +122,12 @@ export function run(cwd: string | URL, options: Omit<RunOptions, 'nodeArgs'>) {
 /**
  * Watches the file system using tsconfig file
  */
-export function watch(cwd: string | URL, ts: typeof tsStatic, options: WatchOptions) {
-  const config = parseConfig(cwd, ts)
-  if (!config) {
-    return
-  }
-
-  const watcher = new Watcher(typeof cwd === 'string' ? cwd : fileURLToPath(cwd), config!)
-  const chokidar = watcher.watch(['.'], { usePolling: options.poll })
-  return { watcher, chokidar }
+export function watch(options: ChokidarOptions) {
+  return chokidar.watch(['.'], options)
 }
 
 /**
- * Check if file is an .env file
+ * Check if file is a .env file
  */
 export function isDotEnvFile(filePath: string) {
   if (filePath === '.env') {
@@ -211,4 +229,92 @@ export async function copyFiles(files: string[], cwd: string, outDir: string) {
   })
 
   return await Promise.all(copyPromises)
+}
+
+/**
+ * Memoize a function using an LRU cache. The function must accept
+ * only one argument as a string value.
+ */
+export function memoize<Result>(
+  fn: (input: string) => any,
+  maxKeys?: number
+): (input: string) => Result {
+  const cache = new Cache<string, Result>({ max: maxKeys })
+
+  return (input: string) => {
+    if (cache.has(input)) {
+      return cache.get(input)!
+    }
+    return fn(input)
+  }
+}
+
+/**
+ * Imports a selected set of lazy hooks and creates an instance of the
+ * Hooks class
+ */
+type AllHooks = WatcherHooks & DevServerHooks & BundlerHooks & TestRunnerHooks
+export async function loadHooks<K extends keyof AllHooks>(
+  rcFileHooks: Partial<AllHooks> | undefined,
+  names: K[]
+) {
+  const groups = names.map((name) => {
+    return {
+      group: name,
+      hooks: rcFileHooks?.[name] ?? [],
+    }
+  })
+
+  const hooks = new Hooks<{
+    [P in K]: [
+      Parameters<UnWrapLazyImport<AllHooks[K][number]>>,
+      Parameters<UnWrapLazyImport<AllHooks[K][number]>>,
+    ]
+  }>()
+
+  for (const { group, hooks: collection } of groups) {
+    for (const item of collection) {
+      hooks.add(group, await importDefault<{}>(item))
+    }
+  }
+
+  return hooks
+}
+
+/**
+ * Wraps a function inside another function that throttles the concurrent
+ * executions of a function. If the function is called too quickly, then
+ * it may result in two invocations at max.
+ */
+export function throttle<Args extends any[]>(
+  fn: (...args: Args) => PromiseLike<any>,
+  name?: string
+): (...args: Args) => Promise<void> {
+  name = name || 'throttled'
+
+  let isBusy = false
+  let hasQueuedCalls = false
+  let lastCallArgs: Args
+
+  async function throttled(...args: Args) {
+    if (isBusy) {
+      debug('ignoring "%s" invocation as current execution is in progress', name)
+      hasQueuedCalls = true
+      lastCallArgs = args
+      return
+    }
+
+    isBusy = true
+    debug('executing "%s" function', name)
+    await fn(...args)
+
+    isBusy = false
+    if (hasQueuedCalls) {
+      hasQueuedCalls = false
+      debug('resuming and running latest "%s" invocation', name)
+      await throttled(...lastCallArgs)
+    }
+  }
+
+  return throttled
 }

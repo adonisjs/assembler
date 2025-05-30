@@ -7,63 +7,33 @@
  * file that was distributed with this source code.
  */
 
-import picomatch from 'picomatch'
-import { relative } from 'node:path'
 import type tsStatic from 'typescript'
+import { cliui } from '@poppinss/cliui'
+import type Hooks from '@poppinss/hooks'
 import prettyHrtime from 'pretty-hrtime'
 import { fileURLToPath } from 'node:url'
+import { type FSWatcher } from 'chokidar'
 import { type ResultPromise } from 'execa'
-import { cliui, type Logger } from '@poppinss/cliui'
-import type { Watcher } from '@poppinss/chokidar-ts'
+import string from '@poppinss/utils/string'
+import { type UnWrapLazyImport } from '@poppinss/utils/types'
 
-import { AssemblerHooks } from './hooks.js'
-import type { DevServerOptions } from './types.js'
-import { getPort, isDotEnvFile, runNode, watch } from './utils.js'
-
-/**
- * Instance of CLIUI
- */
-const ui = cliui()
+import debug from './debug.ts'
+import { FileSystem } from './file_system.ts'
+import type { DevServerOptions } from './types/common.ts'
+import { type DevServerHooks, type WatcherHooks } from './types/hooks.ts'
+import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
 
 /**
- * Exposes the API to start the development. Optionally, the watch API can be
- * used to watch for file changes and restart the development server.
+ * Exposes the API to start the development server in HMR, watch or static mode.
  *
- * The Dev server performs the following actions
+ * In HMR mode, the DevServer will exec the "bin/server.ts" file and let hot-hook
+ * manage the changes using hot module reloading.
  *
- * - Assigns a random PORT, when PORT inside .env file is in use.
- * - Uses tsconfig.json file to collect a list of files to watch.
- * - Uses metaFiles from adonisrc.ts file to collect a list of files to watch.
- * - Restart HTTP server on every file change.
+ * In watch mode, the DevServer will start an internal watcher and restarts the after
+ * every file change. The files must be part of the TypeScript project (via tsconfig.json),
+ * or registered as metaFiles.
  */
 export class DevServer {
-  #cwd: URL
-  #logger = ui.logger
-  #options: DevServerOptions
-
-  /**
-   * Flag to know if the dev server is running in watch
-   * mode
-   */
-  #isWatching: boolean = false
-
-  /**
-   * Script file to start the development server
-   */
-  #scriptFile: string = 'bin/server.js'
-
-  /**
-   * Picomatch matcher function to know if a file path is a
-   * meta file with reloadServer option enabled
-   */
-  #isMetaFileWithReloadsEnabled: picomatch.Matcher
-
-  /**
-   * Picomatch matcher function to know if a file path is a
-   * meta file with reloadServer option disabled
-   */
-  #isMetaFileWithReloadsDisabled: picomatch.Matcher
-
   /**
    * External listeners that are invoked when child process
    * gets an error or closes
@@ -72,47 +42,82 @@ export class DevServer {
   #onClose?: (exitCode: number) => any
 
   /**
+   * The stickyPort is set by the start and the startAndWatch methods
+   * and we will continue to use that port during restart
+   */
+  #stickyPort!: string
+
+  /**
+   * The mode is set by the start and the startAndWatch methods
+   */
+  #mode: 'hmr' | 'watch' | 'static' = 'static'
+
+  /**
+   * Reference to chokidar watcher
+   */
+  #watcher?: FSWatcher
+
+  /**
    * Reference to the child process
    */
   #httpServer?: ResultPromise
 
   /**
-   * Reference to the watcher
+   * Filesystem is used to decide which files to watch or entertain when
+   * using hot-hook
    */
-  #watcher?: ReturnType<Watcher['watch']>
+  #fileSystem!: FileSystem
 
   /**
    * Hooks to execute custom actions during the dev server lifecycle
    */
-  #hooks: AssemblerHooks
+  #hooks!: Hooks<
+    {
+      [K in keyof DevServerHooks]: [
+        Parameters<UnWrapLazyImport<DevServerHooks[K][number]>>,
+        Parameters<UnWrapLazyImport<DevServerHooks[K][number]>>,
+      ]
+    } & {
+      [K in keyof WatcherHooks]: [
+        Parameters<UnWrapLazyImport<WatcherHooks[K][number]>>,
+        Parameters<UnWrapLazyImport<WatcherHooks[K][number]>>,
+      ]
+    }
+  >
 
   /**
-   * Getting reference to colors library from logger
+   * Restarts the HTTP server and throttle concurrent calls to
+   * ensure we do not end up with a long loop of restarts
    */
-  get #colors() {
-    return this.#logger.getColors()
-  }
-
-  constructor(cwd: URL, options: DevServerOptions) {
-    this.#cwd = cwd
-    this.#options = options
-    this.#hooks = new AssemblerHooks(options.hooks)
-    if (this.#options.hmr) {
-      this.#options.nodeArgs = this.#options.nodeArgs.concat(['--import=hot-hook/register'])
+  #restartHTTPServer = throttle(async () => {
+    if (this.#httpServer) {
+      this.#httpServer.removeAllListeners()
+      this.#httpServer.kill('SIGKILL')
     }
+    await this.#startHTTPServer(this.#stickyPort)
+  }, 'restartHTTPServer')
 
-    this.#isMetaFileWithReloadsEnabled = picomatch(
-      (this.#options.metaFiles || [])
-        .filter(({ reloadServer }) => reloadServer === true)
-        .map(({ pattern }) => pattern)
-    )
+  /**
+   * CLI UI to log colorful messages
+   */
+  ui = cliui()
 
-    this.#isMetaFileWithReloadsDisabled = picomatch(
-      (this.#options.metaFiles || [])
-        .filter(({ reloadServer }) => reloadServer !== true)
-        .map(({ pattern }) => pattern)
-    )
+  /**
+   * The mode in which the DevServer is running.
+   */
+  get mode() {
+    return this.#mode
   }
+
+  /**
+   * Script file to start the development server
+   */
+  scriptFile: string = 'bin/server.ts'
+
+  constructor(
+    public cwd: URL,
+    public options: DevServerOptions
+  ) {}
 
   /**
    * Inspect if child process message is from AdonisJS HTTP server
@@ -134,7 +139,36 @@ export class DevServer {
   }
 
   /**
-   * Inspect if child process message is coming from Hot Hook
+   * Displays the server info and executes the hooks after the server has been
+   * started.
+   */
+  async #postServerReady(message: { port: number; host: string; duration?: [number, number] }) {
+    const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
+    const displayMessage = this.ui
+      .sticker()
+      .add(`Server address: ${this.ui.colors.cyan(`http://${host}:${message.port}`)}`)
+      .add(`Mode: ${this.ui.colors.cyan(this.mode)}`)
+
+    if (message.duration) {
+      displayMessage.add(`Ready in: ${this.ui.colors.cyan(prettyHrtime(message.duration))}`)
+    }
+
+    /**
+     * Run hooks before displaying the "displayMessage". It will allow hooks to add
+     * custom lines to the display message.
+     */
+    try {
+      await this.#hooks.runner('devServerStarted').run(this, displayMessage)
+    } catch (error) {
+      this.ui.logger.error('One of the "devServerStarted" hooks failed')
+      this.ui.logger.fatal(error)
+    }
+
+    displayMessage.render()
+  }
+
+  /**
+   * Inspect if child process message is coming from hot-hook
    */
   #isHotHookMessage(message: unknown): message is {
     type: string
@@ -154,140 +188,87 @@ export class DevServer {
    * Conditionally clear the terminal screen
    */
   #clearScreen() {
-    if (this.#options.clearScreen) {
+    if (this.options.clearScreen) {
       process.stdout.write('\u001Bc')
     }
   }
 
   /**
+   * Handles file change event
+   */
+  #handleFileChange(filePath: string, action: string) {
+    const file = this.#fileSystem.inspect(filePath)
+    if (!file) {
+      return
+    }
+
+    if (file.reloadServer) {
+      this.#clearScreen()
+      this.ui.logger.log(`${this.ui.colors.green(action)} ${filePath}`)
+      this.#restartHTTPServer()
+    } else {
+      this.ui.logger.log(`${this.ui.colors.green(action)} ${filePath}`)
+    }
+  }
+
+  /**
+   * Registers inline hooks for the file changes and restarts the
+   * HTTP server when a file gets changed.
+   */
+  #registerServerRestartHooks() {
+    this.#hooks.add('fileAdded', (filePath) => this.#handleFileChange(filePath, 'add'))
+    this.#hooks.add('fileChanged', (filePath) => this.#handleFileChange(filePath, 'update'))
+    this.#hooks.add('fileRemoved', (filePath) => this.#handleFileChange(filePath, 'delete'))
+  }
+
+  /**
    * Starts the HTTP server
    */
-  #startHTTPServer(port: string, mode: 'blocking' | 'nonblocking') {
-    const hooksArgs = { colors: this.#colors, logger: this.#logger }
-    this.#httpServer = runNode(this.#cwd, {
-      script: this.#scriptFile,
-      env: { PORT: port, ...this.#options.env },
-      nodeArgs: this.#options.nodeArgs,
-      reject: true,
-      scriptArgs: this.#options.scriptArgs,
-    })
+  async #startHTTPServer(port: string) {
+    /**
+     * Execute the registered before creating the child process. This will allow
+     * hooks to modify the options before they are used.
+     */
+    await this.#hooks.runner('devServerStarting').run(this)
+    debug('starting http server using "%s" file, options %O', this.scriptFile, this.options)
 
-    this.#httpServer.on('message', async (message) => {
+    return new Promise<void>(async (resolve) => {
       /**
-       * Handle Hot-Hook messages
+       * Creating child process
        */
-      if (this.#isHotHookMessage(message)) {
-        const path = relative(fileURLToPath(this.#cwd), message.path || message.paths?.[0]!)
-        this.#hooks.onSourceFileChanged(hooksArgs, path)
+      this.#httpServer = runNode(this.cwd, {
+        script: this.scriptFile,
+        env: { PORT: port, ...this.options.env },
+        nodeArgs: this.options.nodeArgs,
+        reject: true,
+        scriptArgs: this.options.scriptArgs,
+      })
 
-        if (message.type === 'hot-hook:full-reload') {
-          this.#clearScreen()
-          this.#logger.log(`${this.#colors.green('full-reload')} ${path}`)
-          this.#restartHTTPServer(port)
-          this.#hooks.onDevServerStarted(hooksArgs)
-        } else if (message.type === 'hot-hook:invalidated') {
-          this.#logger.log(`${this.#colors.green('invalidated')} ${path}`)
-        }
-      }
-
-      /**
-       * Handle AdonisJS ready message
-       */
-      if (this.#isAdonisJSReadyMessage(message)) {
-        const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
-
-        const displayMessage = ui
-          .sticker()
-          .useColors(this.#colors)
-          .useRenderer(this.#logger.getRenderer())
-          .add(`Server address: ${this.#colors.cyan(`http://${host}:${message.port}`)}`)
-
-        const watchMode = this.#options.hmr ? 'HMR' : this.#isWatching ? 'Legacy' : 'None'
-        displayMessage.add(`Watch Mode: ${this.#colors.cyan(watchMode)}`)
-
-        if (message.duration) {
-          displayMessage.add(`Ready in: ${this.#colors.cyan(prettyHrtime(message.duration))}`)
-        }
-
-        displayMessage.render()
-
-        await this.#hooks.onDevServerStarted({ colors: ui.colors, logger: this.#logger })
-      }
-    })
-
-    this.#httpServer
-      .then((result) => {
-        if (mode === 'nonblocking') {
-          this.#onClose?.(result.exitCode!)
-          this.#watcher?.close()
-        } else {
-          this.#logger.info('Underlying HTTP server closed. Still watching for changes')
+      this.#httpServer.on('message', async (message) => {
+        if (this.#isAdonisJSReadyMessage(message)) {
+          await this.#postServerReady(message)
+          resolve()
+        } else if (this.#isHotHookMessage(message)) {
         }
       })
-      .catch((error) => {
-        if (mode === 'nonblocking') {
-          this.#onError?.(error)
-          this.#watcher?.close()
-        } else {
-          this.#logger.info('Underlying HTTP server died. Still watching for changes')
-        }
-      })
-  }
 
-  /**
-   * Restarts the HTTP server in the watch mode. Do not call this
-   * method when not in watch mode
-   */
-  #restartHTTPServer(port: string) {
-    if (this.#httpServer) {
-      this.#httpServer.removeAllListeners()
-      this.#httpServer.kill('SIGKILL')
-    }
-
-    this.#startHTTPServer(port, 'blocking')
-  }
-
-  /**
-   * Handles a non TypeScript file change
-   */
-  #handleFileChange(action: string, port: string, relativePath: string) {
-    if (isDotEnvFile(relativePath)) {
-      this.#clearScreen()
-      this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
-      this.#restartHTTPServer(port)
-      return
-    }
-
-    if (this.#isMetaFileWithReloadsEnabled(relativePath)) {
-      this.#clearScreen()
-      this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
-      this.#restartHTTPServer(port)
-      return
-    }
-
-    if (this.#isMetaFileWithReloadsDisabled(relativePath)) {
-      this.#clearScreen()
-      this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
-    }
-  }
-
-  /**
-   * Handles TypeScript source file change
-   */
-  async #handleSourceFileChange(action: string, port: string, relativePath: string) {
-    await this.#hooks.onSourceFileChanged({ colors: ui.colors, logger: this.#logger }, relativePath)
-
-    this.#clearScreen()
-    this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
-    this.#restartHTTPServer(port)
-  }
-
-  /**
-   * Set a custom CLI UI logger
-   */
-  setLogger(logger: Logger) {
-    this.#logger = logger
-    return this
+      this.#httpServer
+        .then((result) => {
+          if (!this.#watcher) {
+            this.#onClose?.(result.exitCode!)
+          } else {
+            this.ui.logger.info('Underlying HTTP server closed. Still watching for changes')
+          }
+        })
+        .catch((error) => {
+          if (!this.#watcher) {
+            this.#onError?.(error)
+          } else {
+            this.ui.logger.info('Underlying HTTP server died. Still watching for changes')
+          }
+        })
+        .finally(() => resolve())
+    })
   }
 
   /**
@@ -309,7 +290,7 @@ export class DevServer {
   }
 
   /**
-   * Close watchers and running child processes
+   * Close watchers and the running child process
    */
   async close() {
     await this.#watcher?.close()
@@ -322,85 +303,108 @@ export class DevServer {
   /**
    * Start the development server
    */
-  async start() {
-    await this.#hooks.registerDevServerHooks()
+  async start(ts: typeof tsStatic) {
+    const tsConfig = parseConfig(this.cwd, ts)
+    if (!tsConfig) {
+      return
+    }
+
+    this.#stickyPort = String(await getPort(this.cwd))
+    this.#fileSystem = new FileSystem(this.cwd, tsConfig, this.options)
+    this.#hooks = await loadHooks(this.options.hooks, [
+      'devServerStarting',
+      'devServerStarted',
+      'fileAdded',
+      'fileChanged',
+      'fileRemoved',
+    ])
+    this.#registerServerRestartHooks()
+
+    if (this.options.hmr) {
+      this.#mode = 'hmr'
+      this.options.nodeArgs = this.options.nodeArgs.concat('--import=hot-hook/register')
+      this.options.env = {
+        ...this.options.env,
+        HOT_HOOK_INCLUDES: this.#fileSystem.includes.join(','),
+        HOT_HOOK_EXCLUDES: this.#fileSystem.excludes.join(','),
+        HOT_HOOK_REGISTER: (this.options.metaFiles ?? []).map(({ pattern }) => pattern).join(','),
+      }
+    }
 
     this.#clearScreen()
-    this.#logger.info('starting HTTP server...')
-    this.#startHTTPServer(String(await getPort(this.#cwd)), 'nonblocking')
+    this.ui.logger.info('starting HTTP server...')
+    await this.#startHTTPServer(this.#stickyPort)
   }
 
   /**
    * Start the development server in watch mode
    */
   async startAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
-    await this.#hooks.registerDevServerHooks()
-
-    const port = String(await getPort(this.#cwd))
-    this.#isWatching = true
-
-    this.#clearScreen()
-
-    this.#logger.info('starting HTTP server...')
-    this.#startHTTPServer(port, 'blocking')
-
-    /**
-     * Create watcher using tsconfig.json file
-     */
-    const output = watch(this.#cwd, ts, options || {})
-    if (!output) {
-      this.#onClose?.(1)
+    const tsConfig = parseConfig(this.cwd, ts)
+    if (!tsConfig) {
       return
     }
 
+    this.#mode = 'watch'
+    this.#stickyPort = String(await getPort(this.cwd))
+    this.#fileSystem = new FileSystem(this.cwd, tsConfig, this.options)
+    this.#hooks = await loadHooks(this.options.hooks, [
+      'devServerStarting',
+      'devServerStarted',
+      'fileAdded',
+      'fileChanged',
+      'fileRemoved',
+    ])
+    this.#registerServerRestartHooks()
+
+    this.#clearScreen()
+    this.ui.logger.info('starting HTTP server...')
+    await this.#startHTTPServer(this.#stickyPort)
+
     /**
-     * Storing reference to watcher, so that we can close it
-     * when HTTP server exists with error
+     * Create watcher
      */
-    this.#watcher = output.chokidar
+    this.#watcher = watch({
+      usePolling: options?.poll ?? false,
+      cwd: fileURLToPath(this.cwd),
+      ignoreInitial: true,
+      ignored: (file, stats) => {
+        if (!stats) {
+          return false
+        }
+        if (stats.isFile()) {
+          return !this.#fileSystem.shouldWatchFile(file)
+        }
+        return !this.#fileSystem.shouldWatchDirectory(file)
+      },
+    })
 
     /**
      * Notify the watcher is ready
      */
-    output.watcher.on('watcher:ready', () => {
-      this.#logger.info('watching file system for changes...')
+    this.#watcher.on('ready', () => {
+      this.ui.logger.info('watching file system for changes...')
     })
 
     /**
      * Cleanup when watcher dies
      */
-    output.chokidar.on('error', (error) => {
-      this.#logger.warning('file system watcher failure')
-      this.#logger.fatal(error as any)
+    this.#watcher.on('error', (error: any) => {
+      this.ui.logger.warning('file system watcher failure')
+      this.ui.logger.fatal(error as any)
 
       this.#onError?.(error)
-      output.chokidar.close()
+      this.#watcher?.close()
     })
 
-    /**
-     * Changes in TypeScript source file
-     */
-    output.watcher.on('source:add', ({ relativePath }) =>
-      this.#handleSourceFileChange('add', port, relativePath)
+    this.#watcher.on('add', (filePath) =>
+      this.#hooks.runner('fileAdded').run(string.toUnixSlash(filePath), this)
     )
-    output.watcher.on('source:change', ({ relativePath }) =>
-      this.#handleSourceFileChange('update', port, relativePath)
+    this.#watcher.on('change', (filePath) =>
+      this.#hooks.runner('fileChanged').run(string.toUnixSlash(filePath), this)
     )
-    output.watcher.on('source:unlink', ({ relativePath }) =>
-      this.#handleSourceFileChange('delete', port, relativePath)
-    )
-
-    /**
-     * Changes in non-TypeScript source files
-     */
-    output.watcher.on('add', ({ relativePath }) =>
-      this.#handleFileChange('add', port, relativePath)
-    )
-    output.watcher.on('change', ({ relativePath }) =>
-      this.#handleFileChange('update', port, relativePath)
-    )
-    output.watcher.on('unlink', ({ relativePath }) =>
-      this.#handleFileChange('delete', port, relativePath)
+    this.#watcher.on('unlink', (filePath) =>
+      this.#hooks.runner('fileRemoved').run(string.toUnixSlash(filePath), this)
     )
   }
 }

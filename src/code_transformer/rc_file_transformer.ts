@@ -8,17 +8,19 @@
  */
 
 import { fileURLToPath } from 'node:url'
-import type { AppEnvironments, RcFile } from '@adonisjs/application/types'
 import {
   Node,
-  Project,
-  SourceFile,
+  type Project,
+  type SourceFile,
   SyntaxKind,
-  CallExpression,
-  PropertyAssignment,
-  FormatCodeSettings,
-  ArrayLiteralExpression,
+  type CallExpression,
+  type PropertyAssignment,
+  type FormatCodeSettings,
+  type ArrayLiteralExpression,
 } from 'ts-morph'
+import { type RcFileAssemblerHooks } from '../types/common.ts'
+
+const ALLOWED_ENVIRONMENTS = ['web', 'console', 'test', 'repl'] as const
 
 /**
  * RcFileTransformer is used to transform the `adonisrc.ts` file
@@ -57,14 +59,12 @@ export class RcFileTransformer {
   /**
    * Check if environments array has a subset of available environments
    */
-  #isInSpecificEnvironment(environments?: AppEnvironments[]): boolean {
+  #isInSpecificEnvironment(environments?: (typeof ALLOWED_ENVIRONMENTS)[number][]): boolean {
     if (!environments) {
       return false
     }
 
-    return !!(['web', 'console', 'test', 'repl'] as const).find(
-      (env) => !environments.includes(env)
-    )
+    return !!ALLOWED_ENVIRONMENTS.find((env) => !environments.includes(env))
   }
 
   /**
@@ -173,7 +173,7 @@ export class RcFileTransformer {
    * Build a new module entry for the preloads and providers array
    * based upon the environments specified
    */
-  #buildNewModuleEntry(modulePath: string, environments?: AppEnvironments[]) {
+  #buildNewModuleEntry(modulePath: string, environments?: (typeof ALLOWED_ENVIRONMENTS)[number][]) {
     if (!this.#isInSpecificEnvironment(environments)) {
       return `() => import('${modulePath}')`
     }
@@ -212,7 +212,7 @@ export class RcFileTransformer {
   /**
    * Add a new preloaded file to the rcFile
    */
-  addPreloadFile(modulePath: string, environments?: AppEnvironments[]) {
+  addPreloadFile(modulePath: string, environments?: (typeof ALLOWED_ENVIRONMENTS)[number][]) {
     const preloadsProperty = this.#getPropertyAssignmentInDefineConfigCall('preloads', '[]')
     const preloadsArray = preloadsProperty.getInitializerIfKindOrThrow(
       SyntaxKind.ArrayLiteralExpression
@@ -237,7 +237,7 @@ export class RcFileTransformer {
   /**
    * Add a new provider to the rcFile
    */
-  addProvider(providerPath: string, environments?: AppEnvironments[]) {
+  addProvider(providerPath: string, environments?: (typeof ALLOWED_ENVIRONMENTS)[number][]) {
     const property = this.#getPropertyAssignmentInDefineConfigCall('providers', '[]')
     const providersArray = property.getInitializerIfKindOrThrow(SyntaxKind.ArrayLiteralExpression)
 
@@ -349,7 +349,7 @@ export class RcFileTransformer {
   /**
    * Add a new assembler hook
    */
-  addAssemblerHook(type: keyof NonNullable<RcFile['hooks']>, path: string) {
+  addAssemblerHook(type: keyof RcFileAssemblerHooks, path: string) {
     const hooksProperty = this.#getPropertyAssignmentInDefineConfigCall('hooks', '{}')
 
     const hooks = hooksProperty.getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression)

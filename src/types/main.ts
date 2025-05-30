@@ -7,6 +7,6 @@
  * file that was distributed with this source code.
  */
 
-export { Bundler } from './src/bundler.ts'
-export { DevServer } from './src/dev_server.ts'
-export { TestRunner } from './src/test_runner.ts'
+export * from './common.ts'
+export * from './hooks.ts'
+export * from './code_transformer.ts'

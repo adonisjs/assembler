@@ -7,20 +7,21 @@
  * file that was distributed with this source code.
  */
 
-import slash from 'slash'
 import dedent from 'dedent'
 import fs from 'node:fs/promises'
 import type tsStatic from 'typescript'
+import { cliui } from '@poppinss/cliui'
 import { fileURLToPath } from 'node:url'
+import type Hooks from '@poppinss/hooks'
 import { join, relative } from 'node:path'
-import { cliui, type Logger } from '@poppinss/cliui'
+import string from '@poppinss/utils/string'
 import { detectPackageManager } from '@antfu/install-pkg'
+import { type UnWrapLazyImport } from '@poppinss/utils/types'
 
-import { AssemblerHooks } from './hooks.js'
-import type { BundlerOptions } from './types.js'
-import { run, parseConfig, copyFiles } from './utils.js'
-
-type SupportedPackageManager = 'npm' | 'yarn' | 'yarn@berry' | 'pnpm' | 'bun'
+import { type BundlerHooks } from './types/hooks.ts'
+import type { BundlerOptions } from './types/common.ts'
+import { run, parseConfig, copyFiles, loadHooks } from './utils.ts'
+import { type SupportedPackageManager } from './types/code_transformer.ts'
 
 /**
  * List of package managers we support in order to
@@ -55,34 +56,36 @@ const SUPPORTED_PACKAGE_MANAGERS: {
 }
 
 /**
- * Instance of CLIUI
- */
-const ui = cliui()
-
-/**
  * The bundler class exposes the API to build an AdonisJS project.
  */
 export class Bundler {
-  #cwd: URL
   #cwdPath: string
   #ts: typeof tsStatic
-  #logger = ui.logger
-  #hooks: AssemblerHooks
-  #options: BundlerOptions
 
   /**
-   * Getting reference to colors library from logger
+   * Hooks to execute custom actions during the build process
    */
-  get #colors() {
-    return this.#logger.getColors()
-  }
+  #hooks!: Hooks<{
+    [K in keyof BundlerHooks]: [
+      Parameters<UnWrapLazyImport<BundlerHooks[K][number]>>,
+      Parameters<UnWrapLazyImport<BundlerHooks[K][number]>>,
+    ]
+  }>
 
-  constructor(cwd: URL, ts: typeof tsStatic, options: BundlerOptions) {
-    this.#cwd = cwd
-    this.#cwdPath = fileURLToPath(this.#cwd)
+  ui = cliui()
+
+  /**
+   * Package manager detect from the project environment
+   */
+  declare packageManager: SupportedPackageManager
+
+  constructor(
+    public cwd: URL,
+    ts: typeof tsStatic,
+    public options: BundlerOptions
+  ) {
+    this.#cwdPath = fileURLToPath(this.cwd)
     this.#ts = ts
-    this.#options = options
-    this.#hooks = new AssemblerHooks(options.hooks)
   }
 
   /**
@@ -90,7 +93,7 @@ export class Bundler {
    * file path
    */
   #getRelativeName(filePath: string) {
-    return slash(relative(this.#cwdPath, filePath))
+    return string.toUnixSlash(relative(this.#cwdPath, filePath))
   }
 
   /**
@@ -105,7 +108,7 @@ export class Bundler {
    */
   async #runTsc(outDir: string): Promise<boolean> {
     try {
-      await run(this.#cwd, {
+      await run(this.cwd, {
         stdio: 'inherit',
         script: 'tsc',
         scriptArgs: ['--outDir', outDir],
@@ -120,7 +123,7 @@ export class Bundler {
    * Copy meta files to the output directory
    */
   async #copyMetaFiles(outDir: string, additionalFilesToCopy: string[]) {
-    const metaFiles = (this.#options.metaFiles || [])
+    const metaFiles = (this.options.metaFiles || [])
       .map((file) => file.pattern)
       .concat(additionalFilesToCopy)
 
@@ -129,24 +132,17 @@ export class Bundler {
 
   /**
    * Detect the package manager used by the project
-   * and return the lockfile name and install command
-   * related to it.
    */
-  async #getPackageManager(client?: SupportedPackageManager) {
-    let pkgManager: string | null | undefined = client
-
-    if (!pkgManager) {
-      pkgManager = await detectPackageManager(this.#cwdPath)
+  async #detectPackageManager(): Promise<SupportedPackageManager | null> {
+    const pkgManager = await detectPackageManager(this.#cwdPath)
+    if (pkgManager === 'deno') {
+      return 'npm'
     }
-    if (!pkgManager) {
-      pkgManager = 'npm'
-    }
-
-    if (!Object.keys(SUPPORTED_PACKAGE_MANAGERS).includes(pkgManager)) {
-      return null
+    if (pkgManager === 'pnpm@6') {
+      return 'pnpm'
     }
 
-    return SUPPORTED_PACKAGE_MANAGERS[pkgManager as SupportedPackageManager]
+    return pkgManager
   }
 
   /**
@@ -167,27 +163,20 @@ export class Bundler {
     `)
 
     await fs.writeFile(aceFileLocation, aceFileContent)
-    this.#logger.info('created ace file', { suffix: this.#getRelativeName(aceFileLocation) })
-  }
-
-  /**
-   * Set a custom CLI UI logger
-   */
-  setLogger(logger: Logger) {
-    this.#logger = logger
-    return this
+    this.ui.logger.info('created ace file', { suffix: this.#getRelativeName(aceFileLocation) })
   }
 
   /**
    * Bundles the application to be run in production
    */
   async bundle(stopOnError: boolean = true, client?: SupportedPackageManager): Promise<boolean> {
-    await this.#hooks.registerBuildHooks()
+    this.#hooks = await loadHooks(this.options.hooks, ['buildStarting', 'buildFinished'])
+    this.packageManager = client ?? (await this.#detectPackageManager()) ?? 'npm'
 
     /**
      * Step 1: Parse config file to get the build output directory
      */
-    const config = parseConfig(this.#cwd, this.#ts)
+    const config = parseConfig(this.cwd, this.#ts)
     if (!config) {
       return false
     }
@@ -195,19 +184,19 @@ export class Bundler {
     /**
      * Step 2: Cleanup existing build directory (if any)
      */
-    const outDir = config.options.outDir || fileURLToPath(new URL('build/', this.#cwd))
-    this.#logger.info('cleaning up output directory', { suffix: this.#getRelativeName(outDir) })
+    const outDir = config.options.outDir || fileURLToPath(new URL('build/', this.cwd))
+    this.ui.logger.info('cleaning up output directory', { suffix: this.#getRelativeName(outDir) })
     await this.#cleanupBuildDirectory(outDir)
 
     /**
-     * Step 4: Execute build starting hook
+     * Step 3: Execute build starting hook
      */
-    await this.#hooks.onBuildStarting({ colors: ui.colors, logger: this.#logger })
+    await this.#hooks.runner('buildStarting').run(this)
 
     /**
-     * Step 5: Build typescript source code
+     * Step 4: Build typescript source code
      */
-    this.#logger.info('compiling typescript source', { suffix: 'tsc' })
+    this.ui.logger.info('compiling typescript source', { suffix: 'tsc' })
     const buildCompleted = await this.#runTsc(outDir)
     await this.#createAceFile(outDir)
 
@@ -217,55 +206,54 @@ export class Bundler {
      */
     if (!buildCompleted && stopOnError) {
       await this.#cleanupBuildDirectory(outDir)
-      const instructions = ui
+
+      const instructions = this.ui
         .sticker()
         .fullScreen()
         .drawBorder((borderChar, colors) => colors.red(borderChar))
 
       instructions.add(
-        this.#colors.red('Cannot complete the build process as there are TypeScript errors.')
+        this.ui.colors.red('Cannot complete the build process as there are TypeScript errors.')
       )
       instructions.add(
-        this.#colors.red(
+        this.ui.colors.red(
           'Use "--ignore-ts-errors" flag to ignore TypeScript errors and continue the build.'
         )
       )
 
-      this.#logger.logError(instructions.prepare())
+      this.ui.logger.logError(instructions.prepare())
       return false
     }
 
     /**
-     * Step 6: Copy meta files to the build directory
+     * Step 5: Copy meta files to the build directory
      */
-    const pkgManager = await this.#getPackageManager(client)
-    const pkgFiles = pkgManager
-      ? ['package.json', ...pkgManager.packageManagerFiles]
-      : ['package.json']
-    this.#logger.info('copying meta files to the output directory')
+    const pkgFiles = [
+      'package.json',
+      ...SUPPORTED_PACKAGE_MANAGERS[this.packageManager].packageManagerFiles,
+    ]
+    this.ui.logger.info('copying meta files to the output directory')
     await this.#copyMetaFiles(outDir, pkgFiles)
 
-    this.#logger.success('build completed')
-    this.#logger.log('')
+    this.ui.logger.success('build completed')
+    this.ui.logger.log('')
+
+    const displayMessage = this.ui
+      .instructions()
+      .heading('Run the following commands to start the server in production')
 
     /**
-     * Step 7: Execute build completed hook
+     * Step 6: Execute build completed hook
      */
-    await this.#hooks.onBuildCompleted({ colors: ui.colors, logger: this.#logger })
+    await this.#hooks.runner('buildFinished').run(this, displayMessage)
 
     /**
      * Next steps
      */
-    ui.instructions()
-      .useRenderer(this.#logger.getRenderer())
-      .heading('Run the following commands to start the server in production')
-      .add(this.#colors.cyan(`cd ${this.#getRelativeName(outDir)}`))
-      .add(
-        this.#colors.cyan(
-          pkgManager ? pkgManager.installCommand : 'Install production dependencies'
-        )
-      )
-      .add(this.#colors.cyan('node bin/server.js'))
+    displayMessage
+      .add(this.ui.colors.cyan(`cd ${this.#getRelativeName(outDir)}`))
+      .add(this.ui.colors.cyan(SUPPORTED_PACKAGE_MANAGERS[this.packageManager].installCommand))
+      .add(this.ui.colors.cyan('node bin/server.js'))
       .render()
 
     return true

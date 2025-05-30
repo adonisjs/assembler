@@ -9,7 +9,7 @@
 
 import { join } from 'node:path'
 import { test } from '@japa/runner'
-import { copyFiles } from '../../src/utils.js'
+import { copyFiles } from '../../src/utils.ts'
 
 test.group('Copy files', () => {
   test('expand glob patterns and copy files to the destination', async ({ assert, fs }) => {

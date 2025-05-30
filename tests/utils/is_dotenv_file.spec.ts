@@ -8,7 +8,7 @@
  */
 
 import { test } from '@japa/runner'
-import { isDotEnvFile } from '../../src/utils.js'
+import { isDotEnvFile } from '../../src/utils.ts'
 
 test.group('Helpers | Is DotEnv file', () => {
   test('check if file is a dot-env file', ({ assert }) => {

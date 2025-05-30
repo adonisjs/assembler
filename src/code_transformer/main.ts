@@ -14,14 +14,18 @@ import {
   Node,
   Project,
   QuoteKind,
-  SourceFile,
+  type SourceFile,
   SyntaxKind,
-  CodeBlockWriter,
-  FormatCodeSettings,
+  type CodeBlockWriter,
+  type FormatCodeSettings,
 } from 'ts-morph'
 
-import { RcFileTransformer } from './rc_file_transformer.js'
-import type { MiddlewareNode, EnvValidationNode, BouncerPolicyNode } from '../types.js'
+import { RcFileTransformer } from './rc_file_transformer.ts'
+import type {
+  MiddlewareNode,
+  EnvValidationNode,
+  BouncerPolicyNode,
+} from '../types/code_transformer.ts'
 
 /**
  * This class is responsible for updating

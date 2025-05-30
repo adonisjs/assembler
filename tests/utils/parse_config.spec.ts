@@ -7,11 +7,11 @@
  * file that was distributed with this source code.
  */
 
-import slash from 'slash'
 import ts from 'typescript'
 import { join } from 'node:path'
 import { test } from '@japa/runner'
-import { parseConfig } from '../../src/utils.js'
+import string from '@poppinss/utils/string'
+import { parseConfig } from '../../src/utils.ts'
 
 test.group('Helpers | Parse config', () => {
   test('report error when config file is missing', async ({ assert, fs }) => {
@@ -35,6 +35,6 @@ test.group('Helpers | Parse config', () => {
     await fs.create('foo.ts', '')
 
     const result = parseConfig(fs.baseUrl, ts)
-    assert.deepEqual(result?.fileNames, [slash(join(fs.basePath, 'foo.ts'))])
+    assert.deepEqual(result?.fileNames, [string.toUnixSlash(join(fs.basePath, 'foo.ts'))])
   })
 })

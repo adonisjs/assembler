@@ -9,9 +9,8 @@
 
 import ts from 'typescript'
 import { test } from '@japa/runner'
-import { setTimeout as sleep } from 'node:timers/promises'
 
-import { Bundler } from '../index.js'
+import { Bundler } from '../index.ts'
 
 test.group('Bundler', () => {
   test('should copy metafiles to the build directory', async ({ assert, fs }) => {
@@ -32,6 +31,7 @@ test.group('Bundler', () => {
     ])
 
     const bundler = new Bundler(fs.baseUrl, ts, {
+      suites: [],
       metaFiles: [
         {
           pattern: 'resources/views/**/*.edge',
@@ -40,6 +40,7 @@ test.group('Bundler', () => {
       ],
     })
 
+    bundler.ui.switchMode('raw')
     await bundler.bundle(true, 'npm')
 
     await Promise.all([
@@ -66,6 +67,7 @@ test.group('Bundler', () => {
     ])
 
     const bundler = new Bundler(fs.baseUrl, ts, {
+      suites: [],
       metaFiles: [
         {
           pattern: 'resources/views/**/*.edge',
@@ -74,6 +76,7 @@ test.group('Bundler', () => {
       ],
     })
 
+    bundler.ui.switchMode('raw')
     await bundler.bundle(true, 'npm')
 
     await Promise.all([
@@ -95,6 +98,7 @@ test.group('Bundler', () => {
     ])
 
     const bundler = new Bundler(fs.baseUrl, ts, {
+      suites: [],
       metaFiles: [
         {
           pattern: 'resources/views/**/*.edge',
@@ -103,6 +107,7 @@ test.group('Bundler', () => {
       ],
     })
 
+    bundler.ui.switchMode('raw')
     await bundler.bundle(true)
 
     await Promise.all([
@@ -123,6 +128,7 @@ test.group('Bundler', () => {
     ])
 
     const bundler = new Bundler(fs.baseUrl, ts, {
+      suites: [],
       metaFiles: [
         {
           pattern: 'resources/views/**/*.edge',
@@ -131,6 +137,7 @@ test.group('Bundler', () => {
       ],
     })
 
+    bundler.ui.switchMode('raw')
     await bundler.bundle(true)
 
     await Promise.all([
@@ -153,6 +160,7 @@ test.group('Bundler', () => {
     ])
 
     const bundler = new Bundler(fs.baseUrl, ts, {
+      suites: [],
       metaFiles: [
         {
           pattern: 'resources/views/**/*.edge',
@@ -161,6 +169,7 @@ test.group('Bundler', () => {
       ],
     })
 
+    bundler.ui.switchMode('raw')
     await bundler.bundle(true)
 
     await Promise.all([
@@ -171,7 +180,7 @@ test.group('Bundler', () => {
     ])
   })
 
-  test('remove ts-node reference in builded ace.js file', async ({ assert, fs }) => {
+  test('remove @poppinss/ts-exec reference in compiled ace.js file', async ({ assert, fs }) => {
     await Promise.all([
       fs.create('ace.js', 'foo'),
       fs.create(
@@ -183,10 +192,12 @@ test.group('Bundler', () => {
       fs.create('package-lock.json', '{}'),
     ])
 
-    await new Bundler(fs.baseUrl, ts, {}).bundle()
+    const bundler = new Bundler(fs.baseUrl, ts, { suites: [] })
+    bundler.ui.switchMode('raw')
+    await bundler.bundle()
 
     const aceFile = await fs.contents('./build/ace.js')
-    assert.notInclude(aceFile, 'ts-node')
+    assert.notInclude(aceFile, '@poppinss/ts-exec')
   })
 
   test('execute hooks', async ({ assert, fs }) => {
@@ -204,14 +215,14 @@ test.group('Bundler', () => {
 
     const bundler = new Bundler(fs.baseUrl, ts, {
       hooks: {
-        onBuildStarting: [
+        buildStarting: [
           async () => ({
             default: () => {
               assert.isTrue(true)
             },
           }),
         ],
-        onBuildCompleted: [
+        buildFinished: [
           async () => ({
             default: () => {
               assert.isTrue(true)
@@ -221,35 +232,110 @@ test.group('Bundler', () => {
       },
     })
 
+    bundler.ui.switchMode('raw')
     await bundler.bundle()
   })
 
-  test('wait for hooks to be registered', async ({ assert, fs }) => {
-    assert.plan(1)
-
-    await fs.createJson('tsconfig.json', {
-      include: ['**/*'],
-      exclude: [],
-    })
-    await fs.create('index.ts', 'console.log("hey")')
-    await fs.create('bin/server.js', `process.send({ isAdonisJS: true, environment: 'web' })`)
-    await fs.create('.env', 'PORT=3334')
-
-    const bundler = new Bundler(fs.baseUrl, ts, {
-      hooks: {
-        onBuildStarting: [
-          async () => {
-            await sleep(1000)
-            return {
-              default: () => {
-                assert.isTrue(true)
-              },
-            }
+  test('build typescript project', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({
+          compilerOptions: {
+            outDir: 'build',
+            skipLibCheck: true,
+            target: 'ESNext',
+            module: 'NodeNext',
+            lib: ['ESNext'],
           },
-        ],
-      },
-    })
+        })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('index.ts', 'export default function main() {}'),
+      fs.createJson('package.json', {
+        type: 'module',
+      }),
+      fs.create('package-lock.json', '{}'),
+    ])
 
-    await bundler.bundle()
-  }).timeout(10_000)
+    const bundler = new Bundler(fs.baseUrl, ts, {})
+    bundler.ui.switchMode('raw')
+    await bundler.bundle(true, 'npm')
+
+    await Promise.all([
+      assert.fileExists('./build/adonisrc.js'),
+      assert.fileExists('./build/index.js'),
+      assert.fileExists('./build/package.json'),
+      assert.fileExists('./build/package-lock.json'),
+    ])
+    await assert.fileContains('./build/index.js', 'export default function main() { }')
+  })
+
+  test('do not build when there are type errors', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({
+          compilerOptions: {
+            outDir: 'build',
+            skipLibCheck: true,
+            target: 'ESNext',
+            module: 'NodeNext',
+            lib: ['ESNext'],
+          },
+        })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create(
+        'index.ts',
+        `export default function main(mod: number) {
+        return mod.toUpperCase()
+      }`
+      ),
+      fs.createJson('package.json', {
+        type: 'module',
+      }),
+      fs.create('package-lock.json', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, {})
+    bundler.ui.switchMode('raw')
+    await bundler.bundle(true, 'npm')
+
+    await assert.dirNotExists('./build')
+  })
+
+  test('create build when instructed to ignore ts error', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({
+          compilerOptions: {
+            outDir: 'build',
+            skipLibCheck: true,
+            target: 'ESNext',
+            module: 'NodeNext',
+            lib: ['ESNext'],
+          },
+        })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create(
+        'index.ts',
+        `export default function main(mod: number) {
+        return mod.toUpperCase()
+      }`
+      ),
+      fs.createJson('package.json', {
+        type: 'module',
+      }),
+      fs.create('package-lock.json', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, {})
+    bundler.ui.switchMode('raw')
+    await bundler.bundle(false, 'npm')
+
+    await assert.dirExists('./build')
+  })
 })

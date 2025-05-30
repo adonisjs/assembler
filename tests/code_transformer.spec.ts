@@ -11,7 +11,7 @@ import dedent from 'dedent'
 import { test } from '@japa/runner'
 import { readFile } from 'node:fs/promises'
 import type { FileSystem } from '@japa/file-system'
-import { CodeTransformer } from '../src/code_transformer/main.js'
+import { CodeTransformer } from '../src/code_transformer/main.ts'
 
 async function setupFakeAdonisproject(fs: FileSystem) {
   await Promise.all([

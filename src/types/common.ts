@@ -7,12 +7,54 @@
  * file that was distributed with this source code.
  */
 
-import type { RcFile } from '@adonisjs/application/types'
+import {
+  type BundlerHooks,
+  type DevServerHooks,
+  type TestRunnerHooks,
+  type WatcherHooks,
+} from './hooks.ts'
+
+/**
+ * File inspected by the filesystem based upon the provided globs
+ * and the current file path
+ */
+export type InspectedFile = {
+  fileType: 'script' | 'meta' | 'test'
+  reloadServer: boolean
+  unixRelativePath: string
+  unixAbsolutePath: string
+}
+
+/**
+ * Subset of properties assembler needs from the "adonisrc.ts" file.
+ */
+export type AssemblerRcFile = {
+  /**
+   * An array of metaFiles glob patterns to watch
+   */
+  metaFiles?: {
+    pattern: string
+    reloadServer: boolean
+  }[]
+
+  /**
+   * Hooks to execute at different stages.
+   */
+  hooks?: Partial<WatcherHooks & DevServerHooks & BundlerHooks & TestRunnerHooks>
+
+  /**
+   * An array of suites for which to run tests
+   */
+  suites?: {
+    name: string
+    files: string | string[]
+  }[]
+}
 
 /**
  * Options needed to run a script file
  */
-export type RunOptions = {
+export type RunScriptOptions = {
   /**
    * Script to run
    */
@@ -43,29 +85,6 @@ export type RunOptions = {
    * false
    */
   reject?: boolean
-}
-
-/**
- * Watcher options
- */
-export type WatchOptions = {
-  poll?: boolean
-}
-
-/**
- * Meta file config defined in "adonisrc.ts" file
- */
-export type MetaFile = {
-  pattern: string
-  reloadServer: boolean
-}
-
-/**
- * Test suite defined in "adonisrc.ts" file
- */
-export type Suite = {
-  name: string
-  files: string | string[]
 }
 
 /**
@@ -101,17 +120,7 @@ export type DevServerOptions = {
    * file.
    */
   env?: NodeJS.ProcessEnv
-
-  /**
-   * An array of metaFiles glob patterns to watch
-   */
-  metaFiles?: MetaFile[]
-
-  /**
-   * Hooks to execute at different stages
-   */
-  hooks?: Pick<NonNullable<RcFile['hooks']>, 'onDevServerStarted' | 'onSourceFileChanged'>
-}
+} & AssemblerRcFile
 
 /**
  * Options accepted by the test runner
@@ -139,16 +148,6 @@ export type TestRunnerOptions = {
    * file.
    */
   env?: NodeJS.ProcessEnv
-
-  /**
-   * An array of metaFiles glob patterns to watch
-   */
-  metaFiles?: MetaFile[]
-
-  /**
-   * An array of suites for which to run tests
-   */
-  suites: Suite[]
 
   /**
    * Set the tests runner reporter via the CLI flag
@@ -181,84 +180,9 @@ export type TestRunnerOptions = {
     files: string[]
     tags: string[]
   }>
-}
+} & AssemblerRcFile
 
 /**
  * Options accepted by the project bundler
  */
-export type BundlerOptions = {
-  /**
-   * An array of metaFiles glob patterns to copy the
-   * files to the build folder
-   */
-  metaFiles?: MetaFile[]
-
-  /**
-   * Hooks to execute at different stages
-   */
-  hooks?: Pick<NonNullable<RcFile['hooks']>, 'onBuildCompleted' | 'onBuildStarting'>
-}
-
-/**
- * Entry to add a middleware to a given middleware stack
- * via the CodeTransformer
- */
-export type MiddlewareNode = {
-  /**
-   * If you are adding a named middleware, then you must
-   * define the name.
-   */
-  name?: string
-
-  /**
-   * The path to the middleware file
-   *
-   * @example
-   *  `@adonisjs/static/static_middleware`
-   *  `#middlewares/silent_auth.js`
-   */
-  path: string
-
-  /**
-   * The position to add the middleware. If `before`
-   * middleware will be added at the first position and
-   * therefore will be run before all others
-   *
-   * @default 'after'
-   */
-  position?: 'before' | 'after'
-}
-
-/**
- * Policy node to be added to the list of policies.
- */
-export type BouncerPolicyNode = {
-  /**
-   * Policy name
-   */
-  name: string
-
-  /**
-   * Policy import path
-   */
-  path: string
-}
-
-/**
- * Defines the structure of an environment variable validation
- * definition
- */
-export type EnvValidationNode = {
-  /**
-   * Write a leading comment on top of your variables
-   */
-  leadingComment?: string
-
-  /**
-   * A key-value pair of env variables and their validation
-   *
-   * @example
-   *  MY_VAR: 'Env.schema.string.optional()'
-   */
-  variables: Record<string, string>
-}
+export type BundlerOptions = AssemblerRcFile

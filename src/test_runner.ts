@@ -7,19 +7,20 @@
  * file that was distributed with this source code.
  */
 
-import picomatch from 'picomatch'
 import type tsStatic from 'typescript'
+import { cliui } from '@poppinss/cliui'
+import type Hooks from '@poppinss/hooks'
+import { fileURLToPath } from 'node:url'
+import { type FSWatcher } from 'chokidar'
 import { type ResultPromise } from 'execa'
-import { cliui, type Logger } from '@poppinss/cliui'
-import type { Watcher } from '@poppinss/chokidar-ts'
+import string from '@poppinss/utils/string'
+import { type UnWrapLazyImport } from '@poppinss/utils/types'
 
-import type { TestRunnerOptions } from './types.js'
-import { getPort, isDotEnvFile, runNode, watch } from './utils.js'
-
-/**
- * Instance of CLIUI
- */
-const ui = cliui()
+import debug from './debug.ts'
+import { FileSystem } from './file_system.ts'
+import type { TestRunnerOptions } from './types/common.ts'
+import { type WatcherHooks, type TestRunnerHooks } from './types/hooks.ts'
+import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
 
 /**
  * Exposes the API to run Japa tests and optionally watch for file
@@ -31,51 +32,8 @@ const ui = cliui()
  *    will be re-run.
  *  - Otherwise, all tests will re-run with respect to the initial
  *    filters applied when running the `node ace test` command.
- *
  */
 export class TestRunner {
-  #cwd: URL
-  #logger = ui.logger
-  #options: TestRunnerOptions
-
-  /**
-   * The script file to run as a child process
-   */
-  #scriptFile: string = 'bin/test.js'
-
-  /**
-   * Pico matcher function to check if the filepath is
-   * part of the `metaFiles` glob patterns
-   */
-  #isMetaFile: picomatch.Matcher
-
-  /**
-   * Pico matcher function to check if the filepath is
-   * part of a test file.
-   */
-  #isTestFile: picomatch.Matcher
-
-  /**
-   * Arguments to pass to the "bin/test.js" file.
-   */
-  #scriptArgs: string[]
-
-  /**
-   * Set of initial filters applied when running the test
-   * command. In watch mode, we will append an additional
-   * filter to run tests only for the file that has been
-   * changed.
-   */
-  #initialFiltersArgs: string[]
-
-  /**
-   * In watch mode, after a file is changed, we wait for the current
-   * set of tests to finish before triggering a re-run. Therefore,
-   * we use this flag to know if we are already busy in running
-   * tests and ignore file-changes.
-   */
-  #isBusy: boolean = false
-
   /**
    * External listeners that are invoked when child process
    * gets an error or closes
@@ -84,49 +42,70 @@ export class TestRunner {
   #onClose?: (exitCode: number) => any
 
   /**
+   * The stickyPort is set by the startAndWatch method and we will
+   * continue to use this port during re-runs
+   */
+  #stickyPort!: string
+
+  /**
+   * Reference to chokidar watcher
+   */
+  #watcher?: FSWatcher
+
+  /**
    * Reference to the test script child process
    */
-  #testScript?: ResultPromise
+  #testsProcess?: ResultPromise
 
   /**
-   * Reference to the watcher
+   * Filesystem is used to decide which files to watch or entertain in watch
+   * mode
    */
-  #watcher?: ReturnType<Watcher['watch']>
+  #fileSystem!: FileSystem
 
   /**
-   * Getting reference to colors library from logger
+   * Hooks to execute custom actions during the tests runner lifecycle
    */
-  get #colors() {
-    return this.#logger.getColors()
-  }
+  #hooks!: Hooks<
+    {
+      [K in keyof TestRunnerHooks]: [
+        Parameters<UnWrapLazyImport<TestRunnerHooks[K][number]>>,
+        Parameters<UnWrapLazyImport<TestRunnerHooks[K][number]>>,
+      ]
+    } & {
+      [K in keyof WatcherHooks]: [
+        Parameters<UnWrapLazyImport<WatcherHooks[K][number]>>,
+        Parameters<UnWrapLazyImport<WatcherHooks[K][number]>>,
+      ]
+    }
+  >
 
-  constructor(cwd: URL, options: TestRunnerOptions) {
-    this.#cwd = cwd
-    this.#options = options
+  /**
+   * Re-runs the test child process and throttle concurrent calls to
+   * ensure we do not end up with a long loop of restarts
+   */
+  #reRunTests = throttle(async (filters?: TestRunnerOptions['filters']) => {
+    if (this.#testsProcess) {
+      this.#testsProcess.removeAllListeners()
+      this.#testsProcess.kill('SIGKILL')
+    }
+    await this.#runTests(this.#stickyPort, filters)
+  }, 'reRunTests')
 
-    this.#isMetaFile = picomatch((this.#options.metaFiles || []).map(({ pattern }) => pattern))
+  /**
+   * CLI UI to log colorful messages
+   */
+  ui = cliui()
 
-    /**
-     * Create a test file watch by collection all the globs
-     * used by all the suites. However, if a suite filter
-     * was used, then we only collect glob for the mentioned
-     * suites.
-     */
-    this.#isTestFile = picomatch(
-      this.#options.suites
-        .filter((suite) => {
-          if (this.#options.filters.suites) {
-            return this.#options.filters.suites.includes(suite.name)
-          }
-          return true
-        })
-        .map((suite) => suite.files)
-        .flat(1)
-    )
+  /**
+   * The script file to run as a child process
+   */
+  scriptFile: string = 'bin/test.ts'
 
-    this.#scriptArgs = this.#convertOptionsToArgs().concat(this.#options.scriptArgs)
-    this.#initialFiltersArgs = this.#convertFiltersToArgs(this.#options.filters)
-  }
+  constructor(
+    public cwd: URL,
+    public options: TestRunnerOptions
+  ) {}
 
   /**
    * Convert test runner options to the CLI args
@@ -134,23 +113,23 @@ export class TestRunner {
   #convertOptionsToArgs() {
     const args: string[] = []
 
-    if (this.#options.reporters) {
+    if (this.options.reporters) {
       args.push('--reporters')
-      args.push(this.#options.reporters.join(','))
+      args.push(this.options.reporters.join(','))
     }
 
-    if (this.#options.timeout !== undefined) {
+    if (this.options.timeout !== undefined) {
       args.push('--timeout')
-      args.push(String(this.#options.timeout))
+      args.push(String(this.options.timeout))
     }
 
-    if (this.#options.failed) {
+    if (this.options.failed) {
       args.push('--failed')
     }
 
-    if (this.#options.retries !== undefined) {
+    if (this.options.retries !== undefined) {
       args.push('--retries')
-      args.push(String(this.#options.retries))
+      args.push(String(this.options.retries))
     }
 
     return args
@@ -158,10 +137,6 @@ export class TestRunner {
 
   /**
    * Converts all known filters to CLI args.
-   *
-   * The following code snippet may seem like repetitive code. But, it
-   * is done intentionally to have visibility around how each filter
-   * is converted to an arg.
    */
   #convertFiltersToArgs(filters: TestRunnerOptions['filters']): string[] {
     const args: string[] = []
@@ -197,7 +172,7 @@ export class TestRunner {
    * Conditionally clear the terminal screen
    */
   #clearScreen() {
-    if (this.#options.clearScreen) {
+    if (this.options.clearScreen) {
       process.stdout.write('\u001Bc')
     }
   }
@@ -205,107 +180,91 @@ export class TestRunner {
   /**
    * Runs tests
    */
-  #runTests(
-    port: string,
-    mode: 'blocking' | 'nonblocking',
-    filters?: TestRunnerOptions['filters']
-  ) {
-    this.#isBusy = true
-
+  async #runTests(port: string, filters?: TestRunnerOptions['filters']) {
     /**
-     * If inline filters are defined, then we ignore the
-     * initial filters
+     * Execute the registered before creating the child process. This will allow
+     * hooks to modify the options before they are used.
      */
-    const scriptArgs = filters
-      ? this.#convertFiltersToArgs(filters).concat(this.#scriptArgs)
-      : this.#initialFiltersArgs.concat(this.#scriptArgs)
+    await this.#hooks.runner('testsStarting').run(this)
+    debug('running tests using "%s" file, options %O', this.scriptFile, this.options)
 
-    this.#testScript = runNode(this.#cwd, {
-      script: this.#scriptFile,
-      reject: true,
-      env: { PORT: port, ...this.#options.env },
-      nodeArgs: this.#options.nodeArgs,
-      scriptArgs,
+    return new Promise<void>(async (resolve) => {
+      /**
+       * If inline filters are defined, then we ignore the
+       * initial filters
+       */
+      const scriptArgs = this.#convertOptionsToArgs()
+        .concat(this.options.scriptArgs)
+        .concat(
+          this.#convertFiltersToArgs({
+            ...this.options.filters,
+            ...filters,
+          })
+        )
+
+      this.#testsProcess = runNode(this.cwd, {
+        script: this.scriptFile,
+        reject: true,
+        env: { PORT: port, ...this.options.env },
+        nodeArgs: this.options.nodeArgs,
+        scriptArgs,
+      })
+
+      this.#testsProcess
+        .then((result) => {
+          this.#hooks
+            .runner('testsFinished')
+            .run(this)
+            .catch((error) => {
+              this.ui.logger.error('One of the "testsFinished" hooks failed')
+              this.ui.logger.fatal(error)
+            })
+            .finally(() => {
+              if (!this.#watcher) {
+                this.#onClose?.(result.exitCode!)
+                this.close()
+              }
+            })
+        })
+        .catch((error) => {
+          if (!this.#watcher) {
+            this.#onError?.(error)
+            this.close()
+          } else {
+            this.ui.logger.info('Underlying HTTP server died. Still watching for changes')
+          }
+        })
+        .finally(() => resolve())
     })
-
-    this.#testScript
-      .then((result) => {
-        if (mode === 'nonblocking') {
-          this.#onClose?.(result.exitCode!)
-          this.close()
-        }
-      })
-      .catch((error) => {
-        if (mode === 'nonblocking') {
-          this.#onError?.(error)
-          this.close()
-        }
-      })
-      .finally(() => {
-        this.#isBusy = false
-      })
   }
 
   /**
-   * Re-run tests with additional inline filters. Should be
-   * executed in watch mode only.
+   * Handles file change event
    */
-  #rerunTests(port: string, filters?: TestRunnerOptions['filters']) {
-    if (this.#testScript) {
-      this.#testScript.removeAllListeners()
-      this.#testScript.kill('SIGKILL')
-    }
-
-    this.#runTests(port, 'blocking', filters)
-  }
-
-  /**
-   * Handles a non TypeScript file change
-   */
-  #handleFileChange(action: string, port: string, relativePath: string) {
-    if (this.#isBusy) {
-      return
-    }
-
-    if (isDotEnvFile(relativePath) || this.#isMetaFile(relativePath)) {
-      this.#clearScreen()
-      this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
-      this.#rerunTests(port)
-    }
-  }
-
-  /**
-   * Handles TypeScript source file change
-   */
-  #handleSourceFileChange(action: string, port: string, relativePath: string) {
-    if (this.#isBusy) {
+  #handleFileChange(filePath: string, action: string) {
+    const file = this.#fileSystem.inspect(filePath)
+    if (!file) {
       return
     }
 
     this.#clearScreen()
-    this.#logger.log(`${this.#colors.green(action)} ${relativePath}`)
+    this.ui.logger.log(`${this.ui.colors.green(action)} ${filePath}`)
 
-    /**
-     * If changed file is a test file after considering the initial filters,
-     * then only run that file
-     */
-    if (this.#isTestFile(relativePath)) {
-      this.#rerunTests(port, {
-        ...this.#options.filters,
-        files: [relativePath],
-      })
-      return
+    if (file.fileType === 'test') {
+      this.#reRunTests({ files: [filePath] })
+    } else {
+      this.#reRunTests()
     }
-
-    this.#rerunTests(port)
   }
 
   /**
-   * Set a custom CLI UI logger
+   * Registers inline hooks for the file changes and restarts the
+   * HTTP server when a file gets changed.
    */
-  setLogger(logger: Logger) {
-    this.#logger = logger
-    return this
+  #registerServerRestartHooks() {
+    this.#hooks.add('fileAdded', (filePath) => this.#handleFileChange(filePath, 'add'))
+    this.#hooks.add('fileChanged', (filePath) => this.#handleFileChange(filePath, 'update'))
+    this.#hooks.add('fileRemoved', (filePath) => this.#handleFileChange(filePath, 'delete'))
   }
 
   /**
@@ -331,9 +290,9 @@ export class TestRunner {
    */
   async close() {
     await this.#watcher?.close()
-    if (this.#testScript) {
-      this.#testScript.removeAllListeners()
-      this.#testScript.kill('SIGKILL')
+    if (this.#testsProcess) {
+      this.#testsProcess.removeAllListeners()
+      this.#testsProcess.kill('SIGKILL')
     }
   }
 
@@ -341,81 +300,96 @@ export class TestRunner {
    * Runs tests
    */
   async run() {
-    const port = String(await getPort(this.#cwd))
+    this.#stickyPort = String(await getPort(this.cwd))
+    this.#hooks = await loadHooks(this.options.hooks, [
+      'testsStarting',
+      'testsFinished',
+      'fileAdded',
+      'fileChanged',
+      'fileRemoved',
+    ])
 
     this.#clearScreen()
-
-    this.#logger.info('booting application to run tests...')
-    this.#runTests(port, 'nonblocking')
+    this.ui.logger.info('booting application to run tests...')
+    await this.#runTests(this.#stickyPort)
   }
 
   /**
    * Run tests in watch mode
    */
   async runAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
-    const port = String(await getPort(this.#cwd))
-
-    this.#clearScreen()
-
-    this.#logger.info('booting application to run tests...')
-    this.#runTests(port, 'blocking')
-
-    /**
-     * Create watcher using tsconfig.json file
-     */
-    const output = watch(this.#cwd, ts, options || {})
-    if (!output) {
-      this.#onClose?.(1)
+    const tsConfig = parseConfig(this.cwd, ts)
+    if (!tsConfig) {
       return
     }
 
+    this.#stickyPort = String(await getPort(this.cwd))
+    this.#fileSystem = new FileSystem(this.cwd, tsConfig, {
+      ...this.options,
+      suites: this.options.suites.filter((suite) => {
+        if (this.options.filters.suites) {
+          return this.options.filters.suites.includes(suite.name)
+        }
+        return true
+      }),
+    })
+    this.#hooks = await loadHooks(this.options.hooks, [
+      'testsStarting',
+      'testsFinished',
+      'fileAdded',
+      'fileChanged',
+      'fileRemoved',
+    ])
+    this.#registerServerRestartHooks()
+
+    this.#clearScreen()
+    this.ui.logger.info('booting application to run tests...')
+    await this.#runTests(this.#stickyPort)
+
     /**
-     * Storing reference to watcher, so that we can close it
-     * when HTTP server exists with error
+     * Create watcher
      */
-    this.#watcher = output.chokidar
+    this.#watcher = watch({
+      usePolling: options?.poll ?? false,
+      cwd: fileURLToPath(this.cwd),
+      ignoreInitial: true,
+      ignored: (file, stats) => {
+        if (!stats) {
+          return false
+        }
+        if (stats.isFile()) {
+          return !this.#fileSystem.shouldWatchFile(file)
+        }
+        return !this.#fileSystem.shouldWatchDirectory(file)
+      },
+    })
 
     /**
      * Notify the watcher is ready
      */
-    output.watcher.on('watcher:ready', () => {
-      this.#logger.info('watching file system for changes...')
+    this.#watcher.on('ready', () => {
+      this.ui.logger.info('watching file system for changes...')
     })
 
     /**
      * Cleanup when watcher dies
      */
-    output.chokidar.on('error', (error) => {
-      this.#logger.warning('file system watcher failure')
-      this.#logger.fatal(error as any)
+    this.#watcher.on('error', (error: any) => {
+      this.ui.logger.warning('file system watcher failure')
+      this.ui.logger.fatal(error as any)
+
       this.#onError?.(error)
-      output.chokidar.close()
+      this.#watcher?.close()
     })
 
-    /**
-     * Changes in TypeScript source file
-     */
-    output.watcher.on('source:add', ({ relativePath }) =>
-      this.#handleSourceFileChange('add', port, relativePath)
+    this.#watcher.on('add', (filePath) =>
+      this.#hooks.runner('fileAdded').run(string.toUnixSlash(filePath), this)
     )
-    output.watcher.on('source:change', ({ relativePath }) =>
-      this.#handleSourceFileChange('update', port, relativePath)
+    this.#watcher.on('change', (filePath) =>
+      this.#hooks.runner('fileChanged').run(string.toUnixSlash(filePath), this)
     )
-    output.watcher.on('source:unlink', ({ relativePath }) =>
-      this.#handleSourceFileChange('delete', port, relativePath)
-    )
-
-    /**
-     * Changes in non-TypeScript source files
-     */
-    output.watcher.on('add', ({ relativePath }) =>
-      this.#handleFileChange('add', port, relativePath)
-    )
-    output.watcher.on('change', ({ relativePath }) =>
-      this.#handleFileChange('update', port, relativePath)
-    )
-    output.watcher.on('unlink', ({ relativePath }) =>
-      this.#handleFileChange('delete', port, relativePath)
+    this.#watcher.on('unlink', (filePath) =>
+      this.#hooks.runner('fileRemoved').run(string.toUnixSlash(filePath), this)
     )
   }
 }

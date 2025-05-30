@@ -8,138 +8,81 @@
  */
 
 import ts from 'typescript'
+import chokidar from 'chokidar'
 import { test } from '@japa/runner'
-import { watch } from '../../src/utils.js'
+import { parseConfig } from '../../src/utils.ts'
+import { FileSystem } from '../../src/file_system.ts'
 
-test.group('Watcher', (group) => {
-  group.tap((t) =>
-    t.disableTimeout().skip(!!process.env.CI, 'Skipping in CI. Cannot get chokidar to work')
-  )
+test.group('Watch', () => {
+  test('get watch files list based using file system', async ({ assert, cleanup, fs }, done) => {
+    await fs.createJson('tsconfig.json', {
+      include: ['**/*'],
+      exclude: ['node_modules/**', 'build', 'public/js/*', 'inertia'],
+    })
+    await fs.create('src/foo.ts', '')
+    await fs.create('src/index.ts', '')
+    await fs.create('public/js/app.js', '')
+    await fs.create('public/views/pages/home.edge', '')
+    await fs.create('public/css/app.css', '')
+    await fs.create('inertia/pages/home.tsx', '')
+    await fs.create('build/index.js', '')
+    await fs.create('node_modules/colors/index.ts', '')
+    await fs.create('.git/refs/heads/foo', '')
 
-  test('watch files included by the tsconfig.json', async ({ fs, assert, cleanup }, done) => {
-    assert.plan(1)
+    const fileSystem = new FileSystem(fs.basePath, parseConfig(fs.basePath, ts)!, {
+      suites: [],
+      metaFiles: [
+        {
+          pattern: 'public/**/*.edge',
+          reloadServer: false,
+        },
+      ],
+    })
 
-    await fs.create(
-      'tsconfig.json',
-      JSON.stringify({
-        include: ['./**/*'],
-      })
-    )
-    await fs.create('foo.ts', '')
+    const watcher = chokidar.watch(['.'], {
+      ignored(file, stats) {
+        if (!stats) {
+          return false
+        }
+        if (stats.isFile()) {
+          return !fileSystem.shouldWatchFile(file)
+        }
+        return !fileSystem.shouldWatchDirectory(file)
+      },
+      cwd: fs.basePath,
+    })
+    cleanup(() => watcher.close())
 
-    const output = watch(fs.baseUrl, ts, {})
-    cleanup(() => output!.chokidar.close())
-
-    output!.watcher.on('source:add', (file) => {
-      assert.equal(file.relativePath, 'bar.ts')
+    watcher.on('ready', () => {
+      assert.snapshot(watcher.getWatched()).matchInline(`
+        {
+          ".": [
+            "public",
+            "src",
+          ],
+          "..": [
+            "tmp",
+          ],
+          "public": [
+            "css",
+            "js",
+            "views",
+          ],
+          "public/css": [],
+          "public/js": [],
+          "public/views": [
+            "pages",
+          ],
+          "public/views/pages": [
+            "home.edge",
+          ],
+          "src": [
+            "foo.ts",
+            "index.ts",
+          ],
+        }
+      `)
       done()
-    })
-
-    output!.watcher.on('watcher:ready', async () => {
-      await fs.create('bar.ts', '')
-    })
-  }).waitForDone()
-
-  test('emit source:change when file is changed', async ({ fs, assert, cleanup }, done) => {
-    assert.plan(1)
-
-    await fs.create(
-      'tsconfig.json',
-      JSON.stringify({
-        include: ['./**/*'],
-      })
-    )
-    await fs.create('foo.ts', '')
-
-    const output = watch(fs.baseUrl, ts, {})
-    cleanup(() => output!.chokidar.close())
-
-    output!.watcher.on('source:change', (file) => {
-      assert.equal(file.relativePath, 'foo.ts')
-      done()
-    })
-
-    output!.watcher.on('watcher:ready', async () => {
-      await fs.create('foo.ts', 'hello world')
-    })
-  }).waitForDone()
-
-  test('emit source:unlink when file is deleted', async ({ fs, assert, cleanup }, done) => {
-    assert.plan(1)
-
-    await fs.create(
-      'tsconfig.json',
-      JSON.stringify({
-        include: ['./**/*'],
-      })
-    )
-    await fs.create('foo.ts', '')
-
-    const output = watch(fs.baseUrl, ts, {})
-    cleanup(() => output!.chokidar.close())
-
-    output!.watcher.on('source:unlink', (file) => {
-      assert.equal(file.relativePath, 'foo.ts')
-      done()
-    })
-
-    output!.watcher.on('watcher:ready', async () => {
-      await fs.remove('foo.ts')
-    })
-  }).waitForDone()
-
-  test('do not emit source:add when file is excluded by tsconfig.json', async ({
-    fs,
-    assert,
-    cleanup,
-  }) => {
-    await fs.create(
-      'tsconfig.json',
-      JSON.stringify({
-        include: ['./**/*'],
-        exclude: ['./baz.ts'],
-      })
-    )
-    await fs.create('foo.ts', '')
-
-    const output = watch(fs.baseUrl, ts, {})
-    cleanup(() => output!.chokidar.close())
-
-    output!.watcher.on('source:add', () => {
-      assert.fail('Never expected to reach here')
-    })
-
-    output!.watcher.on('watcher:ready', async () => {
-      await fs.create('baz.ts', '')
-    })
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-  })
-
-  test('emit add when files other than typescript source files are created', async ({
-    fs,
-    assert,
-    cleanup,
-  }, done) => {
-    assert.plan(1)
-
-    await fs.create(
-      'tsconfig.json',
-      JSON.stringify({
-        include: ['./**/*'],
-      })
-    )
-    await fs.create('foo.ts', '')
-
-    const output = watch(fs.baseUrl, ts, {})
-    cleanup(() => output!.chokidar.close())
-
-    output!.watcher.on('add', (file) => {
-      assert.equal(file.relativePath, 'foo.md')
-      done()
-    })
-
-    output!.watcher.on('watcher:ready', async () => {
-      await fs.create('foo.md', '')
     })
   }).waitForDone()
 })

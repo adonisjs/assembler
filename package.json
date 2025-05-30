@@ -3,7 +3,7 @@
   "description": "Provides utilities to run AdonisJS development server and build project for production",
   "version": "7.8.2",
   "engines": {
-    "node": ">=20.6.0"
+    "node": ">=24.0.0"
   },
   "main": "build/index.js",
   "type": "module",
@@ -15,7 +15,7 @@
   "exports": {
     ".": "./build/index.js",
     "./code_transformer": "./build/src/code_transformer/main.js",
-    "./types": "./build/src/types.js"
+    "./types": "./build/src/types/main.js"
   },
   "scripts": {
     "pretest": "npm run lint",
@@ -96,14 +96,14 @@
   "tsup": {
     "entry": [
       "./index.ts",
-      "./src/types.ts",
+      "./src/types/main.ts",
       "./src/code_transformer/main.ts"
     ],
     "outDir": "./build",
     "clean": true,
     "format": "esm",
     "dts": false,
-    "sourcemap": true,
+    "sourcemap": false,
     "target": "esnext"
   },
   "release-it": {
@@ -141,9 +141,7 @@
       "bin/**",
       "tmp/**",
       "examples/**",
-      "src/dev_server.ts",
-      "src/test_runner.ts",
-      "src/assets_dev_server.ts"
+      "src/test_runner.ts"
     ]
   },
   "prettier": "@adonisjs/prettier-config"

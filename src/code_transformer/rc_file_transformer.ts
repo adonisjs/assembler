@@ -18,7 +18,7 @@ import {
   type FormatCodeSettings,
   type ArrayLiteralExpression,
 } from 'ts-morph'
-import { type RcFileAssemblerHooks } from '../types/common.ts'
+import { type AssemblerRcFile } from '../types/common.ts'
 
 const ALLOWED_ENVIRONMENTS = ['web', 'console', 'test', 'repl'] as const
 
@@ -349,7 +349,7 @@ export class RcFileTransformer {
   /**
    * Add a new assembler hook
    */
-  addAssemblerHook(type: keyof RcFileAssemblerHooks, path: string) {
+  addAssemblerHook(type: keyof Exclude<AssemblerRcFile['hooks'], undefined>, path: string) {
     const hooksProperty = this.#getPropertyAssignmentInDefineConfigCall('hooks', '{}')
 
     const hooks = hooksProperty.getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression)

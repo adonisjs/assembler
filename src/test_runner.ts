@@ -326,7 +326,7 @@ export class TestRunner {
     this.#stickyPort = String(await getPort(this.cwd))
     this.#fileSystem = new FileSystem(this.cwd, tsConfig, {
       ...this.options,
-      suites: this.options.suites.filter((suite) => {
+      suites: this.options.suites?.filter((suite) => {
         if (this.options.filters.suites) {
           return this.options.filters.suites.includes(suite.name)
         }

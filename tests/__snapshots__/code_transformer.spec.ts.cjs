@@ -426,7 +426,7 @@ export default defineConfig({
     () => import('@adonisjs/core/commands')
   ],
   hooks: {
-    onBuildCompleted: [() => import('@adonisjs/vite/hooks/onBuildCompleted')]
+    buildFinished: [() => import('@adonisjs/vite/hooks/onBuildCompleted')]
   }
 })
 "`

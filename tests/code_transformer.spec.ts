@@ -902,7 +902,7 @@ test.group('Code Transformer | addAssemblerHook', (group) => {
     const transformer = new CodeTransformer(fs.baseUrl)
 
     await transformer.updateRcFile((rcFile) =>
-      rcFile.addAssemblerHook('onBuildCompleted', '@adonisjs/vite/hooks/onBuildCompleted')
+      rcFile.addAssemblerHook('buildFinished', '@adonisjs/vite/hooks/onBuildCompleted')
     )
 
     const file = await fs.contents('adonisrc.ts')
@@ -913,8 +913,8 @@ test.group('Code Transformer | addAssemblerHook', (group) => {
     const transformer = new CodeTransformer(fs.baseUrl)
 
     await transformer.updateRcFile((rcFile) => {
-      rcFile.addAssemblerHook('onBuildCompleted', '@adonisjs/vite/hooks/onBuildCompleted')
-      rcFile.addAssemblerHook('onBuildCompleted', '@adonisjs/vite/hooks/onBuildCompleted')
+      rcFile.addAssemblerHook('buildFinished', '@adonisjs/vite/hooks/onBuildCompleted')
+      rcFile.addAssemblerHook('buildFinished', '@adonisjs/vite/hooks/onBuildCompleted')
     })
 
     const file = await fs.contents('adonisrc.ts')

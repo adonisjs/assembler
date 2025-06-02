@@ -8,13 +8,13 @@
  */
 
 import { fileURLToPath } from 'node:url'
-import { basename, dirname, join, relative } from 'node:path'
 import string from '@poppinss/utils/string'
 import { isScriptFile } from '@poppinss/utils'
 import { fsReadAll } from '@poppinss/utils/fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { type OneOrMore } from '@poppinss/utils/types'
 import StringBuilder from '@poppinss/utils/string_builder'
+import { basename, dirname, join, relative } from 'node:path'
 import { installPackage, detectPackageManager } from '@antfu/install-pkg'
 import {
   Node,
@@ -26,13 +26,13 @@ import {
   type FormatCodeSettings,
 } from 'ts-morph'
 
+import debug from '../debug.ts'
 import { RcFileTransformer } from './rc_file_transformer.ts'
 import type {
   MiddlewareNode,
   EnvValidationNode,
   BouncerPolicyNode,
 } from '../types/code_transformer.ts'
-import debug from '../debug.ts'
 
 /**
  * This class is responsible for updating
@@ -511,14 +511,14 @@ export class CodeTransformer {
         })
 
         return filesList.map((filePath) => {
-          const name = new StringBuilder(relative(sourcePath, filePath))
+          const name = new StringBuilder(string.toUnixSlash(relative(sourcePath, filePath)))
             .removeExtension()
             .pascalCase()
             .toString()
 
           const importPath = importAlias
-            ? `${importAlias}/${new StringBuilder(relative(sourcePath, filePath)).removeExtension().toString()}`
-            : relative(outputDir, filePath)
+            ? `${importAlias}/${new StringBuilder(string.toUnixSlash(relative(sourcePath, filePath))).removeExtension().toString()}`
+            : string.toUnixSlash(relative(outputDir, filePath))
 
           return {
             name: output.transformName?.(name) ?? name,

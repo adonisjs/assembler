@@ -12,6 +12,7 @@ import { test } from '@japa/runner'
 import { cliui } from '@poppinss/cliui'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { DevServer } from '../index.ts'
+import { join } from 'node:path'
 
 test.group('DevServer', () => {
   test('start() and execute dev server hook', async ({ fs, assert, cleanup }) => {
@@ -216,7 +217,7 @@ test.group('DevServer', () => {
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(
       'bin/server.ts',
-      `process.send({ type: 'hot-hook:full-reload', path: 'start/routes.ts' });`
+      `process.send({ type: 'hot-hook:full-reload', path: '${join(fs.basePath, 'start/routes.ts')}' });`
     )
     await fs.create('start/routes.ts', ``)
     await fs.create('.env', 'PORT=3334')
@@ -247,7 +248,7 @@ test.group('DevServer', () => {
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(
       'bin/server.ts',
-      `process.send({ type: 'hot-hook:invalidated', path: 'start/routes.ts' });`
+      `process.send({ type: 'hot-hook:invalidated', path: '${join(fs.basePath, 'start/routes.ts')}' });`
     )
     await fs.create('start/routes.ts', ``)
     await fs.create('.env', 'PORT=3334')
@@ -276,7 +277,7 @@ test.group('DevServer', () => {
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(
       'bin/server.ts',
-      `process.send({ type: 'hot-hook:file-changed', action: 'change', path: 'start/routes.ts' });`
+      `process.send({ type: 'hot-hook:file-changed', action: 'change', path: '${join(fs.basePath, 'start/routes.ts')}' });`
     )
     await fs.create('start/routes.ts', ``)
     await fs.create('.env', 'PORT=3334')

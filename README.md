@@ -17,29 +17,10 @@ Assembler is built around the following goals.
 - House all development APIs needed by AdonisJS. Therefore, the scope of the Assembler might increase over time.
 
 ## Dev server
-You can start the HTTP server of an AdonisJS application using the `node --loader=ts-node/esm bin/server.ts` file. However, this approach has some limitations and may not provide the best DX.
+The development server can be started using the `DevServer` class. It will run `bin/server.ts` file from the AdonisJS project as a child process and monitor it for changes (in both HMR and watcher modes).
 
-### Using a file watcher
-You might be tempted to use the Node.js built-in file watcher with the `--watch` flag. However, the Node.js file watcher does not integrate with TypeScript. As a result, you will be tweaking its configuration options to get an ideal experience.
+Every time there is a file change, the `DevServer` will execute the file watcher hooks and if needed will restart the development server.
 
-On the other hand, the Assembler file watcher takes the following approach.
-
-- Parses the `tsconfig.json` file to collect the list of files that are part of your TypeScript project. As a result, if you ever want to ignore any file, you do it directly within the `tsconfig.json` file, and the watcher will pick it up.
-- It uses the `metaFiles` array defined inside the `adonisrc.ts` file to watch additional files that are not `.js` or `.ts`. It may be the Edge templates, markdown files, YAML files, etc.
-
-### Starting the asset bundler server
-If you create a full-stack application, the chances of using Webpack or Vite are high. Instead of starting your assets bundler inside a separate process, you can also rely on Assembler to start a parallel process for the assets bundler.
-
-The [`node ace serve` command](https://github.com/adonisjs/core/blob/next/commands/serve.ts#L88) detects the assets bundler used by your AdonisJS project and passes it to Assembler.
-
-Therefore, if you run the `serve` command with a `vite.config.js` file, you will notice that the Assembler will start both Vite and the AdonisJS HTTP server.
-
-### Picking a random port
-The PORT on which an AdonisJS application should run is configured inside the `.env` file of your AdonisJS application. However, you will often start multiple projects together and have to edit the `.env` file to ensure both projects run on different ports.
-
-With Assembler, you do not have to edit the `.env` files since Assembler will pick a random port of your application if the configured one is already in use.
-
-### Usage
 You may import and use the `DevServer` as follows.
 
 ```ts
@@ -92,9 +73,14 @@ devServer.onClose((exitCode) => {
 await devServer.runAndWatch(ts)
 ```
 
-You may start the dev server and assets bundler dev server using the `start` method.
+You may start the dev server in HMR mode by setting `hmr: true` and calling the `start` method.
 
 ```ts
+const devServer = new DevServer(appRoot, {
+  hmr: true,
+  // ...rest of the config
+})
+
 await devServer.start()
 ```
 
@@ -166,7 +152,6 @@ await runner.run()
 The `Bundler` is used to create the production build of an AdonisJS application. The following steps are performed to generate the build.
 
 - Clean up the existing build directory.
-- Compile frontend assets (if an assets bundler is configured).
 - Create JavaScript build using `tsc` (The TypeScript's official compiler).
 - Copy the `ace.js` file to the build folder. Since the ace file ends with the `.js` extension, it is not compiled by the TypeScript compiler.
 - Copy `package.json` and the **lock-file of the package manager** you are using to the `build` folder. This operation only supports `bun | npm | yarn | pnpm`. For other bundlers, you will have to copy the lock file manually.

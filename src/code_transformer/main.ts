@@ -7,8 +7,14 @@
  * file that was distributed with this source code.
  */
 
-import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { basename, dirname, join, relative } from 'node:path'
+import string from '@poppinss/utils/string'
+import { isScriptFile } from '@poppinss/utils'
+import { fsReadAll } from '@poppinss/utils/fs'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { type OneOrMore } from '@poppinss/utils/types'
+import StringBuilder from '@poppinss/utils/string_builder'
 import { installPackage, detectPackageManager } from '@antfu/install-pkg'
 import {
   Node,
@@ -26,6 +32,7 @@ import type {
   EnvValidationNode,
   BouncerPolicyNode,
 } from '../types/code_transformer.ts'
+import debug from '../debug.ts'
 
 /**
  * This class is responsible for updating
@@ -42,6 +49,7 @@ export class CodeTransformer {
    * Directory of the adonisjs project
    */
   #cwd: URL
+  #cwdPath: string
 
   /**
    * The TsMorph project
@@ -63,6 +71,7 @@ export class CodeTransformer {
 
   constructor(cwd: URL) {
     this.#cwd = cwd
+    this.#cwdPath = fileURLToPath(this.#cwd)
     this.project = new Project({
       tsConfigFilePath: join(fileURLToPath(this.#cwd), 'tsconfig.json'),
       manipulationSettings: { quoteKind: QuoteKind.Single },
@@ -235,7 +244,7 @@ export class CodeTransformer {
     /**
      * Get the `start/env.ts` source file
      */
-    const kernelUrl = fileURLToPath(new URL('./start/env.ts', this.#cwd))
+    const kernelUrl = join(this.#cwdPath, './start/env.ts')
     const file = this.project.getSourceFileOrThrow(kernelUrl)
 
     /**
@@ -308,7 +317,7 @@ export class CodeTransformer {
     /**
      * Get the `start/kernel.ts` source file
      */
-    const kernelUrl = fileURLToPath(new URL('./start/kernel.ts', this.#cwd))
+    const kernelUrl = join(this.#cwdPath, './start/kernel.ts')
     const file = this.project.getSourceFileOrThrow(kernelUrl)
 
     /**
@@ -345,7 +354,7 @@ export class CodeTransformer {
     /**
      * Get the `tests/bootstrap.ts` source file
      */
-    const testBootstrapUrl = fileURLToPath(new URL('./tests/bootstrap.ts', this.#cwd))
+    const testBootstrapUrl = join(this.#cwdPath, './tests/bootstrap.ts')
     const file = this.project.getSourceFileOrThrow(testBootstrapUrl)
 
     /**
@@ -383,7 +392,7 @@ export class CodeTransformer {
     /**
      * Get the `vite.config.ts` source file
      */
-    const viteConfigTsUrl = fileURLToPath(new URL('./vite.config.ts', this.#cwd))
+    const viteConfigTsUrl = join(this.#cwdPath, './vite.config.ts')
 
     const file = this.project.getSourceFile(viteConfigTsUrl)
     if (!file) {
@@ -438,7 +447,7 @@ export class CodeTransformer {
     /**
      * Get the `app/policies/main.ts` source file
      */
-    const kernelUrl = fileURLToPath(new URL('./app/policies/main.ts', this.#cwd))
+    const kernelUrl = join(this.#cwdPath, './app/policies/main.ts')
     const file = this.project.getSourceFileOrThrow(kernelUrl)
 
     /**
@@ -450,5 +459,88 @@ export class CodeTransformer {
 
     file.formatText(this.#editorSettings)
     await file.save()
+  }
+
+  /**
+   * Creates an index file that exports an object in which the key is the PascalCase
+   * name of the entity and the value is a dynamic import.
+   *
+   * For example, in case of controllers, the index file will be the list of controller
+   * names pointing a dynamically imported controller file.
+   *
+   * ```ts
+   * export const controllers = {
+   *   Login: () => import('#controllers/login_controller'),
+   *   Login: () => import('#controllers/login_controller'),
+   * }
+   * ```
+   *
+   * @param source
+   * @param outputPath
+   * @param importAlias
+   */
+  async makeEntityIndex(
+    input: OneOrMore<{ source: string; importAlias?: string }>,
+    output: {
+      destination: string
+      exportName?: string
+      transformName?: (name: string) => string
+      transformImport?: (modulePath: string) => string
+    }
+  ) {
+    const inputs = Array.isArray(input) ? input : [input]
+    const outputPath = join(this.#cwdPath, output.destination)
+    const outputDir = dirname(outputPath)
+    const exportName =
+      output.exportName ??
+      new StringBuilder(basename(output.destination)).removeExtension().camelCase()
+
+    debug(
+      'creating index for "%s" at destination "%s" using sources %O',
+      exportName,
+      outputPath,
+      inputs
+    )
+
+    const entries = await Promise.all(
+      inputs.map(async ({ source, importAlias }) => {
+        const sourcePath = join(this.#cwdPath, source)
+        const filesList = await fsReadAll(sourcePath, {
+          filter: isScriptFile,
+          pathType: 'absolute',
+        })
+
+        return filesList.map((filePath) => {
+          const name = new StringBuilder(relative(sourcePath, filePath))
+            .removeExtension()
+            .pascalCase()
+            .toString()
+
+          const importPath = importAlias
+            ? `${importAlias}/${new StringBuilder(relative(sourcePath, filePath)).removeExtension().toString()}`
+            : relative(outputDir, filePath)
+
+          return {
+            name: output.transformName?.(name) ?? name,
+            importPath: output.transformImport?.(importPath) ?? importPath,
+          }
+        })
+      })
+    )
+
+    const outputContents = entries
+      .flat(2)
+      .reduce<string[]>(
+        (result, entry) => {
+          debug('adding "%O" to the index', entry)
+          result.push(`  ${entry.name}: () => import('${entry.importPath}'),`)
+          return result
+        },
+        [`export const ${exportName} = {`]
+      )
+      .concat('}')
+
+    await mkdir(outputDir, { recursive: true })
+    await writeFile(outputPath, outputContents.join('\n'))
   }
 }

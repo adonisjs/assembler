@@ -11,6 +11,7 @@ import dedent from 'dedent'
 import { test } from '@japa/runner'
 import { readFile } from 'node:fs/promises'
 import type { FileSystem } from '@japa/file-system'
+import StringBuilder from '@poppinss/utils/string_builder'
 import { CodeTransformer } from '../src/code_transformer/main.ts'
 
 async function setupFakeAdonisproject(fs: FileSystem) {
@@ -921,5 +922,115 @@ test.group('Code Transformer | addAssemblerHook', (group) => {
     const occurrences = (file.match(/@adonisjs\/vite\/hooks\/onBuildCompleted/g) || []).length
 
     assert.equal(occurrences, 1)
+  })
+})
+
+test.group('Code Transformer | create entity index file', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('create index from flat and nested files', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create('app/controllers/posts_controller.ts', '')
+    await fs.create('app/controllers/user/posts_controller.ts', '')
+    await fs.create('app/controllers/auth/signup_controller.ts', '')
+    await fs.create('app/controllers/public/home_page.ts', '')
+
+    const outputPath = './.adonisjs/backend/controllers.ts'
+    await transformer.makeEntityIndex(
+      { source: './app/controllers', importAlias: '#controllers' },
+      {
+        destination: outputPath,
+      }
+    )
+
+    assert.snapshot(await fs.contents(outputPath)).matchInline(`
+      "export const controllers = {
+        AuthSignupController: () => import('#controllers/auth/signup_controller'),
+        PostsController: () => import('#controllers/posts_controller'),
+        PublicHomePage: () => import('#controllers/public/home_page'),
+        UserPostsController: () => import('#controllers/user/posts_controller'),
+      }"
+    `)
+  })
+
+  test('create index without the import alias', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create('app/controllers/posts_controller.ts', '')
+    await fs.create('app/controllers/user/posts_controller.ts', '')
+    await fs.create('app/controllers/auth/signup_controller.ts', '')
+    await fs.create('app/controllers/public/home_page.ts', '')
+
+    const outputPath = './.adonisjs/backend/controllers.ts'
+    await transformer.makeEntityIndex(
+      { source: './app/controllers' },
+      {
+        destination: outputPath,
+      }
+    )
+
+    assert.snapshot(await fs.contents(outputPath)).matchInline(`
+      "export const controllers = {
+        AuthSignupController: () => import('../../app/controllers/auth/signup_controller.ts'),
+        PostsController: () => import('../../app/controllers/posts_controller.ts'),
+        PublicHomePage: () => import('../../app/controllers/public/home_page.ts'),
+        UserPostsController: () => import('../../app/controllers/user/posts_controller.ts'),
+      }"
+    `)
+  })
+
+  test('apply name transformer', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create('app/controllers/posts_controller.ts', '')
+    await fs.create('app/controllers/user/posts_controller.ts', '')
+    await fs.create('app/controllers/auth/signup_controller.ts', '')
+    await fs.create('app/controllers/public/home_page.ts', '')
+
+    const outputPath = './.adonisjs/backend/controllers.ts'
+    await transformer.makeEntityIndex(
+      { source: './app/controllers' },
+      {
+        destination: outputPath,
+        transformName(name) {
+          return new StringBuilder(name).removeSuffix('Controller').toString()
+        },
+      }
+    )
+
+    assert.snapshot(await fs.contents(outputPath)).matchInline(`
+      "export const controllers = {
+        AuthSignup: () => import('../../app/controllers/auth/signup_controller.ts'),
+        Posts: () => import('../../app/controllers/posts_controller.ts'),
+        PublicHomePage: () => import('../../app/controllers/public/home_page.ts'),
+        UserPosts: () => import('../../app/controllers/user/posts_controller.ts'),
+      }"
+    `)
+  })
+
+  test('apply import path transformer', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create('app/controllers/posts_controller.ts', '')
+    await fs.create('app/controllers/user/posts_controller.ts', '')
+    await fs.create('app/controllers/auth/signup_controller.ts', '')
+    await fs.create('app/controllers/public/home_page.ts', '')
+
+    const outputPath = './.adonisjs/backend/controllers.ts'
+    await transformer.makeEntityIndex(
+      { source: './app/controllers' },
+      {
+        destination: outputPath,
+        transformImport(modulePath) {
+          return modulePath.replace(new RegExp('../../app/controllers'), '#controllers')
+        },
+      }
+    )
+
+    assert.snapshot(await fs.contents(outputPath)).matchInline(`
+      "export const controllers = {
+        AuthSignupController: () => import('#controllers/auth/signup_controller.ts'),
+        PostsController: () => import('#controllers/posts_controller.ts'),
+        PublicHomePage: () => import('#controllers/public/home_page.ts'),
+        UserPostsController: () => import('#controllers/user/posts_controller.ts'),
+      }"
+    `)
   })
 })

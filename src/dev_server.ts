@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import { relative } from 'node:path'
 import type tsStatic from 'typescript'
 import { cliui } from '@poppinss/cliui'
 import type Hooks from '@poppinss/hooks'
@@ -34,6 +35,11 @@ import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './uti
  * or registered as metaFiles.
  */
 export class DevServer {
+  /**
+   * File path computed from the cwd
+   */
+  #cwdPath: string
+
   /**
    * External listeners that are invoked when child process
    * gets an error or closes
@@ -117,7 +123,9 @@ export class DevServer {
   constructor(
     public cwd: URL,
     public options: DevServerOptions
-  ) {}
+  ) {
+    this.#cwdPath = fileURLToPath(this.cwd)
+  }
 
   /**
    * Inspect if child process message is from AdonisJS HTTP server
@@ -261,18 +269,28 @@ export class DevServer {
           if (message.type === 'hot-hook:file-changed') {
             switch (message.action) {
               case 'add':
-                this.#hooks.runner('fileAdded').run(string.toUnixSlash(message.path), this)
+                this.#hooks
+                  .runner('fileAdded')
+                  .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), this)
                 break
               case 'change':
-                this.#hooks.runner('fileChanged').run(string.toUnixSlash(message.path), false, this)
+                this.#hooks
+                  .runner('fileChanged')
+                  .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), false, this)
                 break
               case 'unlink':
-                this.#hooks.runner('fileRemoved').run(string.toUnixSlash(message.path), this)
+                this.#hooks
+                  .runner('fileRemoved')
+                  .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), this)
             }
           } else if (message.type === 'hot-hook:full-reload') {
-            this.#hooks.runner('fileChanged').run(string.toUnixSlash(message.path), false, this)
+            this.#hooks
+              .runner('fileChanged')
+              .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), false, this)
           } else if (message.type === 'hot-hook:invalidated') {
-            this.#hooks.runner('fileChanged').run(string.toUnixSlash(message.path), true, this)
+            this.#hooks
+              .runner('fileChanged')
+              .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), true, this)
           }
         }
       })
@@ -293,7 +311,6 @@ export class DevServer {
           }
         })
         .finally(() => {
-          console.log('ere>>')
           resolve()
         })
     })
@@ -355,7 +372,10 @@ export class DevServer {
         ...this.options.env,
         HOT_HOOK_INCLUDE: this.#fileSystem.includes.join(','),
         HOT_HOOK_IGNORE: this.#fileSystem.excludes.join(','),
-        HOT_HOOK_RESTART: (this.options.metaFiles ?? []).map(({ pattern }) => pattern).join(','),
+        HOT_HOOK_RESTART: (this.options.metaFiles ?? [])
+          .filter(({ reloadServer }) => !!reloadServer)
+          .map(({ pattern }) => pattern)
+          .join(','),
       }
     }
 
@@ -394,7 +414,7 @@ export class DevServer {
      */
     this.#watcher = watch({
       usePolling: options?.poll ?? false,
-      cwd: fileURLToPath(this.cwd),
+      cwd: this.#cwdPath,
       ignoreInitial: true,
       ignored: (file, stats) => {
         if (!stats) {

@@ -12,6 +12,7 @@ import chokidar from 'chokidar'
 import { test } from '@japa/runner'
 import { parseConfig } from '../../src/utils.ts'
 import { FileSystem } from '../../src/file_system.ts'
+import string from '@poppinss/utils/string'
 
 test.group('Watch', () => {
   test('get watch files list based using file system', async ({ assert, cleanup, fs }, done) => {
@@ -54,7 +55,13 @@ test.group('Watch', () => {
     cleanup(() => watcher.close())
 
     watcher.on('ready', () => {
-      assert.snapshot(watcher.getWatched()).matchInline(`
+      const watchedFiles = watcher.getWatched()
+      assert.snapshot(
+        Object.keys(watcher.getWatched()).reduce<any>((result, key) => {
+          result[string.toUnixSlash(key)] = watchedFiles[key]
+          return result
+        }, {})
+      ).matchInline(`
         {
           ".": [
             "public",

@@ -386,7 +386,7 @@ export class TestRunner {
       this.#hooks.runner('fileAdded').run(string.toUnixSlash(filePath), this)
     )
     this.#watcher.on('change', (filePath) =>
-      this.#hooks.runner('fileChanged').run(string.toUnixSlash(filePath), this)
+      this.#hooks.runner('fileChanged').run(string.toUnixSlash(filePath), false, this)
     )
     this.#watcher.on('unlink', (filePath) =>
       this.#hooks.runner('fileRemoved').run(string.toUnixSlash(filePath), this)

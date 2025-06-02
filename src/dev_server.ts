@@ -171,8 +171,9 @@ export class DevServer {
    * Inspect if child process message is coming from hot-hook
    */
   #isHotHookMessage(message: unknown): message is {
-    type: string
+    type: 'hot-hook:file-changed' | 'hot-hook:invalidated' | 'hot-hook:full-reload'
     path: string
+    action?: 'add' | 'change' | 'unlink'
     paths?: string[]
   } {
     return (
@@ -196,9 +197,14 @@ export class DevServer {
   /**
    * Handles file change event
    */
-  #handleFileChange(filePath: string, action: string) {
+  #handleFileChange(filePath: string, action: string, hotReplaced?: boolean) {
     const file = this.#fileSystem.inspect(filePath)
     if (!file) {
+      return
+    }
+
+    if (hotReplaced) {
+      this.ui.logger.log(`${this.ui.colors.green('invalidated')} ${filePath}`)
       return
     }
 
@@ -206,9 +212,10 @@ export class DevServer {
       this.#clearScreen()
       this.ui.logger.log(`${this.ui.colors.green(action)} ${filePath}`)
       this.#restartHTTPServer()
-    } else {
-      this.ui.logger.log(`${this.ui.colors.green(action)} ${filePath}`)
+      return
     }
+
+    this.ui.logger.log(`${this.ui.colors.green(action)} ${filePath}`)
   }
 
   /**
@@ -217,7 +224,9 @@ export class DevServer {
    */
   #registerServerRestartHooks() {
     this.#hooks.add('fileAdded', (filePath) => this.#handleFileChange(filePath, 'add'))
-    this.#hooks.add('fileChanged', (filePath) => this.#handleFileChange(filePath, 'update'))
+    this.#hooks.add('fileChanged', (filePath, hotReplaced) =>
+      this.#handleFileChange(filePath, 'update', hotReplaced)
+    )
     this.#hooks.add('fileRemoved', (filePath) => this.#handleFileChange(filePath, 'delete'))
   }
 
@@ -248,7 +257,23 @@ export class DevServer {
         if (this.#isAdonisJSReadyMessage(message)) {
           await this.#postServerReady(message)
           resolve()
-        } else if (this.#isHotHookMessage(message)) {
+        } else if (this.#mode === 'hmr' && this.#isHotHookMessage(message)) {
+          if (message.type === 'hot-hook:file-changed') {
+            switch (message.action) {
+              case 'add':
+                this.#hooks.runner('fileAdded').run(string.toUnixSlash(message.path), this)
+                break
+              case 'change':
+                this.#hooks.runner('fileChanged').run(string.toUnixSlash(message.path), false, this)
+                break
+              case 'unlink':
+                this.#hooks.runner('fileRemoved').run(string.toUnixSlash(message.path), this)
+            }
+          } else if (message.type === 'hot-hook:full-reload') {
+            this.#hooks.runner('fileChanged').run(string.toUnixSlash(message.path), false, this)
+          } else if (message.type === 'hot-hook:invalidated') {
+            this.#hooks.runner('fileChanged').run(string.toUnixSlash(message.path), true, this)
+          }
         }
       })
 
@@ -267,7 +292,10 @@ export class DevServer {
             this.ui.logger.info('Underlying HTTP server died. Still watching for changes')
           }
         })
-        .finally(() => resolve())
+        .finally(() => {
+          console.log('ere>>')
+          resolve()
+        })
     })
   }
 
@@ -325,9 +353,9 @@ export class DevServer {
       this.options.nodeArgs = this.options.nodeArgs.concat('--import=hot-hook/register')
       this.options.env = {
         ...this.options.env,
-        HOT_HOOK_INCLUDES: this.#fileSystem.includes.join(','),
-        HOT_HOOK_EXCLUDES: this.#fileSystem.excludes.join(','),
-        HOT_HOOK_REGISTER: (this.options.metaFiles ?? []).map(({ pattern }) => pattern).join(','),
+        HOT_HOOK_INCLUDE: this.#fileSystem.includes.join(','),
+        HOT_HOOK_IGNORE: this.#fileSystem.excludes.join(','),
+        HOT_HOOK_RESTART: (this.options.metaFiles ?? []).map(({ pattern }) => pattern).join(','),
       }
     }
 
@@ -401,7 +429,7 @@ export class DevServer {
       this.#hooks.runner('fileAdded').run(string.toUnixSlash(filePath), this)
     )
     this.#watcher.on('change', (filePath) =>
-      this.#hooks.runner('fileChanged').run(string.toUnixSlash(filePath), this)
+      this.#hooks.runner('fileChanged').run(string.toUnixSlash(filePath), false, this)
     )
     this.#watcher.on('unlink', (filePath) =>
       this.#hooks.runner('fileRemoved').run(string.toUnixSlash(filePath), this)

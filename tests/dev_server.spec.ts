@@ -212,111 +212,91 @@ test.group('DevServer', () => {
     ])
   }).timeout(8 * 1000)
 
-  // test('should restart server if receive hot-hook message', async ({ assert, fs }) => {
-  //   await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
-  //   await fs.create(
-  //     'bin/server.js',
-  //     `process.send({ type: 'hot-hook:full-reload', path: '/foo' });`
-  //   )
-  //   await fs.create('.env', 'PORT=3334')
+  test('restart server if hot-hook:full-reload message is received', async ({ assert, fs }) => {
+    await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
+    await fs.create(
+      'bin/server.ts',
+      `process.send({ type: 'hot-hook:full-reload', path: 'start/routes.ts' });`
+    )
+    await fs.create('start/routes.ts', ``)
+    await fs.create('.env', 'PORT=3334')
 
-  //   const { logger } = cliui({ mode: 'raw' })
-  //   const devServer = new DevServer(fs.baseUrl, {
-  //     hmr: true,
-  //     nodeArgs: [],
-  //     scriptArgs: [],
-  //   }).setLogger(logger)
+    const devServer = new DevServer(fs.baseUrl, {
+      hmr: true,
+      nodeArgs: [],
+      scriptArgs: [],
+    })
 
-  //   await devServer.start()
-  //   await sleep(1000)
-  //   await devServer.close()
+    devServer.ui.switchMode('raw')
+    devServer.start(ts)
+    await sleep(1000)
 
-  //   const logMessages = logger.getLogs().map(({ message }) => message)
-  //   assert.isAtLeast(logMessages.filter((message) => message.includes('full-reload')).length, 1)
-  // })
+    await devServer.close()
 
-  // test('trigger onDevServerStarted and onSourceFileChanged when hot-hook message is received', async ({
-  //   assert,
-  //   fs,
-  // }) => {
-  //   let onDevServerStartedCalled = false
-  //   let onSourceFileChangedCalled = false
+    const logMessages = devServer.ui.logger.getLogs().map(({ message }) => message)
+    assert.isAtLeast(
+      logMessages.filter((message) => message.includes('green(update) start/routes.ts')).length,
+      1
+    )
+  }).disableTimeout()
 
-  //   await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
-  //   await fs.create(
-  //     'bin/server.js',
-  //     `process.send({ type: 'hot-hook:full-reload', path: '/foo' });`
-  //   )
-  //   await fs.create('.env', 'PORT=3334')
+  test('do not restart server when hot-hook:invalidated message is received', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
+    await fs.create(
+      'bin/server.ts',
+      `process.send({ type: 'hot-hook:invalidated', path: 'start/routes.ts' });`
+    )
+    await fs.create('start/routes.ts', ``)
+    await fs.create('.env', 'PORT=3334')
 
-  //   const { logger } = cliui({ mode: 'raw' })
-  //   const devServer = new DevServer(fs.baseUrl, {
-  //     hmr: true,
-  //     nodeArgs: [],
-  //     scriptArgs: [],
-  //     hooks: {
-  //       onDevServerStarted: [
-  //         async () => ({
-  //           default: () => {
-  //             onDevServerStartedCalled = true
-  //           },
-  //         }),
-  //       ],
-  //       onSourceFileChanged: [
-  //         async () => ({
-  //           default: () => {
-  //             onSourceFileChangedCalled = true
-  //           },
-  //         }),
-  //       ],
-  //     },
-  //   }).setLogger(logger)
+    const devServer = new DevServer(fs.baseUrl, {
+      hmr: true,
+      nodeArgs: [],
+      scriptArgs: [],
+    })
 
-  //   await devServer.start()
-  //   await sleep(1000)
-  //   await devServer.close()
+    devServer.ui.switchMode('raw')
+    devServer.start(ts)
+    await sleep(1000)
 
-  //   assert.isTrue(onDevServerStartedCalled)
-  //   assert.isTrue(onSourceFileChangedCalled)
-  // })
+    await devServer.close()
 
-  // test('should correctly display a relative path when a hot-hook message is received', async ({
-  //   assert,
-  //   fs,
-  // }) => {
-  //   await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
-  //   await fs.createJson('package.json', { type: 'module', hotHook: { boundaries: ['./app/**'] } })
-  //   await fs.create('app/controllers/app_controller.ts', 'console.log("foo")')
-  //   await fs.create(
-  //     'bin/server.js',
-  //     `
-  //     import { resolve } from 'path';
-  //     import '../app/controllers/app_controller.js';
-  //     `
-  //   )
-  //   await fs.create('.env', 'PORT=3334')
+    const logMessages = devServer.ui.logger.getLogs().map(({ message }) => message)
+    assert.isAtLeast(
+      logMessages.filter((message) => message.includes('green(invalidated) start/routes.ts'))
+        .length,
+      1
+    )
+  }).disableTimeout()
 
-  //   const { logger } = cliui({ mode: 'raw' })
-  //   const devServer = new DevServer(fs.baseUrl, {
-  //     hmr: true,
-  //     nodeArgs: [],
-  //     scriptArgs: [],
-  //   }).setLogger(logger)
+  test('handle hot-hook:file-changed event', async ({ assert, fs }) => {
+    await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
+    await fs.create(
+      'bin/server.ts',
+      `process.send({ type: 'hot-hook:file-changed', action: 'change', path: 'start/routes.ts' });`
+    )
+    await fs.create('start/routes.ts', ``)
+    await fs.create('.env', 'PORT=3334')
 
-  //   await devServer.start()
-  //   await sleep(2000)
-  //   await fs.create('app/controllers/app_controller.ts', 'console.log("bar")')
-  //   await sleep(2000)
-  //   await devServer.close()
+    const devServer = new DevServer(fs.baseUrl, {
+      hmr: true,
+      nodeArgs: [],
+      scriptArgs: [],
+    })
 
-  //   const logMessages = logger.getLogs().map(({ message }) => message)
+    devServer.ui.switchMode('raw')
+    devServer.start(ts)
+    await sleep(1000)
 
-  //   const relativePath = relative(
-  //     fs.basePath,
-  //     resolve(fs.basePath, 'app/controllers/app_controller.ts')
-  //   )
+    await devServer.close()
 
-  //   const expectedMessage = `green(full-reload) ${relativePath}`
-  //   assert.isAtLeast(logMessages.filter((message) => message.includes(expectedMessage)).length, 1)
-  // }).timeout(10_000)
+    const logMessages = devServer.ui.logger.getLogs().map(({ message }) => message)
+    assert.isAtLeast(
+      logMessages.filter((message) => message.includes('green(update) start/routes.ts')).length,
+      1
+    )
+  }).disableTimeout()
 })

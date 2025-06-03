@@ -214,10 +214,12 @@ test.group('DevServer', () => {
   }).timeout(8 * 1000)
 
   test('restart server if hot-hook:full-reload message is received', async ({ assert, fs }) => {
+    const filePath = join(fs.basePath, 'start/routes.ts')
+    console.log({ filePath })
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(
       'bin/server.ts',
-      `process.send({ type: 'hot-hook:full-reload', path: '${join(fs.basePath, 'start/routes.ts')}' });`
+      `process.send({ type: 'hot-hook:full-reload', path: '${filePath}' });`
     )
     await fs.create('start/routes.ts', ``)
     await fs.create('.env', 'PORT=3334')

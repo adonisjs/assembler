@@ -222,6 +222,7 @@ export class DevServer {
      * file is being imported.
      */
     if ((action === 'add' || action === 'delete') && this.mode === 'hmr') {
+      debug('ignoring add and delete actions in HMR mode %s', filePath)
       return
     }
 
@@ -229,6 +230,7 @@ export class DevServer {
      * Notify about the invalidated file
      */
     if (info && info.source === 'hot-hook' && info.hotReloaded) {
+      debug('hot reloading %s, info %O', filePath, info)
       this.ui.logger.log(`${this.ui.colors.green('invalidated')} ${filePath}`)
       return
     }
@@ -237,6 +239,7 @@ export class DevServer {
      * Do not do anything when fullReload is not enabled.
      */
     if (info && !info.fullReload) {
+      debug('ignoring full reload', filePath, info)
       return
     }
 
@@ -292,9 +295,13 @@ export class DevServer {
 
       this.#httpServer.on('message', async (message) => {
         if (this.#isAdonisJSReadyMessage(message)) {
+          debug('received http server ready message %O', message)
+
           await this.#postServerReady(message)
           resolve()
         } else if (this.#mode === 'hmr' && this.#isHotHookMessage(message)) {
+          debug('received hot-hook message %O', message)
+
           if (message.type === 'hot-hook:file-changed') {
             switch (message.action) {
               case 'add':

@@ -25,7 +25,15 @@ export type WatcherHooks = {
    * The hook is executed after a file has been changed in the watch mode.
    */
   fileChanged: LazyImport<
-    (filePath: string, hotReplaced: boolean, server: DevServer | TestRunner) => AsyncOrSync<void>
+    (
+      filePath: string,
+      info: {
+        source: 'hot-hook' | 'watcher'
+        hotReloaded: boolean
+        fullReload: boolean
+      },
+      server: DevServer | TestRunner
+    ) => AsyncOrSync<void>
   >[]
 
   /**

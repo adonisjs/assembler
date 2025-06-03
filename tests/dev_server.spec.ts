@@ -294,10 +294,14 @@ test.group('DevServer', () => {
 
     await devServer.close()
 
+    /**
+     * Do not restart server or notify about file changes in HMR mode
+     * when it is not an invalidated or full-reload instruction
+     */
     const logMessages = devServer.ui.logger.getLogs().map(({ message }) => message)
-    assert.isAtLeast(
+    assert.equal(
       logMessages.filter((message) => message.includes('green(update) start/routes.ts')).length,
-      1
+      0
     )
   }).disableTimeout()
 })

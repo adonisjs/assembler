@@ -205,14 +205,43 @@ export class DevServer {
   /**
    * Handles file change event
    */
-  #handleFileChange(filePath: string, action: string, hotReplaced?: boolean) {
-    const file = this.#fileSystem.inspect(filePath)
-    if (!file) {
+  #handleFileChange(
+    filePath: string,
+    action: 'add' | 'update' | 'delete',
+    info?: {
+      source: 'hot-hook' | 'watcher'
+      hotReloaded: boolean
+      fullReload: boolean
+    }
+  ) {
+    /**
+     * Ignore add and delete events in HMR mode and let hot-hook find the
+     * file via import first.
+     *
+     * Remember, hot-hook does not send the action as "add" or "delete" if this
+     * file is being imported.
+     */
+    if ((action === 'add' || action === 'delete') && this.mode === 'hmr') {
       return
     }
 
-    if (hotReplaced) {
+    /**
+     * Notify about the invalidated file
+     */
+    if (info && info.source === 'hot-hook' && info.hotReloaded) {
       this.ui.logger.log(`${this.ui.colors.green('invalidated')} ${filePath}`)
+      return
+    }
+
+    /**
+     * Do not do anything when fullReload is not enabled.
+     */
+    if (info && !info.fullReload) {
+      return
+    }
+
+    const file = this.#fileSystem.inspect(filePath)
+    if (!file) {
       return
     }
 
@@ -232,8 +261,8 @@ export class DevServer {
    */
   #registerServerRestartHooks() {
     this.#hooks.add('fileAdded', (filePath) => this.#handleFileChange(filePath, 'add'))
-    this.#hooks.add('fileChanged', (filePath, hotReplaced) =>
-      this.#handleFileChange(filePath, 'update', hotReplaced)
+    this.#hooks.add('fileChanged', (filePath, info) =>
+      this.#handleFileChange(filePath, 'update', info)
     )
     this.#hooks.add('fileRemoved', (filePath) => this.#handleFileChange(filePath, 'delete'))
   }
@@ -274,9 +303,15 @@ export class DevServer {
                   .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), this)
                 break
               case 'change':
-                this.#hooks
-                  .runner('fileChanged')
-                  .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), false, this)
+                this.#hooks.runner('fileChanged').run(
+                  string.toUnixSlash(relative(this.#cwdPath, message.path)),
+                  {
+                    source: 'hot-hook',
+                    fullReload: false,
+                    hotReloaded: false,
+                  },
+                  this
+                )
                 break
               case 'unlink':
                 this.#hooks
@@ -284,13 +319,25 @@ export class DevServer {
                   .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), this)
             }
           } else if (message.type === 'hot-hook:full-reload') {
-            this.#hooks
-              .runner('fileChanged')
-              .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), false, this)
+            this.#hooks.runner('fileChanged').run(
+              string.toUnixSlash(relative(this.#cwdPath, message.path)),
+              {
+                source: 'hot-hook',
+                fullReload: true,
+                hotReloaded: false,
+              },
+              this
+            )
           } else if (message.type === 'hot-hook:invalidated') {
-            this.#hooks
-              .runner('fileChanged')
-              .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), true, this)
+            this.#hooks.runner('fileChanged').run(
+              string.toUnixSlash(relative(this.#cwdPath, message.path)),
+              {
+                source: 'hot-hook',
+                fullReload: false,
+                hotReloaded: true,
+              },
+              this
+            )
           }
         }
       })
@@ -449,7 +496,15 @@ export class DevServer {
       this.#hooks.runner('fileAdded').run(string.toUnixSlash(filePath), this)
     )
     this.#watcher.on('change', (filePath) =>
-      this.#hooks.runner('fileChanged').run(string.toUnixSlash(filePath), false, this)
+      this.#hooks.runner('fileChanged').run(
+        string.toUnixSlash(filePath),
+        {
+          source: 'watcher',
+          fullReload: true,
+          hotReloaded: false,
+        },
+        this
+      )
     )
     this.#watcher.on('unlink', (filePath) =>
       this.#hooks.runner('fileRemoved').run(string.toUnixSlash(filePath), this)

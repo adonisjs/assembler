@@ -218,7 +218,7 @@ test.group('DevServer', () => {
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(
       'bin/server.ts',
-      `process.send({ type: 'hot-hook:full-reload', path: "${filePath}" });`
+      `process.send({ type: 'hot-hook:full-reload', path: "${filePath.replace(/\//g, '\\/')}" });`
     )
     await fs.dump('bin/server.ts')
     await fs.create('start/routes.ts', ``)

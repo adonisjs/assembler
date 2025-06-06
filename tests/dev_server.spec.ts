@@ -216,11 +216,11 @@ test.group('DevServer', () => {
   test('restart server if hot-hook:full-reload message is received', async ({ assert, fs }) => {
     const filePath = join(fs.basePath, 'start/routes.ts')
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
-    await fs.dump('tsconfig.json')
     await fs.create(
       'bin/server.ts',
       `process.send({ type: 'hot-hook:full-reload', path: "${filePath}" });`
     )
+    await fs.dump('bin/server.ts')
     await fs.create('start/routes.ts', ``)
     await fs.create('.env', 'PORT=3334')
 

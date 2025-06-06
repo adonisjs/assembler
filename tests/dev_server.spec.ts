@@ -8,12 +8,26 @@
  */
 
 import ts from 'typescript'
+import { platform } from 'node:os'
 import { test } from '@japa/runner'
+import { join, sep } from 'node:path'
 import { cliui } from '@poppinss/cliui'
 import { setTimeout as sleep } from 'node:timers/promises'
+
 import { DevServer } from '../index.ts'
-import { join, sep } from 'node:path'
-import { platform } from 'node:os'
+
+/**
+ * When filePath using backward slashes is written to a file, the backslashes
+ * are considered as escape charcaters, hence results in a wrong path.
+ *
+ * This method replaces the backward slashes with two backward slashes
+ */
+function normalizePathForWindows(filePath: string) {
+  if (platform() === 'win32') {
+    filePath = filePath.split(sep).join('\\\\')
+  }
+  return filePath
+}
 
 test.group('DevServer', () => {
   test('start() and execute dev server hook', async ({ fs, assert, cleanup }) => {
@@ -215,16 +229,10 @@ test.group('DevServer', () => {
   }).timeout(8 * 1000)
 
   test('restart server if hot-hook:full-reload message is received', async ({ assert, fs }) => {
-    let filePath = join(fs.basePath, 'start/routes.ts')
-    if (platform() === 'win32') {
-      filePath = filePath.split(sep).join('\\\\')
-      console.log({ filePath })
-    }
-
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(
       'bin/server.ts',
-      `process.send({ type: 'hot-hook:full-reload', path: "${filePath}" });`
+      `process.send({ type: 'hot-hook:full-reload', path: '${normalizePathForWindows(join(fs.basePath, 'start/routes.ts'))}' });`
     )
     await fs.dump('bin/server.ts')
     await fs.create('start/routes.ts', ``)
@@ -256,7 +264,7 @@ test.group('DevServer', () => {
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(
       'bin/server.ts',
-      `process.send({ type: 'hot-hook:invalidated', path: '${join(fs.basePath, 'start/routes.ts')}' });`
+      `process.send({ type: 'hot-hook:invalidated', path: '${normalizePathForWindows(join(fs.basePath, 'start/routes.ts'))}' });`
     )
     await fs.create('start/routes.ts', ``)
     await fs.create('.env', 'PORT=3334')
@@ -285,7 +293,7 @@ test.group('DevServer', () => {
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(
       'bin/server.ts',
-      `process.send({ type: 'hot-hook:file-changed', action: 'change', path: '${join(fs.basePath, 'start/routes.ts')}' });`
+      `process.send({ type: 'hot-hook:file-changed', action: 'change', path: '${normalizePathForWindows(join(fs.basePath, 'start/routes.ts'))}' });`
     )
     await fs.create('start/routes.ts', ``)
     await fs.create('.env', 'PORT=3334')

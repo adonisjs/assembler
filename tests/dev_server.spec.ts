@@ -12,7 +12,8 @@ import { test } from '@japa/runner'
 import { cliui } from '@poppinss/cliui'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { DevServer } from '../index.ts'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
+import { platform } from 'node:os'
 
 test.group('DevServer', () => {
   test('start() and execute dev server hook', async ({ fs, assert, cleanup }) => {
@@ -214,11 +215,16 @@ test.group('DevServer', () => {
   }).timeout(8 * 1000)
 
   test('restart server if hot-hook:full-reload message is received', async ({ assert, fs }) => {
-    const filePath = join(fs.basePath, 'start/routes.ts')
+    let filePath = join(fs.basePath, 'start/routes.ts')
+    if (platform() === 'win32') {
+      filePath = filePath.split(sep).join('\\\\')
+      console.log({ filePath })
+    }
+
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(
       'bin/server.ts',
-      `process.send({ type: 'hot-hook:full-reload', path: "${filePath.replace(/\//g, '\\/')}" });`
+      `process.send({ type: 'hot-hook:full-reload', path: "${filePath}" });`
     )
     await fs.dump('bin/server.ts')
     await fs.create('start/routes.ts', ``)

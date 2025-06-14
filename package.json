@@ -68,6 +68,7 @@
     "fast-glob": "^3.3.3",
     "get-port": "^7.1.0",
     "junk": "^4.0.1",
+    "open": "^10.1.2",
     "picomatch": "^4.0.2",
     "pretty-hrtime": "^1.0.3",
     "tmp-cache": "^1.1.0",

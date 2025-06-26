@@ -20,6 +20,7 @@ import { type UnWrapLazyImport } from '@poppinss/utils/types'
 
 import debug from './debug.ts'
 import { FileSystem } from './file_system.ts'
+import { ShortcutsManager } from './shortcuts_manager.ts'
 import type { DevServerOptions } from './types/common.ts'
 import { type DevServerHooks, type WatcherHooks } from './types/hooks.ts'
 import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
@@ -69,6 +70,11 @@ export class DevServer {
   #httpServer?: ResultPromise
 
   /**
+   * Keyboard shortcuts manager
+   */
+  #shortcutsManager?: ShortcutsManager
+
+  /**
    * Filesystem is used to decide which files to watch or entertain when
    * using hot-hook
    */
@@ -102,6 +108,29 @@ export class DevServer {
     }
     await this.#startHTTPServer(this.#stickyPort)
   }, 'restartHTTPServer')
+
+  /**
+   * Sets up keyboard shortcuts
+   */
+  #setupKeyboardShortcuts() {
+    this.#shortcutsManager = new ShortcutsManager({
+      logger: this.ui.logger,
+      callbacks: {
+        onRestart: () => this.#restartHTTPServer(),
+        onClear: () => this.#clearScreen(),
+        onQuit: () => this.close(),
+      },
+    })
+
+    this.#shortcutsManager.setup()
+  }
+
+  /**
+   * Cleanup keyboard shortcuts
+   */
+  #cleanupKeyboardShortcuts() {
+    this.#shortcutsManager?.cleanup()
+  }
 
   /**
    * CLI UI to log colorful messages
@@ -152,14 +181,19 @@ export class DevServer {
    */
   async #postServerReady(message: { port: number; host: string; duration?: [number, number] }) {
     const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
+    const serverUrl = `http://${host}:${message.port}`
+    this.#shortcutsManager?.setServerUrl(serverUrl)
+
     const displayMessage = this.ui
       .sticker()
-      .add(`Server address: ${this.ui.colors.cyan(`http://${host}:${message.port}`)}`)
+      .add(`Server address: ${this.ui.colors.cyan(serverUrl)}`)
       .add(`Mode: ${this.ui.colors.cyan(this.mode)}`)
 
     if (message.duration) {
       displayMessage.add(`Ready in: ${this.ui.colors.cyan(prettyHrtime(message.duration))}`)
     }
+
+    displayMessage.add(`Press ${this.ui.colors.dim('h')} to show help`)
 
     /**
      * Run hooks before displaying the "displayMessage". It will allow hooks to add
@@ -392,6 +426,7 @@ export class DevServer {
    * Close watchers and the running child process
    */
   async close() {
+    this.#cleanupKeyboardShortcuts()
     await this.#watcher?.close()
     if (this.#httpServer) {
       this.#httpServer.removeAllListeners()
@@ -434,6 +469,7 @@ export class DevServer {
     }
 
     this.#clearScreen()
+    this.#setupKeyboardShortcuts()
     this.ui.logger.info('starting HTTP server...')
     await this.#startHTTPServer(this.#stickyPort)
   }
@@ -460,6 +496,7 @@ export class DevServer {
     this.#registerServerRestartHooks()
 
     this.#clearScreen()
+    this.#setupKeyboardShortcuts()
     this.ui.logger.info('starting HTTP server...')
     await this.#startHTTPServer(this.#stickyPort)
 

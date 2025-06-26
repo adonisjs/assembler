@@ -81,7 +81,8 @@ test.group('DevServer', () => {
         stream: 'stdout',
       },
       {
-        message: 'Server address: cyan(http://localhost:3334)\nMode: cyan(static)',
+        message:
+          'Server address: cyan(http://localhost:3334)\nMode: cyan(static)\nPress dim(h) to show help',
         stream: 'stdout',
       },
     ])
@@ -139,7 +140,8 @@ test.group('DevServer', () => {
         stream: 'stdout',
       },
       {
-        message: 'Server address: cyan(http://localhost:3335)\nMode: cyan(watch)',
+        message:
+          'Server address: cyan(http://localhost:3335)\nMode: cyan(watch)\nPress dim(h) to show help',
         stream: 'stdout',
       },
     ])

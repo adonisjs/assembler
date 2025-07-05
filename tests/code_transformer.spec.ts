@@ -9,6 +9,8 @@
 
 import dedent from 'dedent'
 import { test } from '@japa/runner'
+import { relative } from 'node:path'
+import string from '@poppinss/utils/string'
 import { readFile } from 'node:fs/promises'
 import type { FileSystem } from '@japa/file-system'
 import StringBuilder from '@poppinss/utils/string_builder'
@@ -945,9 +947,9 @@ test.group('Code Transformer | create entity index file', (group) => {
 
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "export const controllers = {
-        AuthSignupController: () => import('#controllers/auth/signup_controller'),
+        SignupController: () => import('#controllers/auth/signup_controller'),
         PostsController: () => import('#controllers/posts_controller'),
-        PublicHomePage: () => import('#controllers/public/home_page'),
+        HomePage: () => import('#controllers/public/home_page'),
         UserPostsController: () => import('#controllers/user/posts_controller'),
       }"
     `)
@@ -970,15 +972,15 @@ test.group('Code Transformer | create entity index file', (group) => {
 
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "export const controllers = {
-        AuthSignupController: () => import('../../app/controllers/auth/signup_controller.ts'),
+        SignupController: () => import('../../app/controllers/auth/signup_controller.ts'),
         PostsController: () => import('../../app/controllers/posts_controller.ts'),
-        PublicHomePage: () => import('../../app/controllers/public/home_page.ts'),
+        HomePage: () => import('../../app/controllers/public/home_page.ts'),
         UserPostsController: () => import('../../app/controllers/user/posts_controller.ts'),
       }"
     `)
   })
 
-  test('apply name transformer', async ({ assert, fs }) => {
+  test('self compute the baseName', async ({ assert, fs }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
     await fs.create('app/controllers/posts_controller.ts', '')
     await fs.create('app/controllers/user/posts_controller.ts', '')
@@ -990,8 +992,9 @@ test.group('Code Transformer | create entity index file', (group) => {
       { source: './app/controllers' },
       {
         destination: outputPath,
-        transformName(name) {
-          return new StringBuilder(name).removeSuffix('Controller').toString()
+        computeBaseName(filePath, sourcePath) {
+          const baseName = string.toUnixSlash(relative(sourcePath, filePath))
+          return new StringBuilder(baseName).removeExtension().removeSuffix('Controller').toString()
         },
       }
     )
@@ -1006,7 +1009,7 @@ test.group('Code Transformer | create entity index file', (group) => {
     `)
   })
 
-  test('apply import path transformer', async ({ assert, fs }) => {
+  test('remove name suffix', async ({ assert, fs }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
     await fs.create('app/controllers/posts_controller.ts', '')
     await fs.create('app/controllers/user/posts_controller.ts', '')
@@ -1015,21 +1018,58 @@ test.group('Code Transformer | create entity index file', (group) => {
 
     const outputPath = './.adonisjs/backend/controllers.ts'
     await transformer.makeEntityIndex(
-      { source: './app/controllers' },
+      { source: './app/controllers', importAlias: '#controllers' },
       {
         destination: outputPath,
-        transformImport(modulePath) {
-          return modulePath.replace(new RegExp('../../app/controllers'), '#controllers')
-        },
+        removeNameSuffix: 'controller',
       }
     )
 
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "export const controllers = {
-        AuthSignupController: () => import('#controllers/auth/signup_controller.ts'),
-        PostsController: () => import('#controllers/posts_controller.ts'),
-        PublicHomePage: () => import('#controllers/public/home_page.ts'),
-        UserPostsController: () => import('#controllers/user/posts_controller.ts'),
+        Signup: () => import('#controllers/auth/signup_controller'),
+        Posts: () => import('#controllers/posts_controller'),
+        HomePage: () => import('#controllers/public/home_page'),
+        UserPosts: () => import('#controllers/user/posts_controller'),
+      }"
+    `)
+  })
+
+  test('compute output using a custom function', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create('inertia/pages/home.tsx', '')
+    await fs.create('inertia/pages/auth/signup.tsx', '')
+    await fs.create('inertia/pages/auth/login.tsx', '')
+    await fs.create('inertia/pages/account/profile.tsx', '')
+
+    const outputPath = './.adonisjs/backend/inertia_pages.ts'
+    await transformer.makeEntityIndex(
+      { source: './inertia/pages', allowedExtensions: ['.tsx'] },
+      {
+        destination: outputPath,
+        computeOutput(entries) {
+          return entries
+            .reduce<string[]>(
+              (result, entry) => {
+                result.push(`${entry.name}: typeof import('${entry.importPath}')`)
+                return result
+              },
+              [`declare module '@adonisjs/inertia' {`, 'export interface Pages {']
+            )
+            .concat('}', '}')
+            .join('\n')
+        },
+      }
+    )
+
+    assert.snapshot(await fs.contents(outputPath)).matchInline(`
+      "declare module '@adonisjs/inertia' {
+      export interface Pages {
+      Profile: typeof import('../../inertia/pages/account/profile.tsx')
+      Login: typeof import('../../inertia/pages/auth/login.tsx')
+      Signup: typeof import('../../inertia/pages/auth/signup.tsx')
+      Home: typeof import('../../inertia/pages/home.tsx')
+      }
       }"
     `)
   })

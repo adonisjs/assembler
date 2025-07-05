@@ -444,6 +444,85 @@ export const policies = {
 }
 ```
 
+### makeEntityIndex
+The method is used to create an index file for a collection of entities discovered from one or more root folders. We use this method to create an index file for controllers or generate types for Inertia pages.
+
+```ts
+const transformer = new CodeTransformer(appRoot)
+
+const output = await transformer.makeEntityIndex({
+  source: 'app/controllers',
+  importAlias: '#controllers'
+}, {
+  destination: '.adonisjs/backend/controllers',
+  exportName: 'controllers'
+})
+
+/**
+  export const controllers = {
+    SignupController: () => import('#controllers/auth/signup_controller'),
+    PostsController: () => import('#controllers/posts_controller'),
+    HomePage: () => import('#controllers/public/home_page'),
+    UserPostsController: () => import('#controllers/user/posts_controller'),
+  }
+ */
+```
+
+If you would like to remove the `Controller` suffix from the key (which we do in our official generator), then you can specify the `removeNameSuffix` option.
+
+```ts
+const output = await transformer.makeEntityIndex({
+  source: 'app/controllers',
+  importAlias: '#controllers'
+}, {
+  destination: '.adonisjs/backend/controllers',
+  exportName: 'controllers',
+  removeNameSuffix: 'controller'
+})
+```
+
+For more advanced use-cases, you can specify the `computeBaseName` method to self compute the key name for the collection.
+
+```ts
+import StringBuilder from '@poppinss/utils/string_builder'
+
+const output = await transformer.makeEntityIndex({
+  source: 'app/controllers',
+  importAlias: '#controllers'
+}, {
+  destination: '.adonisjs/backend/controllers',
+  exportName: 'controllers',
+  computeBaseName(filePath, sourcePath) {
+    const baseName = relative(sourcePath, filePath)
+    return new StringBuilder(baseName).toUnixSlash().removeExtension().removeSuffix('Controller').toString()
+  },
+})
+```
+
+#### Controlling the output
+The output is an object with key-value pair in which the value is a lazily imported module. However, you can customize the output to generate a TypeScript type using the `computeOutput` method.
+
+```ts
+const output = await transformer.makeEntityIndex(
+  { source: './inertia/pages', allowedExtensions: ['.tsx'] },
+  {
+    destination: outputPath,
+    computeOutput(entries) {
+      return entries
+        .reduce<string[]>(
+          (result, entry) => {
+            result.push(`${entry.name}: typeof import('${entry.importPath}')`)
+            return result
+          },
+          [`declare module '@adonisjs/inertia' {`, 'export interface Pages {']
+        )
+        .concat('}', '}')
+        .join('\n')
+    },
+  }
+)
+```
+
 ## Contributing
 One of the primary goals of AdonisJS is to have a vibrant community of users and contributors who believe in the framework's principles.
 

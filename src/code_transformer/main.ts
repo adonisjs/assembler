@@ -14,7 +14,7 @@ import { fsReadAll } from '@poppinss/utils/fs'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { type OneOrMore } from '@poppinss/utils/types'
 import StringBuilder from '@poppinss/utils/string_builder'
-import { basename, dirname, join, relative } from 'node:path'
+import { basename, dirname, extname, join, relative } from 'node:path'
 import { installPackage, detectPackageManager } from '@antfu/install-pkg'
 import {
   Node,
@@ -470,8 +470,8 @@ export class CodeTransformer {
    *
    * ```ts
    * export const controllers = {
-   *   Login: () => import('#controllers/login_controller'),
-   *   Login: () => import('#controllers/login_controller'),
+   *   LoginController: () => import('#controllers/login_controller'),
+   *   LogoutController: () => import('#controllers/logout_controller'),
    * }
    * ```
    *
@@ -480,12 +480,13 @@ export class CodeTransformer {
    * @param importAlias
    */
   async makeEntityIndex(
-    input: OneOrMore<{ source: string; importAlias?: string }>,
+    input: OneOrMore<{ source: string; importAlias?: string; allowedExtensions?: string[] }>,
     output: {
       destination: string
       exportName?: string
-      transformName?: (name: string) => string
-      transformImport?: (modulePath: string) => string
+      removeNameSuffix?: string
+      computeBaseName?: (filePath: string, sourcePath: string) => string
+      computeOutput?: (entries: { name: string; importPath: string }[]) => string
     }
   ) {
     const inputs = Array.isArray(input) ? input : [input]
@@ -503,44 +504,81 @@ export class CodeTransformer {
     )
 
     const entries = await Promise.all(
-      inputs.map(async ({ source, importAlias }) => {
+      inputs.map(async ({ source, importAlias, allowedExtensions }) => {
         const sourcePath = join(this.#cwdPath, source)
         const filesList = await fsReadAll(sourcePath, {
-          filter: isScriptFile,
+          filter: (filePath: string) => {
+            if (allowedExtensions) {
+              const ext = extname(filePath)
+              return allowedExtensions.includes(ext)
+            }
+            return isScriptFile(filePath)
+          },
           pathType: 'absolute',
         })
 
+        const knownBaseNames = new Set()
+
         return filesList.map((filePath) => {
-          const name = new StringBuilder(string.toUnixSlash(relative(sourcePath, filePath)))
+          /**
+           * We assume all filenames are unique across sub-directories, hence we will
+           * use the baseName of the file. However, if a file with the same name already
+           * exists, when we will prefix the parent subdirectories to the name.
+           */
+          let baseName = basename(filePath)
+          if (output.computeBaseName) {
+            baseName = output.computeBaseName?.(filePath, sourcePath)
+          } else {
+            if (knownBaseNames.has(baseName)) {
+              baseName = string.toUnixSlash(relative(sourcePath, filePath))
+            }
+            knownBaseNames.add(baseName)
+          }
+
+          const name = new StringBuilder(baseName)
             .removeExtension()
+            .removeSuffix(output.removeNameSuffix ?? '')
             .pascalCase()
             .toString()
 
-          const importPath = importAlias
-            ? `${importAlias}/${new StringBuilder(string.toUnixSlash(relative(sourcePath, filePath))).removeExtension().toString()}`
+          /**
+           * When using an import alias, the baseImportPath will be a relative path
+           * from the source directory, otherwise it will be a relative between
+           * the outputDir and the filePath.
+           */
+          const baseImportPath = importAlias
+            ? string.toUnixSlash(relative(sourcePath, filePath))
             : string.toUnixSlash(relative(outputDir, filePath))
 
+          const importPath = importAlias
+            ? `${importAlias}/${new StringBuilder(baseImportPath).removeExtension().toString()}`
+            : baseImportPath
+
           return {
-            name: output.transformName?.(name) ?? name,
-            importPath: output.transformImport?.(importPath) ?? importPath,
+            name,
+            importPath,
           }
         })
       })
     )
 
-    const outputContents = entries
-      .flat(2)
-      .reduce<string[]>(
-        (result, entry) => {
-          debug('adding "%O" to the index', entry)
-          result.push(`  ${entry.name}: () => import('${entry.importPath}'),`)
-          return result
-        },
-        [`export const ${exportName} = {`]
-      )
-      .concat('}')
+    const computeOutput =
+      output.computeOutput ??
+      ((list) => {
+        return list
+          .reduce<string[]>(
+            (result, entry) => {
+              debug('adding "%O" to the index', entry)
+              result.push(`  ${entry.name}: () => import('${entry.importPath}'),`)
+              return result
+            },
+            [`export const ${exportName} = {`]
+          )
+          .concat('}')
+          .join('\n')
+      })
 
     await mkdir(outputDir, { recursive: true })
-    await writeFile(outputPath, outputContents.join('\n'))
+    await writeFile(outputPath, computeOutput(entries.flat(2)))
   }
 }

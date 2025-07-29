@@ -7,33 +7,12 @@
  * file that was distributed with this source code.
  */
 
-import type { Logger } from '@poppinss/cliui'
-
-/**
- * Keyboard shortcut definition
- */
-export interface KeyboardShortcut {
-  key: string
-  description: string
-  handler: () => void
-}
-
-/**
- * Callbacks for keyboard shortcuts actions
- */
-export interface KeyboardShortcutsCallbacks {
-  onRestart: () => void
-  onClear: () => void
-  onQuit: () => void
-}
-
-/**
- * Shortcuts manager options
- */
-export interface ShortcutsManagerOptions {
-  logger: Logger
-  callbacks: KeyboardShortcutsCallbacks
-}
+import { type Logger } from '@poppinss/cliui'
+import {
+  type ShortcutsManagerOptions,
+  type KeyboardShortcut,
+  type KeyboardShortcutsCallbacks,
+} from './types/common.ts'
 
 /**
  * Manages keyboard shortcuts for development server
@@ -90,10 +69,11 @@ export class ShortcutsManager {
    * Initialize keyboard shortcuts
    */
   setup() {
-    if (!process.stdin.isTTY) return
+    if (!process.stdin.isTTY) {
+      return
+    }
 
     process.stdin.setRawMode(true)
-
     this.#keyPressHandler = (data: Buffer) => this.#handleKeyPress(data.toString())
     process.stdin.on('data', this.#keyPressHandler)
   }
@@ -103,10 +83,14 @@ export class ShortcutsManager {
    */
   #handleKeyPress(key: string) {
     // Handle Ctrl+C (0x03) and Ctrl+D (0x04)
-    if (key === '\u0003' || key === '\u0004') return this.#callbacks.onQuit()
+    if (key === '\u0003' || key === '\u0004') {
+      return this.#callbacks.onQuit()
+    }
 
     const shortcut = this.#shortcuts.find((s) => s.key === key)
-    if (shortcut) shortcut.handler()
+    if (shortcut) {
+      shortcut.handler()
+    }
   }
 
   /**
@@ -134,7 +118,9 @@ export class ShortcutsManager {
    * Cleanup keyboard shortcuts
    */
   cleanup() {
-    if (!process.stdin.isTTY) return
+    if (!process.stdin.isTTY) {
+      return
+    }
 
     process.stdin.setRawMode(false)
     process.stdin.removeListener('data', this.#keyPressHandler!)

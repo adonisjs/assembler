@@ -7,6 +7,8 @@
  * file that was distributed with this source code.
  */
 
+import type { Logger } from '@poppinss/cliui'
+
 import {
   type BundlerHooks,
   type DevServerHooks,
@@ -186,3 +188,29 @@ export type TestRunnerOptions = {
  * Options accepted by the project bundler
  */
 export type BundlerOptions = AssemblerRcFile
+
+/**
+ * Keyboard shortcut definition
+ */
+export interface KeyboardShortcut {
+  key: string
+  description: string
+  handler: () => void
+}
+
+/**
+ * Callbacks for keyboard shortcuts actions
+ */
+export interface KeyboardShortcutsCallbacks {
+  onRestart: () => void
+  onClear: () => void
+  onQuit: () => void
+}
+
+/**
+ * Shortcuts manager options
+ */
+export interface ShortcutsManagerOptions {
+  logger: Logger
+  callbacks: KeyboardShortcutsCallbacks
+}

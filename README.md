@@ -50,17 +50,7 @@ const devServer = new DevServer(appRoot, {
       pattern: 'resources/views/**/*.edge',
       reloadServer: false,
     }
-  ],
-
-  /**
-   * The assets bundler process to start
-   */
-  assets: {
-    enabled: true,
-    name: 'vite',
-    cmd: 'vite',
-    args: []
-  }
+  ]
 })
 
 devServer.onError((error) => {
@@ -86,9 +76,6 @@ await devServer.start()
 
 ## Test runner
 The `TestRunner` is used to execute the `bin/test.ts` file of your AdonisJS application. Like the `DevServer`, the `TestRunner` allows you to watch for file changes and re-run the tests. The following steps are taken to re-run tests in watch mode.
-
-> [!NOTE]  
-> Read [Using a file watcher](#using-a-file-watcher) section to understand which files are watched by the file watcher.
 
 - If the changed file is a test file, only tests for that file will be re-run.
 - Otherwise, all tests will re-run with respect to the initial filters applied when running the `node ace test` command.
@@ -176,17 +163,6 @@ const bundler = new Bundler(appRoot, ts, {
       reloadServer: false,
     }
   ],
-
-  /**
-   * The assets bundler to use to bundle the frontend
-   * assets
-   */
-  assets: {
-    enabled: true,
-    name: 'vite',
-    cmd: 'vite',
-    args: ['build']
-  }
 })
 ```
 

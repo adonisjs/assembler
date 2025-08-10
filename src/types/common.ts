@@ -8,13 +8,25 @@
  */
 
 import type { Logger } from '@poppinss/cliui'
-
 import {
   type BundlerHooks,
   type DevServerHooks,
   type TestRunnerHooks,
   type WatcherHooks,
 } from './hooks.ts'
+
+/**
+ * Represents an import statement
+ */
+export type Import = {
+  specifier: string
+  isConstant: boolean
+  clause: {
+    type: 'namespace' | 'default' | 'named'
+    value: string
+    alias?: string
+  }
+}
 
 /**
  * File inspected by the filesystem based upon the provided globs

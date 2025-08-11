@@ -12,6 +12,9 @@
     "!build/bin",
     "!build/tests"
   ],
+  "imports": {
+    "#src/*": "./src/*.ts"
+  },
   "exports": {
     ".": "./build/index.js",
     "./code_transformer": "./build/src/code_transformer/main.js",

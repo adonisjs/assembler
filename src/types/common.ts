@@ -8,12 +8,23 @@
  */
 
 import type { Logger } from '@poppinss/cliui'
+import { type Prettify } from '@poppinss/utils/types'
 import {
   type BundlerHooks,
   type DevServerHooks,
   type TestRunnerHooks,
   type WatcherHooks,
 } from './hooks.ts'
+
+/**
+ * Marks a given optional property as required
+ */
+export type AsRequired<T, K extends keyof T> = Prettify<
+  Omit<T, K> &
+    Required<{
+      [O in K]: T[K]
+    }>
+>
 
 /**
  * Represents an import statement

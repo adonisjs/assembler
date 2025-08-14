@@ -8,6 +8,7 @@
  */
 
 import { fileURLToPath } from 'node:url'
+import { isRelative } from './utils.ts'
 
 /**
  * Encapsulates the API to resolve import specifiers with the ability
@@ -28,16 +29,17 @@ export class PathsResolver {
    * Resolve import specifier
    */
   resolve(specifier: string) {
-    if (specifier.startsWith('./') || specifier.startsWith('../')) {
-      throw new Error('Cannot resolve relative paths')
+    if (isRelative(specifier)) {
+      throw new Error('Cannot resolve relative paths using PathsResolver')
     }
 
-    const cached = this.#resolvedPaths[specifier]
+    const cacheKey = specifier
+    const cached = this.#resolvedPaths[cacheKey]
     if (cached) {
       return cached
     }
 
-    this.#resolvedPaths[specifier] = fileURLToPath(this.#resolver(specifier))
-    return this.#resolvedPaths[specifier]
+    this.#resolvedPaths[cacheKey] = fileURLToPath(this.#resolver(specifier))
+    return this.#resolvedPaths[cacheKey]
   }
 }

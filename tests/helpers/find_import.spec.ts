@@ -8,7 +8,7 @@
  */
 
 import { test } from '@japa/runner'
-import { findImport } from '../src/utils.ts'
+import { findImport } from '../../src/helpers.ts'
 
 test.group('Find import', () => {
   test('find "{input.namespace}" import reference from the file')

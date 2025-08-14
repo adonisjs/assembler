@@ -5,6 +5,9 @@
   "engines": {
     "node": ">=24.0.0"
   },
+  "imports": {
+    "#tests/*": "./tests/*.ts"
+  },
   "main": "build/index.js",
   "type": "module",
   "files": [
@@ -12,12 +15,10 @@
     "!build/bin",
     "!build/tests"
   ],
-  "imports": {
-    "#src/*": "./src/*.ts"
-  },
   "exports": {
     ".": "./build/index.js",
     "./code_transformer": "./build/src/code_transformer/main.js",
+    "./routes_scanner": "./build/src/code_scanners/routes_scanner/main.js",
     "./types": "./build/src/types/main.js"
   },
   "scripts": {
@@ -33,7 +34,7 @@
     "release": "release-it",
     "version": "npm run build",
     "prepublishOnly": "npm run build",
-    "quick:test": "cross-env NODE_DEBUG=adonisjs:assembler node --enable-source-maps --import=@poppinss/ts-exec bin/test.ts"
+    "quick:test": "cross-env NODE_DEBUG=adonisjs:assembler node --enable-source-maps --import=@poppinss/ts-exec --experimental-import-meta-resolve bin/test.ts"
   },
   "devDependencies": {
     "@adonisjs/eslint-config": "^3.0.0-next.0",

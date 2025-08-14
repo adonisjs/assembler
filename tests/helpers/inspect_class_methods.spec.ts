@@ -9,7 +9,7 @@
 
 import { test } from '@japa/runner'
 import { parse, Lang } from '@ast-grep/napi'
-import { inspectClassMethods } from '../src/utils.ts'
+import { inspectClass, inspectClassMethods } from '../../src/helpers.ts'
 
 test.group('Inspect class methods', () => {
   test('Inspect all methods of a class', ({ assert }) => {
@@ -44,62 +44,11 @@ test.group('Inspect class methods', () => {
       }`
     ).root()
 
-    const methods = inspectClassMethods(root).map((e) => {
+    const methods = inspectClassMethods(inspectClass(root)!).map((e) => {
       return e.find({ rule: { kind: 'property_identifier' } })?.text()
     })
 
     assert.deepEqual(methods, [
-      'foo',
-      'bar',
-      /** Private methods are skipped */ undefined,
-      'fooBar',
-      'world',
-    ])
-  })
-
-  test('Inspect all methods from multiple classes', ({ assert }) => {
-    const root = parse(
-      Lang.TypeScript,
-      `
-      class Bar {
-        bar() {}
-      }
-
-      class Foo {
-        /**
-         * Docblock comments
-         */
-        async foo() {}
-
-        private bar(a, b, c) {
-        }
-
-        async #baz() {}
-
-        protected fooBar(
-          a,
-          b,
-          c
-        ) {
-        }
-
-        /**
-         * Declared as Property
-         */
-        hello = function() {}.bind(this)
-
-        /**this method must exist*/ world() {}
-
-        // commented out foo() {}
-      }`
-    ).root()
-
-    const methods = inspectClassMethods(root).map((e) => {
-      return e.find({ rule: { kind: 'property_identifier' } })?.text()
-    })
-
-    assert.deepEqual(methods, [
-      'bar',
       'foo',
       'bar',
       /** Private methods are skipped */ undefined,

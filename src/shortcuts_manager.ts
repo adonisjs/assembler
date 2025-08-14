@@ -9,8 +9,8 @@
 
 import { type Logger } from '@poppinss/cliui'
 import {
-  type ShortcutsManagerOptions,
   type KeyboardShortcut,
+  type ShortcutsManagerOptions,
   type KeyboardShortcutsCallbacks,
 } from './types/common.ts'
 

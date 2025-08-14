@@ -7,21 +7,21 @@
  * file that was distributed with this source code.
  */
 
+import { join } from 'node:path'
 import { test } from '@japa/runner'
 import { PathsResolver } from '../src/paths_resolver.ts'
-import { join } from 'node:path'
 
 test.group('Paths resolver', () => {
   test('throw error when trying to resolve a relative path', () => {
     const resolver = new PathsResolver()
     resolver.resolve('./routes_scanner.spec.ts')
-  }).throws('Cannot resolve relative paths')
+  }).throws('Cannot resolve relative paths using PathsResolver')
 
-  test('resolve subpath import specifier', ({ assert }) => {
+  test('resolve subpath import specifier', async ({ assert }) => {
     const resolver = new PathsResolver()
     assert.equal(
-      resolver.resolve('#src/file_system'),
-      join(import.meta.dirname, '..', 'src', 'file_system.ts')
+      resolver.resolve('#tests/dev_server.spec'),
+      join(import.meta.dirname, 'dev_server.spec.ts')
     )
   })
 

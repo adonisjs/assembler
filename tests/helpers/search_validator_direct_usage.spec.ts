@@ -9,15 +9,20 @@
 
 import { test } from '@japa/runner'
 import { parse, Lang } from '@ast-grep/napi'
-import { inspectMethodArguments, nodeToPlainText } from '../src/utils.ts'
+import {
+  inspectClass,
+  nodeToPlainText,
+  inspectClassMethods,
+  searchValidatorDirectUsage,
+} from '../../src/helpers.ts'
 
-test.group('Inspect method arguments', () => {
-  test('Inspect all arguments from multiple methods')
+test.group('Search validator direct usage', () => {
+  test('Search all validators via their direct usage')
     .with([
       {
         input: `class UsersController {
         async store() {
-          await request.validateUsing(createUserValidator)
+          await createUserValidator.validate({ data: request.all() })
         }
       }`,
         output: ['createUserValidator'],
@@ -26,7 +31,7 @@ test.group('Inspect method arguments', () => {
         input: `class UsersController {
         async store() {
           try {
-            await vine.validate(createUserValidator)
+            await createUserValidator.validate(request.all())
           } catch (error) {
           }
         }
@@ -36,7 +41,7 @@ test.group('Inspect method arguments', () => {
       {
         input: `class UsersController {
         async store() {
-          await request.validateUsing(user.createUserValidator)
+          await user.createUserValidator.validate(request.all())
         }
       }`,
         output: ['user.createUserValidator'],
@@ -44,17 +49,9 @@ test.group('Inspect method arguments', () => {
       {
         input: `class UsersController {
         async store() {
-          await request.validateUsing(/*
-            Always use the create validator
-          */ user.createUserValidator)
-        }
-      }`,
-        output: ['user.createUserValidator'],
-      },
-      {
-        input: `class UsersController {
-        async store() {
-          await request.validateUsing(/* Always use the create validator */ user.createUserValidator)
+          await user
+            .createUserValidator
+            .validate(request.all())
         }
       }`,
         output: ['user.createUserValidator'],
@@ -63,9 +60,9 @@ test.group('Inspect method arguments', () => {
         input: `class UsersController {
         async store() {
           if (request.input('type') === 'car') {
-            await request.validateUsing(/* Always use the car validator */ createCarValidator)
+            await createCarValidator.validate(request.all())
           } else {
-            await request.validateUsing(createVehicleValidator)
+            await createVehicleValidator.validate(request.all())
           }
         }
       }`,
@@ -74,14 +71,14 @@ test.group('Inspect method arguments', () => {
     ])
     .run(({ assert }, { input, output }) => {
       const root = parse(Lang.TypeScript, input).root()
+      const storeMethod = inspectClassMethods(inspectClass(root)!).find((e) => {
+        return e.find({
+          rule: { kind: 'property_identifier', regex: `\\bstore\\b` },
+        })
+      })!
 
-      const validatorArguments = inspectMethodArguments(root, [
-        'request.validateUsing',
-        'vine.validate',
-      ]).map((node) => {
-        return nodeToPlainText(
-          node.find({ rule: { any: [{ kind: 'identifier' }, { kind: 'member_expression' }] } })!
-        )
+      const validatorArguments = searchValidatorDirectUsage(storeMethod).map((node) => {
+        return nodeToPlainText(node)
       })
 
       assert.deepEqual(validatorArguments, output)

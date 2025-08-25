@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import { join } from 'node:path'
 import { test } from '@japa/runner'
 import { RoutesScanner } from '../../src/code_scanners/routes_scanner/main.ts'
 
@@ -74,7 +75,7 @@ test.group('Routes scanner', () => {
       return new URL([resolvedPath, ...rest, `${fileName}.ts`].join('/'), fs.baseUrl).href
     })
 
-    const scannedRoutes = await scanner.scan([
+    await scanner.scan([
       {
         domain: 'root',
         methods: ['GET', 'HEAD'],
@@ -127,7 +128,7 @@ test.group('Routes scanner', () => {
       },
     ])
 
-    assert.snapshot(scannedRoutes).matchInline(`
+    assert.snapshot(scanner.getScannedRoutes()).matchInline(`
       [
         {
           "controller": {
@@ -370,7 +371,7 @@ test.group('Routes scanner', () => {
       return new URL([resolvedPath, ...rest, `${fileName}.ts`].join('/'), fs.baseUrl).href
     })
 
-    const scannedRoutes = await scanner.scan([
+    await scanner.scan([
       {
         domain: 'root',
         methods: ['GET', 'HEAD'],
@@ -423,7 +424,7 @@ test.group('Routes scanner', () => {
       },
     ])
 
-    assert.snapshot(scannedRoutes).matchInline(`
+    assert.snapshot(scanner.getScannedRoutes()).matchInline(`
       [
         {
           "controller": {
@@ -650,7 +651,7 @@ test.group('Routes scanner', () => {
       return new URL([resolvedPath, ...rest, `${fileName}.ts`].join('/'), fs.baseUrl).href
     })
 
-    const scannedRoutes = await scanner.scan([
+    await scanner.scan([
       {
         domain: 'root',
         methods: ['GET', 'HEAD'],
@@ -703,7 +704,7 @@ test.group('Routes scanner', () => {
       },
     ])
 
-    assert.snapshot(scannedRoutes).matchInline(`
+    assert.snapshot(scanner.getScannedRoutes()).matchInline(`
       [
         {
           "controller": {
@@ -860,6 +861,554 @@ test.group('Routes scanner', () => {
               "name": "userValidators.update",
             },
           ],
+        },
+      ]
+    `)
+  })
+
+  test('invalidate a controller and re-compute its routes request and response types', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.createJson('package.json', {
+      imports: {
+        '#controllers/*': './app/controllers/*.ts',
+      },
+    })
+
+    await fs.create(
+      'app/controllers/users_controller.ts',
+      `
+      import User from '#models/user'
+      import { createUserValidator } from '#validators/user'
+
+      export default class UsersController {
+        async index({ inertia }: HttpContext) {
+          return interia.render('users/list', {
+            users: await User.all()
+          })
+        }
+
+        async store({ request, response, response }: HttpContext) {
+          const payload = await request.validateUsing(
+            createUserValidator,
+          )
+
+          await User.create(payload)
+          response.redirect().back()
+        }
+      }
+    `
+    )
+
+    await fs.create(
+      'app/controllers/posts_controller.ts',
+      `
+      import Post from '#models/post'
+      import { createPostValidator } from '#validators/post'
+
+      export default class PostsController {
+        async index({ inertia }: HttpContext) {
+          return interia.render('posts/list', {
+            posts: await Post.all()
+          })
+        }
+
+        async store({ request, response, response }: HttpContext) {
+          const payload = await request.validateUsing(
+            createPostValidator,
+          )
+          await Post.create(payload)
+          response.redirect().back()
+        }
+      }
+    `
+    )
+
+    const scanner = new RoutesScanner(fs.basePath, [])
+    scanner.pathsResolver.use((specifier) => {
+      const [namespace, ...rest] = specifier.split('/')
+      const fileName = rest.pop()
+      const resolvedPath = namespace === '#controllers' ? './app/controllers' : ''
+      return new URL([resolvedPath, ...rest, `${fileName}.ts`].join('/'), fs.baseUrl).href
+    })
+
+    await scanner.scan([
+      {
+        domain: 'root',
+        methods: ['GET', 'HEAD'],
+        pattern: '/users',
+        tokens: [],
+        controllerReference: {
+          importExpression: `() => import('#controllers/users_controller')`,
+          method: 'index',
+        },
+      },
+      {
+        domain: 'root',
+        methods: ['POST'],
+        pattern: '/users',
+        tokens: [],
+        controllerReference: {
+          importExpression: `() => import('#controllers/users_controller')`,
+          method: 'store',
+        },
+      },
+      {
+        domain: 'root',
+        methods: ['GET', 'HEAD'],
+        pattern: '/posts',
+        tokens: [],
+        controllerReference: {
+          importExpression: `() => import('#controllers/posts_controller')`,
+          method: 'index',
+        },
+      },
+      {
+        domain: 'root',
+        methods: ['POST'],
+        pattern: '/posts',
+        tokens: [],
+        controllerReference: {
+          importExpression: `() => import('#controllers/posts_controller')`,
+          method: 'store',
+        },
+      },
+    ])
+
+    assert.snapshot(scanner.getScannedRoutes()).matchInline(`
+      [
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/users_controller",
+              "type": "default",
+              "value": "UsersController",
+            },
+            "method": "index",
+            "name": "UsersController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/users_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "GET",
+            "HEAD",
+          ],
+          "name": "users.index",
+          "pattern": "/users",
+          "request": undefined,
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/users_controller').default['index']>",
+          },
+          "tokens": [],
+          "validators": undefined,
+        },
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/users_controller",
+              "type": "default",
+              "value": "UsersController",
+            },
+            "method": "store",
+            "name": "UsersController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/users_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "POST",
+          ],
+          "name": "users.store",
+          "pattern": "/users",
+          "request": {
+            "imports": [
+              "import { Infer } from '@vinejs/vine/types'",
+            ],
+            "type": "Infer<(typeof import('#validators/user').createUserValidator)>",
+          },
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/users_controller').default['store']>",
+          },
+          "tokens": [],
+          "validators": [
+            {
+              "import": {
+                "specifier": "#validators/user",
+                "type": "named",
+                "value": "createUserValidator",
+              },
+              "name": "createUserValidator",
+            },
+          ],
+        },
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/posts_controller",
+              "type": "default",
+              "value": "PostsController",
+            },
+            "method": "index",
+            "name": "PostsController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/posts_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "GET",
+            "HEAD",
+          ],
+          "name": "posts.index",
+          "pattern": "/posts",
+          "request": undefined,
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/posts_controller').default['index']>",
+          },
+          "tokens": [],
+          "validators": undefined,
+        },
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/posts_controller",
+              "type": "default",
+              "value": "PostsController",
+            },
+            "method": "store",
+            "name": "PostsController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/posts_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "POST",
+          ],
+          "name": "posts.store",
+          "pattern": "/posts",
+          "request": {
+            "imports": [
+              "import { Infer } from '@vinejs/vine/types'",
+            ],
+            "type": "Infer<(typeof import('#validators/post').createPostValidator)>",
+          },
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/posts_controller').default['store']>",
+          },
+          "tokens": [],
+          "validators": [
+            {
+              "import": {
+                "specifier": "#validators/post",
+                "type": "named",
+                "value": "createPostValidator",
+              },
+              "name": "createPostValidator",
+            },
+          ],
+        },
+      ]
+    `)
+
+    /**
+     * Let's update both the controllers and invalidate them
+     * one by one
+     */
+    await fs.create(
+      'app/controllers/users_controller.ts',
+      `
+      import User from '#models/user'
+      import { createUser } from '#validators/user'
+
+      export default class UsersController {
+        async index({ inertia }: HttpContext) {
+          return interia.render('users/list', {
+            users: await User.all()
+          })
+        }
+
+        async store({ request, response, response }: HttpContext) {
+          const payload = await request.validateUsing(
+            createUser,
+          )
+
+          await User.create(payload)
+          response.redirect().back()
+        }
+      }
+    `
+    )
+
+    await fs.create(
+      'app/controllers/posts_controller.ts',
+      `
+      import Post from '#models/post'
+
+      export default class PostsController {
+        async index({ inertia }: HttpContext) {
+          return interia.render('posts/list', {
+            posts: await Post.all()
+          })
+        }
+      }
+    `
+    )
+
+    await scanner.invalidate(join(fs.basePath, 'app/controllers/users_controller.ts'))
+    assert.snapshot(scanner.getScannedRoutes()).matchInline(`
+      [
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/users_controller",
+              "type": "default",
+              "value": "UsersController",
+            },
+            "method": "index",
+            "name": "UsersController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/users_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "GET",
+            "HEAD",
+          ],
+          "name": "users.index",
+          "pattern": "/users",
+          "request": undefined,
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/users_controller').default['index']>",
+          },
+          "tokens": [],
+          "validators": undefined,
+        },
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/users_controller",
+              "type": "default",
+              "value": "UsersController",
+            },
+            "method": "store",
+            "name": "UsersController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/users_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "POST",
+          ],
+          "name": "users.store",
+          "pattern": "/users",
+          "request": {
+            "imports": [
+              "import { Infer } from '@vinejs/vine/types'",
+            ],
+            "type": "Infer<(typeof import('#validators/user').createUser)>",
+          },
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/users_controller').default['store']>",
+          },
+          "tokens": [],
+          "validators": [
+            {
+              "import": {
+                "specifier": "#validators/user",
+                "type": "named",
+                "value": "createUser",
+              },
+              "name": "createUser",
+            },
+          ],
+        },
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/posts_controller",
+              "type": "default",
+              "value": "PostsController",
+            },
+            "method": "index",
+            "name": "PostsController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/posts_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "GET",
+            "HEAD",
+          ],
+          "name": "posts.index",
+          "pattern": "/posts",
+          "request": undefined,
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/posts_controller').default['index']>",
+          },
+          "tokens": [],
+          "validators": undefined,
+        },
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/posts_controller",
+              "type": "default",
+              "value": "PostsController",
+            },
+            "method": "store",
+            "name": "PostsController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/posts_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "POST",
+          ],
+          "name": "posts.store",
+          "pattern": "/posts",
+          "request": {
+            "imports": [
+              "import { Infer } from '@vinejs/vine/types'",
+            ],
+            "type": "Infer<(typeof import('#validators/post').createPostValidator)>",
+          },
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/posts_controller').default['store']>",
+          },
+          "tokens": [],
+          "validators": [
+            {
+              "import": {
+                "specifier": "#validators/post",
+                "type": "named",
+                "value": "createPostValidator",
+              },
+              "name": "createPostValidator",
+            },
+          ],
+        },
+      ]
+    `)
+
+    await scanner.invalidate(join(fs.basePath, 'app/controllers/posts_controller.ts'))
+    assert.snapshot(scanner.getScannedRoutes()).matchInline(`
+      [
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/users_controller",
+              "type": "default",
+              "value": "UsersController",
+            },
+            "method": "index",
+            "name": "UsersController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/users_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "GET",
+            "HEAD",
+          ],
+          "name": "users.index",
+          "pattern": "/users",
+          "request": undefined,
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/users_controller').default['index']>",
+          },
+          "tokens": [],
+          "validators": undefined,
+        },
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/users_controller",
+              "type": "default",
+              "value": "UsersController",
+            },
+            "method": "store",
+            "name": "UsersController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/users_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "POST",
+          ],
+          "name": "users.store",
+          "pattern": "/users",
+          "request": {
+            "imports": [
+              "import { Infer } from '@vinejs/vine/types'",
+            ],
+            "type": "Infer<(typeof import('#validators/user').createUser)>",
+          },
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/users_controller').default['store']>",
+          },
+          "tokens": [],
+          "validators": [
+            {
+              "import": {
+                "specifier": "#validators/user",
+                "type": "named",
+                "value": "createUser",
+              },
+              "name": "createUser",
+            },
+          ],
+        },
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/posts_controller",
+              "type": "default",
+              "value": "PostsController",
+            },
+            "method": "index",
+            "name": "PostsController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/posts_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "GET",
+            "HEAD",
+          ],
+          "name": "posts.index",
+          "pattern": "/posts",
+          "request": undefined,
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/posts_controller').default['index']>",
+          },
+          "tokens": [],
+          "validators": undefined,
+        },
+        {
+          "controller": {
+            "import": {
+              "specifier": "#controllers/posts_controller",
+              "type": "default",
+              "value": "PostsController",
+            },
+            "method": "store",
+            "name": "PostsController",
+            "path": "/Users/virk/code/adonisjs/devtools/assembler/tmp/app/controllers/posts_controller.ts",
+          },
+          "domain": "root",
+          "methods": [
+            "POST",
+          ],
+          "name": "posts.store",
+          "pattern": "/posts",
+          "request": undefined,
+          "response": {
+            "imports": [],
+            "type": "ReturnType<import('#controllers/posts_controller').default['store']>",
+          },
+          "tokens": [],
+          "validators": undefined,
         },
       ]
     `)

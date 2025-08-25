@@ -21,7 +21,7 @@ import { copyFile, mkdir } from 'node:fs/promises'
 import { EnvLoader, EnvParser } from '@adonisjs/env'
 import chokidar, { type ChokidarOptions } from 'chokidar'
 import { type UnWrapLazyImport } from '@poppinss/utils/types'
-import path, { basename, dirname, isAbsolute, join, relative } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative } from 'node:path'
 
 import debug from './debug.ts'
 import type { RunScriptOptions } from './types/common.ts'

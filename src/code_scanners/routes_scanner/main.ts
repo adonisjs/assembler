@@ -385,6 +385,32 @@ export class RoutesScanner {
   }
 
   /**
+   * Returns the scanned routes
+   */
+  getScannedRoutes() {
+    return this.#scannedRoutes
+  }
+
+  /**
+   * Invalidating a controller will trigger computing the validators,
+   * request types and the response types.
+   */
+  async invalidate(controllerPath: string) {
+    const controllerRoutes = this.#controllerRoutes[controllerPath]
+    if (!controllerRoutes) {
+      return
+    }
+
+    this.astFileSystem.clear(controllerPath)
+    for (let scannedRoute of controllerRoutes) {
+      if (scannedRoute.controller) {
+        await this.#setResponse(scannedRoute, scannedRoute.controller)
+        await this.#setRequest(scannedRoute, scannedRoute.controller)
+      }
+    }
+  }
+
+  /**
    * Scans an array of Route list items and fetches their validators,
    * controllers, and request/response types.
    */
@@ -394,6 +420,5 @@ export class RoutesScanner {
     }
 
     this.astFileSystem.clear()
-    return this.#scannedRoutes
   }
 }

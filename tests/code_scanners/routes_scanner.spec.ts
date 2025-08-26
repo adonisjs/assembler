@@ -9,6 +9,7 @@
 
 import { join } from 'node:path'
 import { test } from '@japa/runner'
+import string from '@poppinss/utils/string'
 import { RoutesScanner } from '../../src/code_scanners/routes_scanner/main.ts'
 
 test.group('Routes scanner', () => {
@@ -139,7 +140,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -165,7 +166,7 @@ test.group('Routes scanner', () => {
             },
             "method": "create",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -191,7 +192,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -230,7 +231,7 @@ test.group('Routes scanner', () => {
             },
             "method": "edit",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -256,7 +257,7 @@ test.group('Routes scanner', () => {
             },
             "method": "update",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -435,7 +436,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -461,7 +462,7 @@ test.group('Routes scanner', () => {
             },
             "method": "create",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -487,7 +488,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -528,7 +529,7 @@ test.group('Routes scanner', () => {
             },
             "method": "edit",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -554,7 +555,7 @@ test.group('Routes scanner', () => {
             },
             "method": "update",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -715,7 +716,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -741,7 +742,7 @@ test.group('Routes scanner', () => {
             },
             "method": "create",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -767,7 +768,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -806,7 +807,7 @@ test.group('Routes scanner', () => {
             },
             "method": "edit",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -832,7 +833,7 @@ test.group('Routes scanner', () => {
             },
             "method": "update",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -987,7 +988,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1013,7 +1014,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1052,7 +1053,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/posts_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1078,7 +1079,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/posts_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1167,7 +1168,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1193,7 +1194,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1232,7 +1233,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/posts_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1258,7 +1259,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/posts_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1303,7 +1304,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1329,7 +1330,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/users_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1368,7 +1369,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/posts_controller.ts'))}",
           },
           "domain": "root",
           "methods": [
@@ -1394,7 +1395,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${string.toUnixSlash(join(fs.basePath, '/app/controllers/posts_controller.ts'))}",
           },
           "domain": "root",
           "methods": [

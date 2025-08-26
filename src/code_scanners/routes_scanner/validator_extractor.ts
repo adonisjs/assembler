@@ -22,6 +22,7 @@ import {
   inspectMethodArguments,
   searchValidatorDirectUsage,
 } from '../../helpers.ts'
+import string from '@poppinss/utils/string'
 
 /**
  * Extracts the VineJS validator usage from within a controller
@@ -132,7 +133,9 @@ export async function extractValidators(
         name: validationCall,
         import: {
           specifier: isRelative(importCall.specifier)
-            ? relative(appRoot, fileURLToPath(new URL(importCall.specifier, controllerURL)))
+            ? string.toUnixSlash(
+                relative(appRoot, fileURLToPath(new URL(importCall.specifier, controllerURL)))
+              )
             : importCall.specifier,
           type: importCall.clause.type,
           value: importCall.clause.value,

@@ -396,6 +396,7 @@ export class RoutesScanner {
    * request types and the response types.
    */
   async invalidate(controllerPath: string) {
+    controllerPath = string.toUnixSlash(controllerPath)
     const controllerRoutes = this.#controllerRoutes[controllerPath]
     if (!controllerRoutes) {
       return

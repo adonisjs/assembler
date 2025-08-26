@@ -13,6 +13,7 @@ import { test } from '@japa/runner'
 import { join, sep } from 'node:path'
 import { cliui } from '@poppinss/cliui'
 import { setTimeout as sleep } from 'node:timers/promises'
+import { RuntimeException } from '@poppinss/utils/exception'
 
 import { DevServer } from '../index.ts'
 
@@ -322,4 +323,52 @@ test.group('DevServer', () => {
       0
     )
   }).disableTimeout()
+
+  test('return error when tsconfig file is missing', async ({ fs, assert, cleanup }) => {
+    let hooksStack: string[] = []
+    let error: any
+
+    await fs.create(
+      'bin/server.ts',
+      `process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })`
+    )
+    await fs.create('.env', 'PORT=3335')
+
+    const devServer = new DevServer(fs.baseUrl, {
+      nodeArgs: [],
+      scriptArgs: [],
+      metaFiles: [],
+      suites: [],
+      hooks: {
+        devServerStarted: [
+          async () => ({
+            default: () => {
+              hooksStack.push('devServerStarted')
+            },
+          }),
+        ],
+        devServerStarting: [
+          async () => ({
+            default: () => {
+              hooksStack.push('devServerStarting')
+            },
+          }),
+        ],
+      },
+    })
+
+    devServer.ui = cliui()
+    devServer.ui.switchMode('raw')
+
+    devServer.onError((startError) => {
+      error = startError
+    })
+
+    await devServer.startAndWatch(ts)
+    cleanup(() => devServer.close())
+
+    assert.instanceOf(error, RuntimeException)
+    assert.deepEqual(devServer.ui.logger.getLogs(), [])
+    assert.deepEqual(hooksStack, [])
+  })
 })

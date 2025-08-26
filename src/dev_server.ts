@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url'
 import { type FSWatcher } from 'chokidar'
 import { type ResultPromise } from 'execa'
 import string from '@poppinss/utils/string'
+import { RuntimeException } from '@poppinss/utils/exception'
 import { type UnWrapLazyImport } from '@poppinss/utils/types'
 
 import debug from './debug.ts'
@@ -440,6 +441,7 @@ export class DevServer {
   async start(ts: typeof tsStatic) {
     const tsConfig = parseConfig(this.cwd, ts)
     if (!tsConfig) {
+      this.#onError?.(new RuntimeException('Unable to parse tsconfig file'))
       return
     }
 
@@ -480,6 +482,7 @@ export class DevServer {
   async startAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
     const tsConfig = parseConfig(this.cwd, ts)
     if (!tsConfig) {
+      this.#onError?.(new RuntimeException('Unable to parse tsconfig file'))
       return
     }
 

@@ -9,6 +9,7 @@
 
 import { join } from 'node:path'
 import { test } from '@japa/runner'
+import { pathToFileURL } from 'node:url'
 import { PathsResolver } from '../src/paths_resolver.ts'
 
 test.group('Paths resolver', () => {
@@ -35,7 +36,10 @@ test.group('Paths resolver', () => {
 
   test('use custom resolver', ({ assert }) => {
     const resolver = new PathsResolver()
-    resolver.use((specifier) => `file:///${specifier.replace('#', '')}`)
-    assert.equal(resolver.resolve('#src/file_system'), '/src/file_system')
+    resolver.use((specifier) => pathToFileURL(specifier.replace('#', '')).toString())
+    assert.equal(
+      resolver.resolve('#src/file_system'),
+      join(import.meta.dirname, '..', 'src/file_system')
+    )
   })
 })

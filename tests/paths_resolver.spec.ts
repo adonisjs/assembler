@@ -29,7 +29,7 @@ test.group('Paths resolver', () => {
     const resolver = new PathsResolver()
     assert.equal(
       resolver.resolve('@adonisjs/assembler/code_transformer'),
-      join(import.meta.dirname, '..', 'build', 'src', 'code_transformer/main.js')
+      join(import.meta.dirname, '..', 'build', 'src', 'code_transformer/main.ts')
     )
   })
 

@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
-export * from './common.ts'
 export * from './hooks.ts'
+export * from './common.ts'
+export * from './code_scanners.ts'
 export * from './code_transformer.ts'

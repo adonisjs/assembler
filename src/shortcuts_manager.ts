@@ -16,13 +16,42 @@ import {
 
 /**
  * Manages keyboard shortcuts for development server
+ *
+ * @example
+ * const shortcuts = new ShortcutsManager({
+ *   logger: ui.logger,
+ *   callbacks: {
+ *     onRestart: () => server.restart(),
+ *     onClear: () => console.clear(),
+ *     onQuit: () => process.exit()
+ *   }
+ * })
+ * shortcuts.setup()
  */
 export class ShortcutsManager {
+  /**
+   * Logger instance for displaying messages
+   */
   #logger: Logger
+
+  /**
+   * Callback functions for different keyboard shortcuts
+   */
   #callbacks: KeyboardShortcutsCallbacks
+
+  /**
+   * The server URL used for opening browser
+   */
   #serverUrl?: string
+
+  /**
+   * Key press event handler function
+   */
   #keyPressHandler?: (data: Buffer) => void
 
+  /**
+   * Available keyboard shortcuts with their handlers
+   */
   #shortcuts: KeyboardShortcut[] = [
     {
       key: 'r',
@@ -53,6 +82,11 @@ export class ShortcutsManager {
     },
   ]
 
+  /**
+   * Create a new ShortcutsManager instance
+   *
+   * @param options - Configuration options for the shortcuts manager
+   */
   constructor(options: ShortcutsManagerOptions) {
     this.#logger = options.logger
     this.#callbacks = options.callbacks
@@ -60,6 +94,8 @@ export class ShortcutsManager {
 
   /**
    * Set server url for opening in browser
+   *
+   * @param url - The server URL to open when 'o' key is pressed
    */
   setServerUrl(url: string) {
     this.#serverUrl = url
@@ -115,7 +151,7 @@ export class ShortcutsManager {
   }
 
   /**
-   * Cleanup keyboard shortcuts
+   * Cleanup keyboard shortcuts and restore terminal state
    */
   cleanup() {
     if (!process.stdin.isTTY) {

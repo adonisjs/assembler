@@ -25,9 +25,22 @@ const ALLOWED_ENVIRONMENTS = ['web', 'console', 'test', 'repl'] as const
 /**
  * RcFileTransformer is used to transform the `adonisrc.ts` file
  * for adding new commands, providers, meta files etc
+ *
+ * @example
+ * const transformer = new RcFileTransformer(cwd, project)
+ * transformer.addProvider('#providers/app_provider')
+ * transformer.addCommand('#commands/make_controller')
+ * await transformer.save()
  */
 export class RcFileTransformer {
+  /**
+   * The current working directory URL
+   */
   #cwd: URL
+
+  /**
+   * The TsMorph project instance
+   */
   #project: Project
 
   /**
@@ -43,6 +56,12 @@ export class RcFileTransformer {
     semicolons: 'remove',
   }
 
+  /**
+   * Create a new RcFileTransformer instance
+   *
+   * @param cwd - The current working directory URL
+   * @param project - The TsMorph project instance
+   */
   constructor(cwd: URL, project: Project) {
     this.#cwd = cwd
     this.#project = project
@@ -186,6 +205,9 @@ export class RcFileTransformer {
 
   /**
    * Add a new command to the rcFile
+   *
+   * @param commandPath - The path to the command file
+   * @returns This RcFileTransformer instance for method chaining
    */
   addCommand(commandPath: string) {
     const commandsProperty = this.#getPropertyAssignmentInDefineConfigCall('commands', '[]')
@@ -211,6 +233,10 @@ export class RcFileTransformer {
 
   /**
    * Add a new preloaded file to the rcFile
+   *
+   * @param modulePath - The path to the preload file
+   * @param environments - Optional array of environments where this preload should run
+   * @returns This RcFileTransformer instance for method chaining
    */
   addPreloadFile(modulePath: string, environments?: (typeof ALLOWED_ENVIRONMENTS)[number][]) {
     const preloadsProperty = this.#getPropertyAssignmentInDefineConfigCall('preloads', '[]')
@@ -236,6 +262,10 @@ export class RcFileTransformer {
 
   /**
    * Add a new provider to the rcFile
+   *
+   * @param providerPath - The path to the provider file
+   * @param environments - Optional array of environments where this provider should run
+   * @returns This RcFileTransformer instance for method chaining
    */
   addProvider(providerPath: string, environments?: (typeof ALLOWED_ENVIRONMENTS)[number][]) {
     const property = this.#getPropertyAssignmentInDefineConfigCall('providers', '[]')
@@ -260,6 +290,10 @@ export class RcFileTransformer {
 
   /**
    * Add a new meta file to the rcFile
+   *
+   * @param globPattern - The glob pattern for the meta file
+   * @param reloadServer - Whether the server should reload when this file changes
+   * @returns This RcFileTransformer instance for method chaining
    */
   addMetaFile(globPattern: string, reloadServer = false) {
     const property = this.#getPropertyAssignmentInDefineConfigCall('metaFiles', '[]')
@@ -371,7 +405,7 @@ export class RcFileTransformer {
   }
 
   /**
-   * Save the adonisrc.ts file
+   * Save the adonisrc.ts file with all applied transformations
    */
   save() {
     const file = this.#getRcFileOrThrow()

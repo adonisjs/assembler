@@ -15,13 +15,24 @@ import debug from './debug.ts'
 /**
  * An abstraction around converting files to an AST and caching
  * them forever. The cache could be cleared manually.
+ *
+ * @example
+ * const astfs = new AstFileSystem()
+ * const node = await astfs.get('./app/controllers/users_controller.ts')
+ * astfs.clear('./app/controllers/users_controller.ts')
  */
 export class AstFileSystem {
+  /**
+   * Cache map storing parsed AST nodes by file path
+   */
   #cache: Map<string, SgNode> = new Map()
 
   /**
    * Returns the file contents as AST-grep node and caches it
    * forever.
+   *
+   * @param filePath - The path to the file to parse
+   * @returns Promise resolving to the AST-grep node
    */
   async get(filePath: string): Promise<SgNode> {
     const cached = this.#cache.get(filePath)
@@ -38,6 +49,8 @@ export class AstFileSystem {
 
   /**
    * Clear AST cache for a single file or all the files
+   *
+   * @param filePath - Optional file path to clear. If omitted, clears entire cache
    */
   clear(filePath?: string) {
     debug('clear AST cache "%s"', filePath)

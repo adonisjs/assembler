@@ -1,0 +1,19 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "@adonisjs/assembler",
+  "includeVersion": true,
+  "excludeExternals": true,
+  "entryPoints": [
+    "./index.ts",
+    "./src/types/main.ts",
+    "./src/helpers.ts",
+    "./src/code_transformer/main.ts",
+    "./src/code_scanners/routes_scanner/main.ts"
+  ],
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "readme": "none",
+  "gitRevision": "main",
+  "sort": ["source-order"]
+}

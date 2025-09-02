@@ -12,7 +12,18 @@ import { type SgNode } from '@ast-grep/napi'
 import type { Import } from './types/common.ts'
 
 /**
- * Finds an import reference inside a code snippet
+ * Finds an import reference inside a code snippet by analyzing the import statements
+ * and matching against the provided import reference identifier
+ *
+ * @param code - The code snippet to search for imports
+ * @param importReference - The import reference identifier to find
+ * @returns Promise that resolves to an Import object or null if not found
+ *
+ * @example
+ * const importInfo = await findImport(code, 'validateUser')
+ * if (importInfo) {
+ *   console.log(importInfo.specifier) // '@/validators/user'
+ * }
  */
 export async function findImport(code: string, importReference: string): Promise<Import | null> {
   const importIdentifier = importReference.split('.')[0]
@@ -90,6 +101,15 @@ export async function findImport(code: string, importReference: string): Promise
 /**
  * Returns a node that represents a TypeScript class or null
  * when unable to find the class.
+ *
+ * @param node - The AST node to search within for class declarations
+ * @returns The SgNode representing the class or null if not found
+ *
+ * @example
+ * const classNode = inspectClass(rootNode)
+ * if (classNode) {
+ *   console.log('Found class:', classNode.text())
+ * }
  */
 export function inspectClass(node: SgNode): SgNode | null {
   return node.find({
@@ -102,6 +122,16 @@ export function inspectClass(node: SgNode): SgNode | null {
 /**
  * Returns an array of SgNodes for class methods. The input node
  * must represent a class.
+ *
+ * @param node - The AST node representing a class to search for methods
+ * @returns Array of SgNodes representing method definitions within the class
+ *
+ * @example
+ * const classNode = inspectClass(rootNode)
+ * if (classNode) {
+ *   const methods = inspectClassMethods(classNode)
+ *   methods.forEach(method => console.log('Method:', method.text()))
+ * }
  */
 export function inspectClassMethods(node: SgNode): SgNode[] {
   return node.findAll({
@@ -112,12 +142,20 @@ export function inspectClassMethods(node: SgNode): SgNode[] {
 }
 
 /**
- * Converts an array of SgNode to plain text by removing whitespaces,
- * identation and comments in between. Tested with the following
+ * Converts an SgNode to plain text by removing whitespaces,
+ * indentation and comments in between. Tested with the following
  * children nodes only.
  *
  * - MemberExpression
- * - Identifer
+ * - Identifier
+ *
+ * @param node - The AST node to convert to plain text
+ * @returns String representation of the node without formatting
+ *
+ * @example
+ * const memberExpression = node.find({ rule: { kind: 'member_expression' } })
+ * const plainText = nodeToPlainText(memberExpression)
+ * console.log(plainText) // 'user.validate'
  */
 export function nodeToPlainText(node: SgNode) {
   let out: string[] = []
@@ -141,6 +179,15 @@ export function nodeToPlainText(node: SgNode) {
  *
  * For example: In case of validators, we will first find the Controller
  * method for which we want the validation method calls.
+ *
+ * @param node - The AST node to search within for method calls
+ * @param methodCalls - Array of method call names to search for
+ * @returns Array of SgNodes representing the arguments of matching method calls
+ *
+ * @example
+ * const controllerMethod = classNode.find({ rule: { kind: 'method_definition' } })
+ * const validatorArgs = inspectMethodArguments(controllerMethod, ['validate', 'request.validate'])
+ * validatorArgs.forEach(arg => console.log('Validator argument:', arg.text()))
  */
 export function inspectMethodArguments(node: SgNode, methodCalls: string[]): SgNode[] {
   const matchingExpressions = node.findAll({
@@ -165,6 +212,16 @@ export function inspectMethodArguments(node: SgNode, methodCalls: string[]): SgN
  * Inspect the validator direct usage code snippets. A member expression
  * calling the ".validate" method is considered as direct usage of
  * the validator.
+ *
+ * @param node - The AST node to search within for validator direct usage
+ * @returns Array of SgNodes representing validator expressions that call validate method
+ *
+ * @example
+ * const methodNode = classNode.find({ rule: { kind: 'method_definition' } })
+ * const validators = searchValidatorDirectUsage(methodNode)
+ * validators.forEach(validator => {
+ *   console.log('Direct validator usage:', nodeToPlainText(validator))
+ * })
  */
 export function searchValidatorDirectUsage(node: SgNode): SgNode[] {
   const matchingExpressions = node.findAll({

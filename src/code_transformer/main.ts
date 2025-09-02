@@ -35,14 +35,26 @@ import type {
 } from '../types/code_transformer.ts'
 
 /**
- * This class is responsible for updating
+ * This class is responsible for transforming AdonisJS project code,
+ * including updating middleware, environment validations, and other
+ * code generation tasks.
+ *
+ * @example
+ * const transformer = new CodeTransformer(cwd)
+ * await transformer.addMiddlewareToStack('server', [{
+ *   path: '#middleware/cors_middleware',
+ *   position: 'before'
+ * }])
  */
 export class CodeTransformer {
   /**
-   * Exporting utilities to install package and detect
-   * the package manager
+   * Utility function for installing packages
    */
   installPackage = installPackage
+
+  /**
+   * Utility function for detecting the package manager
+   */
   detectPackageManager = detectPackageManager
 
   /**
@@ -52,7 +64,7 @@ export class CodeTransformer {
   #cwdPath: string
 
   /**
-   * The TsMorph project
+   * The TsMorph project instance for AST manipulation
    */
   project: Project
 
@@ -69,6 +81,11 @@ export class CodeTransformer {
     semicolons: 'remove',
   }
 
+  /**
+   * Create a new CodeTransformer instance
+   *
+   * @param cwd - The current working directory URL
+   */
   constructor(cwd: URL) {
     this.#cwd = cwd
     this.#cwdPath = fileURLToPath(this.#cwd)
@@ -237,8 +254,9 @@ export class CodeTransformer {
   }
 
   /**
-   * Add new env variable validation in the
-   * `env.ts` file
+   * Add new env variable validation in the `env.ts` file
+   *
+   * @param definition - Environment validation definition containing variables and comment
    */
   async defineEnvValidations(definition: EnvValidationNode) {
     /**
@@ -306,12 +324,14 @@ export class CodeTransformer {
   }
 
   /**
-   * Define new middlewares inside the `start/kernel.ts`
-   * file
+   * Define new middlewares inside the `start/kernel.ts` file
    *
    * This function is highly based on some assumptions
    * and will not work if you significantly tweaked
    * your `start/kernel.ts` file.
+   *
+   * @param stack - The middleware stack to add to ('server', 'router', or 'named')
+   * @param middleware - Array of middleware entries to add
    */
   async addMiddlewareToStack(stack: 'server' | 'router' | 'named', middleware: MiddlewareNode[]) {
     /**
@@ -336,7 +356,9 @@ export class CodeTransformer {
   }
 
   /**
-   * Update the `adonisrc.ts` file
+   * Update the `adonisrc.ts` file using the provided callback
+   *
+   * @param callback - Function that receives the RcFileTransformer for modifications
    */
   async updateRcFile(callback: (transformer: RcFileTransformer) => void) {
     const rcFileTransformer = new RcFileTransformer(this.#cwd, this.project)
@@ -346,6 +368,9 @@ export class CodeTransformer {
 
   /**
    * Add a new Japa plugin in the `tests/bootstrap.ts` file
+   *
+   * @param pluginCall - The plugin function call to add
+   * @param importDeclarations - Import declarations needed for the plugin
    */
   async addJapaPlugin(
     pluginCall: string,
@@ -383,7 +408,10 @@ export class CodeTransformer {
   }
 
   /**
-   * Add a new Vite plugin
+   * Add a new Vite plugin to the `vite.config.ts` file
+   *
+   * @param pluginCall - The plugin function call to add
+   * @param importDeclarations - Import declarations needed for the plugin
    */
   async addVitePlugin(
     pluginCall: string,
@@ -442,6 +470,8 @@ export class CodeTransformer {
   /**
    * Adds a policy to the list of `policies` object configured
    * inside the `app/policies/main.ts` file.
+   *
+   * @param policies - Array of bouncer policy entries to add
    */
   async addPolicies(policies: BouncerPolicyNode[]) {
     /**
@@ -475,9 +505,14 @@ export class CodeTransformer {
    * }
    * ```
    *
-   * @param source
-   * @param outputPath
-   * @param importAlias
+   * @param input - Source configuration for entity scanning
+   * @param output - Output configuration for the generated index file
+   *
+   * @example
+   * await transformer.makeEntityIndex(
+   *   { source: 'app/controllers', importAlias: '#controllers' },
+   *   { destination: 'start/controllers.ts', exportName: 'controllers' }
+   * )
    */
   async makeEntityIndex(
     input: OneOrMore<{ source: string; importAlias?: string; allowedExtensions?: string[] }>,

@@ -8,29 +8,42 @@
  */
 
 /**
- * Entry to add a middleware to a given middleware stack
- * via the CodeTransformer
+ * Entry to add a middleware to a given middleware stack via the CodeTransformer.
+ * Represents middleware configuration for server, router, or named middleware stacks.
+ *
+ * @example
+ * const corsMiddleware: MiddlewareNode = {
+ *   path: '@adonisjs/cors/cors_middleware',
+ *   position: 'before'
+ * }
+ *
+ * const namedMiddleware: MiddlewareNode = {
+ *   name: 'auth',
+ *   path: '#middleware/auth_middleware',
+ *   position: 'after'
+ * }
  */
 export type MiddlewareNode = {
   /**
-   * If you are adding a named middleware, then you must
-   * define the name.
+   * Required for named middleware. The key name under which the middleware
+   * will be registered in the named middleware collection.
    */
   name?: string
 
   /**
-   * The path to the middleware file
+   * The import path to the middleware file. Can be a package import,
+   * subpath import, or relative path.
    *
    * @example
-   *  `@adonisjs/static/static_middleware`
-   *  `#middlewares/silent_auth.js`
+   * '@adonisjs/static/static_middleware'
+   * '#middlewares/silent_auth'
+   * './middleware/custom_middleware.js'
    */
   path: string
 
   /**
-   * The position to add the middleware. If `before`
-   * middleware will be added at the first position and
-   * therefore will be run before all others
+   * The position to add the middleware in the stack.
+   * 'before' adds at the beginning (runs first), 'after' adds at the end (runs last).
    *
    * @default 'after'
    */
@@ -38,40 +51,69 @@ export type MiddlewareNode = {
 }
 
 /**
- * Policy node to be added to the list of policies.
+ * Policy node to be added to the list of Bouncer authorization policies.
+ * Used for registering policies in the application's policy registry.
+ *
+ * @example
+ * const userPolicy: BouncerPolicyNode = {
+ *   name: 'UserPolicy',
+ *   path: '#policies/user_policy'
+ * }
  */
 export type BouncerPolicyNode = {
   /**
-   * Policy name
+   * The name of the policy class (should match the exported class name)
    */
   name: string
 
   /**
-   * Policy import path
+   * The import path to the policy file
    */
   path: string
 }
 
 /**
- * Defines the structure of an environment variable validation
- * definition
+ * Defines the structure of an environment variable validation definition.
+ * Used to add new environment variable validations to the start/env.ts file.
+ *
+ * @example
+ * const envValidation: EnvValidationNode = {
+ *   leadingComment: 'Database configuration',
+ *   variables: {
+ *     DB_HOST: 'Env.schema.string()',
+ *     DB_PORT: 'Env.schema.number.optional({ port: 5432 })',
+ *     DB_PASSWORD: 'Env.schema.string.optional()'
+ *   }
+ * }
  */
 export type EnvValidationNode = {
   /**
-   * Write a leading comment on top of your variables
+   * Optional leading comment to write above the variable definitions.
+   * Helps group related environment variables together.
    */
   leadingComment?: string
 
   /**
-   * A key-value pair of env variables and their validation
+   * A key-value pair of environment variables and their validation schemas.
+   * The key is the environment variable name, the value is the validation code.
    *
    * @example
-   *  MY_VAR: 'Env.schema.string.optional()'
+   * {
+   *   MY_VAR: 'Env.schema.string.optional()',
+   *   API_KEY: 'Env.schema.string()'
+   * }
    */
   variables: Record<string, string>
 }
 
 /**
- * The supported package managers for installing packages
+ * The supported package managers for installing packages and managing lockfiles.
+ * Each package manager has specific lockfiles and install commands.
+ *
+ * @example
+ * const packageManager: SupportedPackageManager = 'pnpm'
+ *
+ * // Used in bundler configuration
+ * const bundler = new Bundler(cwd, ts, { packageManager: 'yarn@berry' })
  */
 export type SupportedPackageManager = 'npm' | 'yarn' | 'yarn@berry' | 'pnpm' | 'bun'

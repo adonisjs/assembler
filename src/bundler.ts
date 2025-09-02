@@ -27,7 +27,7 @@ import { type SupportedPackageManager } from './types/code_transformer.ts'
  * List of package managers we support in order to
  * copy lockfiles
  */
-const SUPPORTED_PACKAGE_MANAGERS: {
+export const SUPPORTED_PACKAGE_MANAGERS: {
   [K in SupportedPackageManager]: {
     packageManagerFiles: string[]
     installCommand: string
@@ -57,9 +57,20 @@ const SUPPORTED_PACKAGE_MANAGERS: {
 
 /**
  * The bundler class exposes the API to build an AdonisJS project.
+ *
+ * @example
+ * const bundler = new Bundler(new URL('./'), ts, { hooks: [] })
+ * const success = await bundler.bundle()
  */
 export class Bundler {
+  /**
+   * The current working project directory path as string
+   */
   #cwdPath: string
+
+  /**
+   * Reference to the TypeScript module
+   */
   #ts: typeof tsStatic
 
   /**
@@ -72,13 +83,23 @@ export class Bundler {
     ]
   }>
 
+  /**
+   * CLI UI instance for displaying colorful messages and progress information
+   */
   ui = cliui()
 
   /**
-   * Package manager detect from the project environment
+   * Package manager detected from the project environment
    */
   declare packageManager: SupportedPackageManager
 
+  /**
+   * Create a new bundler instance
+   *
+   * @param cwd - The current working directory URL
+   * @param ts - TypeScript module reference
+   * @param options - Bundler configuration options
+   */
   constructor(
     public cwd: URL,
     ts: typeof tsStatic,
@@ -168,6 +189,13 @@ export class Bundler {
 
   /**
    * Bundles the application to be run in production
+   *
+   * @param stopOnError - Whether to stop the build process on TypeScript errors
+   * @param client - Override the detected package manager
+   * @returns Promise that resolves to true if build succeeded, false otherwise
+   *
+   * @example
+   * const success = await bundler.bundle(true, 'npm')
    */
   async bundle(stopOnError: boolean = true, client?: SupportedPackageManager): Promise<boolean> {
     this.#hooks = await loadHooks(this.options.hooks, ['buildStarting', 'buildFinished'])

@@ -35,6 +35,10 @@ const DEFAULT_EXCLUDES = ['node_modules/**', 'bower_components/**', 'jspm_packag
  *
  * Using FileSystem you can register actions to be executed when a file changes in
  * one of the above categories.
+ *
+ * @example
+ * const fs = new FileSystem(cwd, tsConfig, rcFile)
+ * const file = fs.inspect('./app/controllers/users_controller.ts')
  */
 export class FileSystem {
   /**
@@ -84,7 +88,7 @@ export class FileSystem {
   #isTestFile: picomatch.Matcher
 
   /**
-   * References to includes and excludes
+   * References to includes and excludes glob patterns
    */
   #includes: string[]
   #excludes: string[]
@@ -206,6 +210,13 @@ export class FileSystem {
     return true
   })
 
+  /**
+   * Create a new FileSystem instance
+   *
+   * @param cwd - The current working directory URL or string path
+   * @param tsConfig - Parsed TypeScript configuration
+   * @param rcFile - AdonisJS RC file configuration
+   */
   constructor(cwd: URL | string, tsConfig: tsStatic.ParsedCommandLine, rcFile: AssemblerRcFile) {
     this.#cwd = string.toUnixSlash(typeof cwd === 'string' ? cwd : fileURLToPath(cwd))
     this.#tsConfig = tsConfig
@@ -325,6 +336,9 @@ export class FileSystem {
    *
    * You must use "shouldWatchDirectory" method for directories and call
    * this method for files only.
+   *
+   * @param absolutePath - The absolute path to the file
+   * @returns True if the file should be watched
    */
   shouldWatchFile(absolutePath: string) {
     return this.inspect(relative(this.#cwd, absolutePath)) !== null

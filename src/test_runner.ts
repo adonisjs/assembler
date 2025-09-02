@@ -33,6 +33,10 @@ import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './uti
  *    will be re-run.
  *  - Otherwise, all tests will re-run with respect to the initial
  *    filters applied when running the `node ace test` command.
+ *
+ * @example
+ * const testRunner = new TestRunner(cwd, { suites: [], hooks: [] })
+ * await testRunner.run()
  */
 export class TestRunner {
   /**
@@ -94,7 +98,7 @@ export class TestRunner {
   }, 'reRunTests')
 
   /**
-   * CLI UI to log colorful messages
+   * CLI UI instance to log colorful messages and progress information
    */
   ui = cliui()
 
@@ -103,6 +107,12 @@ export class TestRunner {
    */
   scriptFile: string = 'bin/test.ts'
 
+  /**
+   * Create a new TestRunner instance
+   *
+   * @param cwd - The current working directory URL
+   * @param options - Test runner configuration options
+   */
   constructor(
     public cwd: URL,
     public options: TestRunnerOptions
@@ -269,8 +279,10 @@ export class TestRunner {
   }
 
   /**
-   * Add listener to get notified when dev server is
-   * closed
+   * Add listener to get notified when test runner is closed
+   *
+   * @param callback - Function to call when test runner closes
+   * @returns This TestRunner instance for method chaining
    */
   onClose(callback: (exitCode: number) => any): this {
     this.#onClose = callback
@@ -278,8 +290,10 @@ export class TestRunner {
   }
 
   /**
-   * Add listener to get notified when dev server exists
-   * with an error
+   * Add listener to get notified when test runner encounters an error
+   *
+   * @param callback - Function to call when test runner encounters an error
+   * @returns This TestRunner instance for method chaining
    */
   onError(callback: (error: any) => any): this {
     this.#onError = callback
@@ -298,7 +312,7 @@ export class TestRunner {
   }
 
   /**
-   * Runs tests
+   * Runs tests once without watching for file changes
    */
   async run() {
     this.#stickyPort = String(await getPort(this.cwd))
@@ -316,7 +330,10 @@ export class TestRunner {
   }
 
   /**
-   * Run tests in watch mode
+   * Run tests in watch mode and re-run them when files change
+   *
+   * @param ts - TypeScript module reference
+   * @param options - Watch options including polling mode
    */
   async runAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
     const tsConfig = parseConfig(this.cwd, ts)

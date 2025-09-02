@@ -10,3 +10,4 @@
 export { Bundler } from './src/bundler.ts'
 export { DevServer } from './src/dev_server.ts'
 export { TestRunner } from './src/test_runner.ts'
+export { SUPPORTED_PACKAGE_MANAGERS } from './src/bundler.ts'

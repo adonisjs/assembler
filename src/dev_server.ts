@@ -35,6 +35,10 @@ import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './uti
  * In watch mode, the DevServer will start an internal watcher and restarts the after
  * every file change. The files must be part of the TypeScript project (via tsconfig.json),
  * or registered as metaFiles.
+ *
+ * @example
+ * const devServer = new DevServer(cwd, { hmr: true, hooks: [] })
+ * await devServer.start(ts)
  */
 export class DevServer {
   /**
@@ -71,7 +75,7 @@ export class DevServer {
   #httpServer?: ResultPromise
 
   /**
-   * Keyboard shortcuts manager
+   * Keyboard shortcuts manager instance
    */
   #shortcutsManager?: ShortcutsManager
 
@@ -134,7 +138,7 @@ export class DevServer {
   }
 
   /**
-   * CLI UI to log colorful messages
+   * CLI UI instance to log colorful messages and progress information
    */
   ui = cliui()
 
@@ -150,6 +154,12 @@ export class DevServer {
    */
   scriptFile: string = 'bin/server.ts'
 
+  /**
+   * Create a new DevServer instance
+   *
+   * @param cwd - The current working directory URL
+   * @param options - Development server configuration options
+   */
   constructor(
     public cwd: URL,
     public options: DevServerOptions
@@ -406,8 +416,10 @@ export class DevServer {
   }
 
   /**
-   * Add listener to get notified when dev server is
-   * closed
+   * Add listener to get notified when dev server is closed
+   *
+   * @param callback - Function to call when dev server closes
+   * @returns This DevServer instance for method chaining
    */
   onClose(callback: (exitCode: number) => any): this {
     this.#onClose = callback
@@ -415,8 +427,10 @@ export class DevServer {
   }
 
   /**
-   * Add listener to get notified when dev server exists
-   * with an error
+   * Add listener to get notified when dev server encounters an error
+   *
+   * @param callback - Function to call when dev server encounters an error
+   * @returns This DevServer instance for method chaining
    */
   onError(callback: (error: any) => any): this {
     this.#onError = callback
@@ -436,7 +450,9 @@ export class DevServer {
   }
 
   /**
-   * Start the development server
+   * Start the development server in static or HMR mode
+   *
+   * @param ts - TypeScript module reference
    */
   async start(ts: typeof tsStatic) {
     const tsConfig = parseConfig(this.cwd, ts)
@@ -477,7 +493,10 @@ export class DevServer {
   }
 
   /**
-   * Start the development server in watch mode
+   * Start the development server in watch mode and restart on file changes
+   *
+   * @param ts - TypeScript module reference
+   * @param options - Watch options including polling mode
    */
   async startAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
     const tsConfig = parseConfig(this.cwd, ts)

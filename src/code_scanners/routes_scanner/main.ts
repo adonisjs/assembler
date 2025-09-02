@@ -25,6 +25,18 @@ import {
   type RoutesScannerRules,
 } from '../../types/code_scanners.ts'
 
+/**
+ * RoutesScanner is responsible for scanning application routes,
+ * extracting their controllers, validators, request and response types.
+ *
+ * @example
+ * const scanner = new RoutesScanner(appRoot, [rules])
+ * scanner.defineResponse((route, controller) => {
+ *   return { type: 'CustomResponseType', imports: [] }
+ * })
+ * await scanner.scan(routes)
+ * const scannedRoutes = scanner.getScannedRoutes()
+ */
 export class RoutesScanner {
   /**
    * The root of the application from where we will resolve
@@ -74,7 +86,7 @@ export class RoutesScanner {
   ) => AsyncOrSync<ScannedRoute['validators']>
 
   /**
-   * CLI UI to log colorful messages
+   * CLI UI instance to log colorful messages and progress information
    */
   ui = cliui()
 
@@ -99,6 +111,12 @@ export class RoutesScanner {
     response: {},
   }
 
+  /**
+   * Create a new RoutesScanner instance
+   *
+   * @param appRoot - The root directory of the application
+   * @param rulesCollection - Collection of rules to apply during scanning
+   */
   constructor(appRoot: string, rulesCollection: RoutesScannerRules[]) {
     this.#appRoot = appRoot
 
@@ -340,6 +358,9 @@ export class RoutesScanner {
    * a given route. The callback will be executed for all
    * the routes and you must return undefined to fallback
    * to the default behavior of detecting types
+   *
+   * @param callback - Function to compute response types for routes
+   * @returns This RoutesScanner instance for method chaining
    */
   defineResponse(
     callback: (
@@ -357,6 +378,9 @@ export class RoutesScanner {
    * a given route. The callback will be executed for all
    * the routes and you must return undefined to fallback
    * to the default behavior of detecting types
+   *
+   * @param callback - Function to compute request types for routes
+   * @returns This RoutesScanner instance for method chaining
    */
   defineRequest(
     callback: (
@@ -370,8 +394,10 @@ export class RoutesScanner {
   }
 
   /**
-   * Register a callback to extract validators from the route
-   * controller.
+   * Register a callback to extract validators from the route controller
+   *
+   * @param callback - Function to extract validators from controllers
+   * @returns This RoutesScanner instance for method chaining
    */
   extractValidators(
     callback: (
@@ -386,6 +412,8 @@ export class RoutesScanner {
 
   /**
    * Returns the scanned routes
+   *
+   * @returns Array of scanned routes with their metadata
    */
   getScannedRoutes() {
     return this.#scannedRoutes
@@ -394,6 +422,8 @@ export class RoutesScanner {
   /**
    * Invalidating a controller will trigger computing the validators,
    * request types and the response types.
+   *
+   * @param controllerPath - Path to the controller file to invalidate
    */
   async invalidate(controllerPath: string) {
     controllerPath = string.toUnixSlash(controllerPath)
@@ -414,6 +444,8 @@ export class RoutesScanner {
   /**
    * Scans an array of Route list items and fetches their validators,
    * controllers, and request/response types.
+   *
+   * @param routes - Array of route list items to scan
    */
   async scan(routes: RoutesListItem[]) {
     for (let route of routes) {

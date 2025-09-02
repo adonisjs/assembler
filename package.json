@@ -74,7 +74,7 @@
     "get-port": "^7.1.0",
     "junk": "^4.0.1",
     "open": "^10.2.0",
-    "parse-imports": "^2.2.1",
+    "parse-imports": "^3.0.0",
     "picomatch": "^4.0.3",
     "pretty-hrtime": "^1.0.3",
     "tmp-cache": "^1.1.0",

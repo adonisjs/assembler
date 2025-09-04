@@ -12,8 +12,8 @@ import { relative } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import lodash from '@poppinss/utils/lodash'
 import { naturalSort } from '@poppinss/utils'
-import picomatch, { type Matcher } from 'picomatch'
 import { Lang, parse, type SgNode } from '@ast-grep/napi'
+import picomatch, { type PicomatchOptions, type Matcher } from 'picomatch'
 
 import debug from './debug.ts'
 import { removeExtension } from './utils.ts'
@@ -31,7 +31,7 @@ const DEFAULT_GLOB = ['**/!(*.d).ts', '**/*.tsx', '**/*.js']
  * formats for different use cases.
  *
  * @example
- * const vfs = new VirtualFileSystem('/src', { glob: ['**/*.ts'] })
+ * const vfs = new VirtualFileSystem('/src', { glob: ['**\/*.ts'] })
  * await vfs.scan()
  * const fileTree = vfs.asTree()
  * const astNode = await vfs.get('/src/app.ts')
@@ -65,6 +65,11 @@ export class VirtualFileSystem {
   #matcher: Matcher
 
   /**
+   * Picomatch options used for file pattern matching
+   */
+  #picoMatchOptions: PicomatchOptions
+
+  /**
    * Create a new VirtualFileSystem instance
    *
    * @param source - Absolute path to the source directory
@@ -73,10 +78,11 @@ export class VirtualFileSystem {
   constructor(source: string, options?: VirtualFileSystemOptions) {
     this.#source = source
     this.#options = options ?? {}
-    this.#matcher = picomatch(this.#options.glob ?? DEFAULT_GLOB, {
+    this.#picoMatchOptions = {
       posixSlashes: true,
       cwd: this.#source,
-    })
+    }
+    this.#matcher = picomatch(this.#options.glob ?? DEFAULT_GLOB, this.#picoMatchOptions)
   }
 
   /**
@@ -88,14 +94,13 @@ export class VirtualFileSystem {
    */
   async scan() {
     debug('fetching entities from source "%s"', this.#source)
-    const fsDir = new fdir()
-      .globWithOptions(this.#options.glob ?? DEFAULT_GLOB, {
-        posixSlashes: true,
-        cwd: this.#source,
-      })
+    const filesList = await new fdir()
+      .globWithOptions(this.#options.glob ?? DEFAULT_GLOB, this.#picoMatchOptions)
       .withFullPaths()
+      .crawl(this.#source)
+      .withPromise()
 
-    const filesList = await fsDir.crawl(this.#source).withPromise()
+    debug('scanned files %O', filesList)
     this.#files = new Set(filesList.sort(naturalSort))
   }
 
@@ -183,20 +188,27 @@ export class VirtualFileSystem {
    * matches the pre-defined filters.
    *
    * @param filePath - Absolute path of the file to add
+   * @returns True if the file was added, false if it doesn't match filters
    */
-  add(filePath: string) {
+  add(filePath: string): boolean {
     if (this.has(filePath)) {
+      debug('adding new "%s" file to the virtual file system', filePath)
       this.#files.add(filePath)
+      return true
     }
+
+    return false
   }
 
   /**
    * Remove a file from the virtual file system
    *
    * @param filePath - Absolute path of the file to remove
+   * @returns True if the file was removed, false if it wasn't tracked
    */
-  remove(filePath: string) {
-    this.#files.delete(filePath)
+  remove(filePath: string): boolean {
+    debug('removing "%s" file from virtual file system', filePath)
+    return this.#files.delete(filePath)
   }
 
   /**
@@ -218,8 +230,8 @@ export class VirtualFileSystem {
 
     const fileContents = await readFile(filePath, 'utf-8')
     debug('parsing "%s" file to AST', filePath)
-    this.#astCache.set(filePath, parse(Lang.TypeScript, fileContents).root())
 
+    this.#astCache.set(filePath, parse(Lang.TypeScript, fileContents).root())
     return this.#astCache.get(filePath)!
   }
 

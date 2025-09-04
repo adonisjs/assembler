@@ -12,10 +12,11 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join, relative } from 'node:path'
 import StringBuilder from '@poppinss/utils/string_builder'
 
+import debug from '../debug.ts'
+import { removeExtension } from '../utils.ts'
 import { FileBuffer } from '../file_buffer.ts'
 import { VirtualFileSystem } from '../virtual_file_system.ts'
 import { type RecursiveFileTree, type IndexGeneratorSourceConfig } from '../types/common.ts'
-import { removeExtension } from '../utils.ts'
 
 /**
  * IndexGeneratorSource handles the generation of a single index file.
@@ -68,10 +69,15 @@ export class IndexGeneratorSource {
   /**
    * Create a new IndexGeneratorSource instance
    *
+   * @param name - Unique name for this index generator source
    * @param appRoot - The application root directory path
    * @param config - Configuration for this index generator source
    */
-  constructor(appRoot: string, config: IndexGeneratorSourceConfig) {
+  constructor(
+    public name: string,
+    appRoot: string,
+    config: IndexGeneratorSourceConfig
+  ) {
     this.#config = config
     this.#appRoot = appRoot
     this.#source = join(this.#appRoot, this.#config.source)
@@ -105,6 +111,47 @@ export class IndexGeneratorSource {
   }
 
   /**
+   * Transforms the barrel file index key. Converts basename to PascalCase
+   * and all other paths to camelCase
+   *
+   * @param config - Configuration containing suffix removal options
+   * @returns Function that transforms file paths to appropriate keys
+   */
+  #createBarrelFileKeyGenerator(config: IndexGeneratorSourceConfig) {
+    return function (key: string) {
+      const paths = key.split('/')
+      const baseName = new StringBuilder(paths.pop()!)
+        .removeSuffix(config.removeSuffix ?? '')
+        .pascalCase()
+        .toString()
+      return [...paths.map((p) => string.camelCase(p)), baseName].join('/')
+    }
+  }
+
+  /**
+   * Converts the file path to a lazy import. In case of an alias, the source
+   * path is replaced with the alias, otherwise a relative import is created
+   * from the output dirname.
+   *
+   * @param source - The source directory path
+   * @param outputDirname - The output directory path
+   * @param config - Configuration containing import alias options
+   * @returns Function that converts file paths to import statements
+   */
+  #createBarrelFileImportGenerator(
+    source: string,
+    outputDirname: string,
+    config: IndexGeneratorSourceConfig
+  ) {
+    return function (filePath: string) {
+      if (config.importAlias) {
+        return `() => import('${removeExtension(filePath.replace(source, config.importAlias))}')`
+      }
+      return `() => import('${relative(outputDirname, filePath)}')`
+    }
+  }
+
+  /**
    * Generate a barrel file export structure
    *
    * This method creates a nested object structure that represents all
@@ -115,31 +162,16 @@ export class IndexGeneratorSource {
    * @param exportName - Name for the main export object
    */
   #asBarrelFile(vfs: VirtualFileSystem, buffer: FileBuffer, exportName: string) {
-    const tree = vfs.asTree({
-      /**
-       * Transforming the key to convert basename to PascalCase and
-       * all other paths to camelCase
-       */
-      transformKey: (key) => {
-        const paths = key.split('/')
-        const baseName = new StringBuilder(paths.pop()!)
-          .removeSuffix(this.#config.removeSuffix ?? '')
-          .pascalCase()
-          .toString()
-        return [...paths.map((p) => string.camelCase(p)), baseName].join('/')
-      },
+    const keyGenerator = this.#createBarrelFileKeyGenerator(this.#config)
+    const importGenerator = this.#createBarrelFileImportGenerator(
+      this.#source,
+      this.#outputDirname,
+      this.#config
+    )
 
-      /**
-       * Converts the file path to a lazy import. Incase of an alias, the source
-       * path is replaced with the alias, otherwise a relative import is created
-       * from the output dirname
-       */
-      transformValue: (filePath) => {
-        if (this.#config.importAlias) {
-          return `() => import('${removeExtension(filePath.replace(this.#source, this.#config.importAlias))}')`
-        }
-        return `() => import('${relative(this.#outputDirname, filePath)}')`
-      },
+    const tree = vfs.asTree({
+      transformKey: keyGenerator,
+      transformValue: importGenerator,
     })
 
     buffer.write(`export const ${exportName} = {`).indent()
@@ -148,13 +180,12 @@ export class IndexGeneratorSource {
   }
 
   /**
-   * Generate the index file
+   * Generate the output content and write it to the output file
    *
-   * This method scans the source directory, processes files according to
-   * the configuration, and writes the generated index file to disk.
+   * This method creates the file buffer, populates it with the generated
+   * content based on configuration, and writes it to disk.
    */
-  async generate() {
-    await this.#vfs.scan()
+  async #generateOutput() {
     const buffer = new FileBuffer()
 
     if (this.#config.as === 'barrelFile') {
@@ -165,5 +196,48 @@ export class IndexGeneratorSource {
 
     await mkdir(dirname(this.#output), { recursive: true })
     await writeFile(this.#output, buffer.flush())
+  }
+
+  /**
+   * Add a file to the virtual file system and regenerate index if needed
+   *
+   * If the file matches the configured glob patterns, it will be added
+   * to the virtual file system and the index file will be regenerated.
+   *
+   * @param filePath - Absolute path of the file to add
+   */
+  async addFile(filePath: string) {
+    const added = this.#vfs.add(filePath)
+    if (added) {
+      debug('file added, re-generating "%s" index', this.name)
+      await this.#generateOutput()
+    }
+  }
+
+  /**
+   * Remove a file from the virtual file system and regenerate index if needed
+   *
+   * If the file was previously tracked, it will be removed from the
+   * virtual file system and the index file will be regenerated.
+   *
+   * @param filePath - Absolute path of the file to remove
+   */
+  async removeFile(filePath: string) {
+    const removed = this.#vfs.remove(filePath)
+    if (removed) {
+      debug('file removed, re-generating "%s" index', this.name)
+      await this.#generateOutput()
+    }
+  }
+
+  /**
+   * Generate the index file
+   *
+   * This method scans the source directory, processes files according to
+   * the configuration, and writes the generated index file to disk.
+   */
+  async generate() {
+    await this.#vfs.scan()
+    await this.#generateOutput()
   }
 }

@@ -155,4 +155,94 @@ test.group('Index generator', () => {
       }"
     `)
   })
+
+  test('re-generate index when a new file is added', async ({ assert, fs }) => {
+    const outputPath = './.adonisjs/backend/controllers.ts'
+
+    await fs.create('app/controllers/posts_controller.ts', '')
+    await fs.create('app/controllers/user/posts_controller.ts', '')
+    await fs.create('app/controllers/auth/signup_controller.ts', '')
+    await fs.create('app/controllers/public/home_page.ts', '')
+
+    const transformer = new IndexGenerator(fs.basePath)
+    transformer.add('controllers', {
+      as: 'barrelFile',
+      exportName: 'controllers',
+      output: outputPath,
+      source: 'app/controllers',
+      importAlias: '#controllers',
+    })
+    await transformer.generate()
+
+    /**
+     * Considered
+     */
+    await transformer.addFile(join(fs.basePath, 'app/controllers/post_comments_controller.ts'))
+
+    /**
+     * Ignored (model file)
+     */
+    await transformer.addFile(join(fs.basePath, 'app/models/post_comment.ts'))
+    /**
+     * Ignored (markdown file)
+     */
+    await transformer.addFile(join(fs.basePath, 'app/controllers/README.md'))
+
+    assert.snapshot(await fs.contents(outputPath)).matchInline(`
+      "export const controllers = {
+        'auth': {
+          'SignupController': () => import('#controllers/auth/signup_controller'),
+        },
+        'PostsController': () => import('#controllers/posts_controller'),
+        'public': {
+          'HomePage': () => import('#controllers/public/home_page'),
+        },
+        'user': {
+          'PostsController': () => import('#controllers/user/posts_controller'),
+        },
+        'PostCommentsController': () => import('#controllers/post_comments_controller'),
+      }"
+    `)
+  })
+
+  test('re-generate index when an existing file is removed', async ({ assert, fs }) => {
+    const outputPath = './.adonisjs/backend/controllers.ts'
+
+    await fs.create('app/controllers/posts_controller.ts', '')
+    await fs.create('app/controllers/user/posts_controller.ts', '')
+    await fs.create('app/controllers/auth/signup_controller.ts', '')
+    await fs.create('app/controllers/public/home_page.ts', '')
+
+    const transformer = new IndexGenerator(fs.basePath)
+    transformer.add('controllers', {
+      as: 'barrelFile',
+      exportName: 'controllers',
+      output: outputPath,
+      source: 'app/controllers',
+      importAlias: '#controllers',
+    })
+    await transformer.generate()
+
+    /**
+     * Considered
+     */
+    await transformer.removeFile(join(fs.basePath, 'app/controllers/user/posts_controller.ts'))
+
+    /**
+     * Noop, since file never existed
+     */
+    await transformer.removeFile(join(fs.basePath, 'app/controllers/user/users.ts'))
+
+    assert.snapshot(await fs.contents(outputPath)).matchInline(`
+      "export const controllers = {
+        'auth': {
+          'SignupController': () => import('#controllers/auth/signup_controller'),
+        },
+        'PostsController': () => import('#controllers/posts_controller'),
+        'public': {
+          'HomePage': () => import('#controllers/public/home_page'),
+        },
+      }"
+    `)
+  })
 })

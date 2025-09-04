@@ -55,16 +55,41 @@ export class IndexGenerator {
    * @returns This IndexGenerator instance for method chaining
    */
   add(name: string, config: IndexGeneratorSourceConfig) {
-    this.#sources[name] = new IndexGeneratorSource(this.#appRoot, config)
+    this.#sources[name] = new IndexGeneratorSource(name, this.#appRoot, config)
     return this
   }
 
   /**
-   * Regenerate all registered index files
+   * Add a file to all registered index generator sources
    *
-   * This method is currently a placeholder for future implementation.
+   * This method propagates the file addition to all registered sources,
+   * allowing them to regenerate their index files if the new file matches
+   * their glob patterns.
+   *
+   * @param filePath - Absolute path of the file to add
    */
-  async regenerate() {}
+  async addFile(filePath: string) {
+    const sources = Object.values(this.#sources)
+    for (let source of sources) {
+      await source.addFile(filePath)
+    }
+  }
+
+  /**
+   * Remove a file from all registered index generator sources
+   *
+   * This method propagates the file removal to all registered sources,
+   * allowing them to regenerate their index files if the removed file
+   * was previously tracked.
+   *
+   * @param filePath - Absolute path of the file to remove
+   */
+  async removeFile(filePath: string) {
+    const sources = Object.values(this.#sources)
+    for (let source of sources) {
+      await source.removeFile(filePath)
+    }
+  }
 
   /**
    * Generate all registered index files

@@ -26,6 +26,8 @@ import { basename, dirname, isAbsolute, join, relative } from 'node:path'
 import debug from './debug.ts'
 import type { RunScriptOptions } from './types/common.ts'
 import {
+  type CommonHooks,
+  type RouterHooks,
   type WatcherHooks,
   type BundlerHooks,
   type DevServerHooks,
@@ -325,7 +327,12 @@ export function isRelative(pathValue: string) {
  * @param names - Array of hook names to load
  * @returns Promise resolving to configured Hooks instance
  */
-type AllHooks = WatcherHooks & DevServerHooks & BundlerHooks & TestRunnerHooks
+type AllHooks = CommonHooks &
+  RouterHooks &
+  WatcherHooks &
+  DevServerHooks &
+  BundlerHooks &
+  TestRunnerHooks
 export async function loadHooks<K extends keyof AllHooks>(
   rcFileHooks: Partial<AllHooks> | undefined,
   names: K[]

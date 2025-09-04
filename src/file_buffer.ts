@@ -11,7 +11,7 @@ import { EOL } from 'node:os'
 
 /**
  * Buffer class to construct template output with proper indentation and formatting.
- * 
+ *
  * The FileBuffer class provides a fluent API for building text output with automatic
  * indentation management. It's commonly used for generating code or template files
  * where proper formatting is important.

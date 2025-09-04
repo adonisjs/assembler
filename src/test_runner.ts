@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import { join } from 'node:path'
+import { join } from 'node:path/posix'
 import type tsStatic from 'typescript'
 import { cliui } from '@poppinss/cliui'
 import type Hooks from '@poppinss/hooks'
@@ -540,13 +540,13 @@ export class TestRunner {
     })
 
     this.#watcher.on('add', (filePath) => {
-      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
       const relativePath = string.toUnixSlash(filePath)
+      const absolutePath = join(this.#cwdPath, filePath)
       this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
     })
     this.#watcher.on('change', (filePath) => {
-      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
       const relativePath = string.toUnixSlash(filePath)
+      const absolutePath = join(this.#cwdPath, filePath)
       this.#hooks.runner('fileChanged').run(
         relativePath,
         absolutePath,
@@ -559,8 +559,8 @@ export class TestRunner {
       )
     })
     this.#watcher.on('unlink', (filePath) => {
-      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
       const relativePath = string.toUnixSlash(filePath)
+      const absolutePath = join(this.#cwdPath, filePath)
       this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
     })
   }

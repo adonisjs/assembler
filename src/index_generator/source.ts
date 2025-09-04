@@ -192,7 +192,7 @@ export class IndexGeneratorSource {
         return `() => import('${removeExtension(filePath.replace(source, config.importAlias))}')`
       }
       debug('converting "%s" to relative import, source "%s"', filePath, outputDirname)
-      return `() => import('${string.toUnixSlash(relative(outputDirname, filePath))}')`
+      return `() => import('${relative(outputDirname, filePath)}')`
     }
   }
 

@@ -13,9 +13,9 @@ import type Hooks from '@poppinss/hooks'
 import prettyHrtime from 'pretty-hrtime'
 import { fileURLToPath } from 'node:url'
 import { type FSWatcher } from 'chokidar'
-import { join, relative } from 'node:path'
 import { type ResultPromise } from 'execa'
 import string from '@poppinss/utils/string'
+import { join, relative } from 'node:path/posix'
 import { RuntimeException } from '@poppinss/utils/exception'
 import { type UnWrapLazyImport } from '@poppinss/utils/types'
 
@@ -539,7 +539,7 @@ export class DevServer {
         } else if (this.#mode === 'hmr' && this.#isHotHookMessage(message)) {
           debug('received hot-hook message %O', message)
           const absolutePath = message.path ? string.toUnixSlash(message.path) : ''
-          const relativePath = string.toUnixSlash(relative(this.#cwdPath, message.path))
+          const relativePath = relative(this.#cwdPath, message.path)
 
           if (message.type === 'hot-hook:file-changed') {
             const { action } = message
@@ -700,20 +700,20 @@ export class DevServer {
     })
 
     this.#watcher.on('add', (filePath) => {
-      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
       const relativePath = string.toUnixSlash(filePath)
+      const absolutePath = join(this.#cwdPath, filePath)
       this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
     })
     this.#watcher.on('change', (filePath) => {
-      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
       const relativePath = string.toUnixSlash(filePath)
+      const absolutePath = join(this.#cwdPath, filePath)
       this.#hooks
         .runner('fileChanged')
         .run(relativePath, absolutePath, DevServer.#WATCHER_INFO, this)
     })
     this.#watcher.on('unlink', (filePath) => {
-      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
       const relativePath = string.toUnixSlash(filePath)
+      const absolutePath = join(this.#cwdPath, filePath)
       this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
     })
   }

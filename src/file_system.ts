@@ -8,8 +8,8 @@
  */
 
 import picomatch from 'picomatch'
-import { relative } from 'node:path'
 import type tsStatic from 'typescript'
+import { relative } from 'node:path/posix'
 import string from '@poppinss/utils/string'
 
 import debug from './debug.ts'
@@ -136,7 +136,7 @@ export class FileSystem {
    * }
    */
   inspect = memoize<[string?], InspectedFile | null>((absolutePath, relativePath) => {
-    relativePath = relativePath ?? string.toUnixSlash(relative(this.#cwd, absolutePath))
+    relativePath = relativePath ?? relative(this.#cwd, absolutePath)
 
     /**
      * If a file is a script file and part of the backend project, then we consider
@@ -223,7 +223,7 @@ export class FileSystem {
      * Overriding excludes via metaFiles patterns is close to impossible because
      * of how undeterministic glob patterns are.
      */
-    const relativePath = string.toUnixSlash(relative(this.#cwd, absolutePath))
+    const relativePath = relative(this.#cwd, absolutePath)
     if (this.#isExcluded(relativePath)) {
       debug('watching "%s"', absolutePath)
       return false

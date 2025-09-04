@@ -9,7 +9,7 @@
 
 import { fdir } from 'fdir'
 import Cache from 'tmp-cache'
-import { relative } from 'node:path'
+import { relative } from 'node:path/posix'
 import lodash from '@poppinss/utils/lodash'
 import string from '@poppinss/utils/string'
 import { readFile } from 'node:fs/promises'
@@ -105,9 +105,10 @@ export class VirtualFileSystem {
     const sortedFiles = filesList.sort(naturalSort)
     this.#files.clear()
 
-    for (const filePath of sortedFiles) {
-      const relativePath = string.toUnixSlash(removeExtension(relative(this.#source, filePath)))
-      this.#files.set(string.toUnixSlash(filePath), relativePath)
+    for (let filePath of sortedFiles) {
+      filePath = string.toUnixSlash(filePath)
+      const relativePath = removeExtension(relative(this.#source, filePath))
+      this.#files.set(filePath, relativePath)
     }
   }
 

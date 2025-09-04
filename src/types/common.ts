@@ -9,12 +9,47 @@
 
 import type { Logger } from '@poppinss/cliui'
 import { type Prettify } from '@poppinss/utils/types'
+
+import { type FileBuffer } from '../file_buffer.ts'
+import { type VirtualFileSystem } from '../virtual_file_system.ts'
 import {
+  type CommonHooks,
+  type RouterHooks,
   type BundlerHooks,
+  type WatcherHooks,
   type DevServerHooks,
   type TestRunnerHooks,
-  type WatcherHooks,
 } from './hooks.ts'
+
+export type RecursiveFileTree = {
+  [key: string]: string | RecursiveFileTree
+}
+
+/**
+ * Options accepted by the VirtualFileSystem class
+ */
+export type VirtualFileSystemOptions = {
+  glob?: string[]
+}
+
+/**
+ * Source configuration accepted by the index generator
+ */
+export type IndexGeneratorSourceConfig = (
+  | {
+      exportName: string
+      as: 'barrelFile'
+    }
+  | {
+      as: (vfs: VirtualFileSystem, buffer: FileBuffer, config: IndexGeneratorSourceConfig) => void
+    }
+) & {
+  source: string
+  output: string
+  glob?: string[]
+  importAlias?: string
+  removeSuffix?: string
+}
 
 /**
  * Marks a given optional property as required
@@ -114,7 +149,9 @@ export type AssemblerRcFile = {
   /**
    * Hooks to execute at different stages of development and build processes
    */
-  hooks?: Partial<WatcherHooks & DevServerHooks & BundlerHooks & TestRunnerHooks>
+  hooks?: Partial<
+    CommonHooks & WatcherHooks & DevServerHooks & BundlerHooks & TestRunnerHooks & RouterHooks
+  >
 
   /**
    * An array of test suites configuration

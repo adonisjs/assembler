@@ -7,14 +7,8 @@
  * file that was distributed with this source code.
  */
 
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import string from '@poppinss/utils/string'
-import { isScriptFile } from '@poppinss/utils'
-import { fsReadAll } from '@poppinss/utils/fs'
-import { mkdir, writeFile } from 'node:fs/promises'
-import { type OneOrMore } from '@poppinss/utils/types'
-import StringBuilder from '@poppinss/utils/string_builder'
-import { basename, dirname, extname, join, relative } from 'node:path'
 import { installPackage, detectPackageManager } from '@antfu/install-pkg'
 import {
   Node,
@@ -26,7 +20,6 @@ import {
   type FormatCodeSettings,
 } from 'ts-morph'
 
-import debug from '../debug.ts'
 import { RcFileTransformer } from './rc_file_transformer.ts'
 import type {
   MiddlewareNode,
@@ -489,131 +482,5 @@ export class CodeTransformer {
 
     file.formatText(this.#editorSettings)
     await file.save()
-  }
-
-  /**
-   * Creates an index file that exports an object in which the key is the PascalCase
-   * name of the entity and the value is a dynamic import.
-   *
-   * For example, in case of controllers, the index file will be the list of controller
-   * names pointing a dynamically imported controller file.
-   *
-   * ```ts
-   * export const controllers = {
-   *   LoginController: () => import('#controllers/login_controller'),
-   *   LogoutController: () => import('#controllers/logout_controller'),
-   * }
-   * ```
-   *
-   * @param input - Source configuration for entity scanning
-   * @param output - Output configuration for the generated index file
-   *
-   * @example
-   * await transformer.makeEntityIndex(
-   *   { source: 'app/controllers', importAlias: '#controllers' },
-   *   { destination: 'start/controllers.ts', exportName: 'controllers' }
-   * )
-   */
-  async makeEntityIndex(
-    input: OneOrMore<{ source: string; importAlias?: string; allowedExtensions?: string[] }>,
-    output: {
-      destination: string
-      exportName?: string
-      removeNameSuffix?: string
-      computeBaseName?: (filePath: string, sourcePath: string) => string
-      computeOutput?: (entries: { name: string; importPath: string }[]) => string
-    }
-  ) {
-    const inputs = Array.isArray(input) ? input : [input]
-    const outputPath = join(this.#cwdPath, output.destination)
-    const outputDir = dirname(outputPath)
-    const exportName =
-      output.exportName ??
-      new StringBuilder(basename(output.destination)).removeExtension().camelCase()
-
-    debug(
-      'creating index for "%s" at destination "%s" using sources %O',
-      exportName,
-      outputPath,
-      inputs
-    )
-
-    const entries = await Promise.all(
-      inputs.map(async ({ source, importAlias, allowedExtensions }) => {
-        const sourcePath = join(this.#cwdPath, source)
-        const filesList = await fsReadAll(sourcePath, {
-          filter: (filePath: string) => {
-            if (allowedExtensions) {
-              const ext = extname(filePath)
-              return allowedExtensions.includes(ext)
-            }
-            return isScriptFile(filePath)
-          },
-          pathType: 'absolute',
-        })
-
-        const knownBaseNames = new Set()
-
-        return filesList.map((filePath) => {
-          /**
-           * We assume all filenames are unique across sub-directories, hence we will
-           * use the baseName of the file. However, if a file with the same name already
-           * exists, when we will prefix the parent subdirectories to the name.
-           */
-          let baseName = basename(filePath)
-          if (output.computeBaseName) {
-            baseName = output.computeBaseName?.(filePath, sourcePath)
-          } else {
-            if (knownBaseNames.has(baseName)) {
-              baseName = string.toUnixSlash(relative(sourcePath, filePath))
-            }
-            knownBaseNames.add(baseName)
-          }
-
-          const name = new StringBuilder(baseName)
-            .removeExtension()
-            .removeSuffix(output.removeNameSuffix ?? '')
-            .pascalCase()
-            .toString()
-
-          /**
-           * When using an import alias, the baseImportPath will be a relative path
-           * from the source directory, otherwise it will be a relative between
-           * the outputDir and the filePath.
-           */
-          const baseImportPath = importAlias
-            ? string.toUnixSlash(relative(sourcePath, filePath))
-            : string.toUnixSlash(relative(outputDir, filePath))
-
-          const importPath = importAlias
-            ? `${importAlias}/${new StringBuilder(baseImportPath).removeExtension().toString()}`
-            : baseImportPath
-
-          return {
-            name,
-            importPath,
-          }
-        })
-      })
-    )
-
-    const computeOutput =
-      output.computeOutput ??
-      ((list) => {
-        return list
-          .reduce<string[]>(
-            (result, entry) => {
-              debug('adding "%O" to the index', entry)
-              result.push(`  ${entry.name}: () => import('${entry.importPath}'),`)
-              return result
-            },
-            [`export const ${exportName} = {`]
-          )
-          .concat('}')
-          .join('\n')
-      })
-
-    await mkdir(outputDir, { recursive: true })
-    await writeFile(outputPath, computeOutput(entries.flat(2)))
   }
 }

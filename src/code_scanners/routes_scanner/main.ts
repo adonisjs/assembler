@@ -14,10 +14,10 @@ import { type AsyncOrSync } from '@poppinss/utils/types'
 import StringBuilder from '@poppinss/utils/string_builder'
 
 import debug from '../../debug.ts'
-import { PathsResolver } from '../../paths_resolver.ts'
 import { type AsRequired } from '../../types/common.ts'
-import { AstFileSystem } from '../../ast_file_system.ts'
+import { PathsResolver } from '../../paths_resolver.ts'
 import { extractValidators } from './validator_extractor.ts'
+import { VirtualFileSystem } from '../../virtual_file_system.ts'
 import {
   type ScannedRoute,
   type RoutesListItem,
@@ -95,12 +95,6 @@ export class RoutesScanner {
    * imports to absolute paths
    */
   pathsResolver = new PathsResolver()
-
-  /**
-   * The AstFileSystem is used to convert files to AST-grep nodes.
-   * The AST is cached to speed up the performance.
-   */
-  astFileSystem = new AstFileSystem()
 
   /**
    * The rules to apply when scanning routes
@@ -222,10 +216,10 @@ export class RoutesScanner {
   /**
    * Defines the request type for the route
    */
-  async #setRequest(route: ScannedRoute, controller: ScannedController) {
+  async #setRequest(route: ScannedRoute, controller: ScannedController, vfs: VirtualFileSystem) {
     route.validators =
       (await this.#extractValidators?.(route, controller, this)) ??
-      (await extractValidators(this.#appRoot, this.astFileSystem, controller))
+      (await extractValidators(this.#appRoot, vfs, controller))
     route.request =
       (await this.#computeRequestTypes?.(route, controller, this)) ??
       this.#prepareRequestTypes(route)
@@ -255,7 +249,10 @@ export class RoutesScanner {
   /**
    * Scans a route that is using a controller reference
    */
-  async #processRouteWithController(route: AsRequired<RoutesListItem, 'controllerReference'>) {
+  async #processRouteWithController(
+    route: AsRequired<RoutesListItem, 'controllerReference'>,
+    vfs: VirtualFileSystem
+  ) {
     const controller = await this.#inspectControllerSpecifier(
       route.controllerReference.importExpression,
       route.controllerReference.method
@@ -321,7 +318,7 @@ export class RoutesScanner {
       }
 
       if (!scannedRoute.request) {
-        await this.#setRequest(scannedRoute, controller)
+        await this.#setRequest(scannedRoute, controller, vfs)
       }
     }
   }
@@ -330,7 +327,7 @@ export class RoutesScanner {
    * Processing a given route list item and further scan it to
    * fetch the controller, request and response types.
    */
-  async #processRoute(route: RoutesListItem) {
+  async #processRoute(route: RoutesListItem, vfs: VirtualFileSystem) {
     /**
      * Skip route when it has a name and also part of
      * skip array
@@ -349,7 +346,8 @@ export class RoutesScanner {
     }
 
     await this.#processRouteWithController(
-      route as AsRequired<RoutesListItem, 'controllerReference'>
+      route as AsRequired<RoutesListItem, 'controllerReference'>,
+      vfs
     )
   }
 
@@ -432,11 +430,11 @@ export class RoutesScanner {
       return
     }
 
-    this.astFileSystem.clear(controllerPath)
     for (let scannedRoute of controllerRoutes) {
       if (scannedRoute.controller) {
+        const vfs = new VirtualFileSystem(this.#appRoot)
         await this.#setResponse(scannedRoute, scannedRoute.controller)
-        await this.#setRequest(scannedRoute, scannedRoute.controller)
+        await this.#setRequest(scannedRoute, scannedRoute.controller, vfs)
       }
     }
   }
@@ -448,10 +446,10 @@ export class RoutesScanner {
    * @param routes - Array of route list items to scan
    */
   async scan(routes: RoutesListItem[]) {
+    const vfs = new VirtualFileSystem(this.#appRoot)
     for (let route of routes) {
-      await this.#processRoute(route)
+      await this.#processRoute(route, vfs)
     }
-
-    this.astFileSystem.clear()
+    vfs.invalidate()
   }
 }

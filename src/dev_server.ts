@@ -192,9 +192,10 @@ export class DevServer {
    */
   async #postServerReady(message: { port: number; host: string; duration?: [number, number] }) {
     const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
+    const info = { host, port: message.port }
     const serverUrl = `http://${host}:${message.port}`
-    this.#shortcutsManager?.setServerUrl(serverUrl)
 
+    this.#shortcutsManager?.setServerUrl(serverUrl)
     const displayMessage = this.ui
       .sticker()
       .add(`Server address: ${this.ui.colors.cyan(serverUrl)}`)
@@ -211,7 +212,7 @@ export class DevServer {
      * custom lines to the display message.
      */
     try {
-      await this.#hooks.runner('devServerStarted').run(this, displayMessage)
+      await this.#hooks.runner('devServerStarted').run(this, info, displayMessage)
     } catch (error) {
       this.ui.logger.error('One of the "devServerStarted" hooks failed')
       this.ui.logger.fatal(error)

@@ -326,3 +326,7 @@ export function throttle<Args extends any[]>(
 
   return throttled
 }
+
+export function removeExtension(filePath: string) {
+  return filePath.substring(0, filePath.lastIndexOf('.'))
+}

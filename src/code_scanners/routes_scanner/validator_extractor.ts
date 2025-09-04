@@ -8,11 +8,12 @@
  */
 
 import { relative } from 'node:path'
+import string from '@poppinss/utils/string'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import debug from '../../debug.ts'
 import { isRelative } from '../../utils.ts'
-import { type AstFileSystem } from '../../ast_file_system.ts'
+import { type VirtualFileSystem } from '../../virtual_file_system.ts'
 import { type ScannedController, type ScannedRoute } from '../../types/code_scanners.ts'
 import {
   findImport,
@@ -22,7 +23,6 @@ import {
   inspectMethodArguments,
   searchValidatorDirectUsage,
 } from '../../helpers.ts'
-import string from '@poppinss/utils/string'
 
 /**
  * Extracts the VineJS validator usage from within a controller
@@ -41,10 +41,10 @@ import string from '@poppinss/utils/string'
  */
 export async function extractValidators(
   appRoot: string,
-  astFileSystem: AstFileSystem,
+  vfs: VirtualFileSystem,
   controller: ScannedController
 ): Promise<ScannedRoute['validators']> {
-  const root = await astFileSystem.get(controller.path)
+  const root = await vfs.get(controller.path)
   const fileContents = root.text()
 
   const controllerClass = inspectClass(root)

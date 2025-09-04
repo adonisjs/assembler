@@ -9,7 +9,7 @@
 
 import { join } from 'node:path'
 import { test } from '@japa/runner'
-import { AstFileSystem } from '../../src/ast_file_system.ts'
+import { VirtualFileSystem } from '../../src/virtual_file_system.ts'
 import { extractValidators } from '../../src/code_scanners/routes_scanner/validator_extractor.ts'
 
 test.group('Validator extractor', () => {
@@ -36,7 +36,7 @@ test.group('Validator extractor', () => {
     )
 
     assert.deepEqual(
-      await extractValidators(fs.basePath, new AstFileSystem(), {
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
         path: join(fs.basePath, 'app/controllers/users_controller.ts'),
         method: 'store',
         name: 'UsersController',
@@ -90,7 +90,7 @@ test.group('Validator extractor', () => {
     )
 
     assert.deepEqual(
-      await extractValidators(fs.basePath, new AstFileSystem(), {
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
         path: join(fs.basePath, 'app/controllers/users_controller.ts'),
         method: 'store',
         name: 'UsersController',
@@ -128,7 +128,7 @@ test.group('Validator extractor', () => {
     )
 
     assert.deepEqual(
-      await extractValidators(fs.basePath, new AstFileSystem(), {
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
         path: join(fs.basePath, 'app/controllers/users_controller.ts'),
         method: 'store',
         name: 'UsersController',
@@ -166,7 +166,7 @@ test.group('Validator extractor', () => {
     )
 
     assert.deepEqual(
-      await extractValidators(fs.basePath, new AstFileSystem(), {
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
         path: join(fs.basePath, 'app/controllers/users_controller.ts'),
         method: 'store',
         name: 'UsersController',
@@ -201,7 +201,7 @@ test.group('Validator extractor', () => {
     )
 
     assert.isUndefined(
-      await extractValidators(fs.basePath, new AstFileSystem(), {
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
         path: join(fs.basePath, 'app/controllers/users_controller.ts'),
         method: 'store',
         name: 'UsersController',
@@ -224,7 +224,7 @@ test.group('Validator extractor', () => {
     )
 
     assert.isUndefined(
-      await extractValidators(fs.basePath, new AstFileSystem(), {
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
         path: join(fs.basePath, 'app/controllers/users_controller.ts'),
         method: 'store',
         name: 'UsersController',
@@ -252,7 +252,7 @@ test.group('Validator extractor', () => {
     )
 
     assert.deepEqual(
-      await extractValidators(fs.basePath, new AstFileSystem(), {
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
         path: join(fs.basePath, 'app/controllers/users_controller.ts'),
         method: 'store',
         name: 'UsersController',
@@ -295,7 +295,7 @@ test.group('Validator extractor', () => {
     )
 
     assert.deepEqual(
-      await extractValidators(fs.basePath, new AstFileSystem(), {
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
         path: join(fs.basePath, 'app/controllers/users_controller.ts'),
         method: 'store',
         name: 'UsersController',
@@ -347,7 +347,7 @@ test.group('Validator extractor', () => {
     )
 
     assert.deepEqual(
-      await extractValidators(fs.basePath, new AstFileSystem(), {
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
         path: join(fs.basePath, 'app/controllers/users_controller.ts'),
         method: 'store',
         name: 'UsersController',
@@ -385,7 +385,7 @@ test.group('Validator extractor', () => {
     )
 
     assert.deepEqual(
-      await extractValidators(fs.basePath, new AstFileSystem(), {
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
         path: join(fs.basePath, 'app/controllers/users_controller.ts'),
         method: 'store',
         name: 'UsersController',

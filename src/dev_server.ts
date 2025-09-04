@@ -7,13 +7,13 @@
  * file that was distributed with this source code.
  */
 
-import { relative } from 'node:path'
 import type tsStatic from 'typescript'
 import { cliui } from '@poppinss/cliui'
 import type Hooks from '@poppinss/hooks'
 import prettyHrtime from 'pretty-hrtime'
 import { fileURLToPath } from 'node:url'
 import { type FSWatcher } from 'chokidar'
+import { join, relative } from 'node:path'
 import { type ResultPromise } from 'execa'
 import string from '@poppinss/utils/string'
 import { RuntimeException } from '@poppinss/utils/exception'
@@ -23,8 +23,14 @@ import debug from './debug.ts'
 import { FileSystem } from './file_system.ts'
 import { ShortcutsManager } from './shortcuts_manager.ts'
 import type { DevServerOptions } from './types/common.ts'
-import { type DevServerHooks, type WatcherHooks } from './types/hooks.ts'
+import { IndexGenerator } from './index_generator/main.ts'
 import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
+import {
+  type RouterHooks,
+  type CommonHooks,
+  type DevServerHooks,
+  type WatcherHooks,
+} from './types/hooks.ts'
 
 /**
  * Exposes the API to start the development server in HMR, watch or static mode.
@@ -41,6 +47,30 @@ import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './uti
  * await devServer.start(ts)
  */
 export class DevServer {
+  /**
+   * Pre-allocated info objects for hot-hook events to avoid repeated object creation
+   */
+  static readonly #HOT_HOOK_CHANGE_INFO = {
+    source: 'hot-hook' as const,
+    fullReload: false,
+    hotReloaded: false,
+  }
+  static readonly #HOT_HOOK_FULL_RELOAD_INFO = {
+    source: 'hot-hook' as const,
+    fullReload: true,
+    hotReloaded: false,
+  }
+  static readonly #HOT_HOOK_INVALIDATED_INFO = {
+    source: 'hot-hook' as const,
+    fullReload: false,
+    hotReloaded: true,
+  }
+  static readonly #WATCHER_INFO = {
+    source: 'watcher' as const,
+    fullReload: true,
+    hotReloaded: false,
+  }
+
   /**
    * File path computed from the cwd
    */
@@ -85,11 +115,23 @@ export class DevServer {
    */
   #fileSystem!: FileSystem
 
+  #indexGenerator: IndexGenerator
+
   /**
    * Hooks to execute custom actions during the dev server lifecycle
    */
   #hooks!: Hooks<
     {
+      [K in keyof CommonHooks]: [
+        Parameters<UnWrapLazyImport<CommonHooks[K][number]>>,
+        Parameters<UnWrapLazyImport<CommonHooks[K][number]>>,
+      ]
+    } & {
+      [K in keyof RouterHooks]: [
+        Parameters<UnWrapLazyImport<RouterHooks[K][number]>>,
+        Parameters<UnWrapLazyImport<RouterHooks[K][number]>>,
+      ]
+    } & {
       [K in keyof DevServerHooks]: [
         Parameters<UnWrapLazyImport<DevServerHooks[K][number]>>,
         Parameters<UnWrapLazyImport<DevServerHooks[K][number]>>,
@@ -137,10 +179,22 @@ export class DevServer {
     this.#shortcutsManager?.cleanup()
   }
 
+  #ui = cliui()
+
   /**
    * CLI UI instance to log colorful messages and progress information
    */
-  ui = cliui()
+  get ui() {
+    return this.#ui
+  }
+
+  /**
+   * CLI UI instance to log colorful messages and progress information
+   */
+  set ui(ui: ReturnType<typeof cliui>) {
+    this.#ui = ui
+    this.#indexGenerator.setLogger(ui.logger)
+  }
 
   /**
    * The mode in which the DevServer is running.
@@ -165,6 +219,7 @@ export class DevServer {
     public options: DevServerOptions
   ) {
     this.#cwdPath = fileURLToPath(this.cwd)
+    this.#indexGenerator = new IndexGenerator(this.#cwdPath, this.ui.logger)
   }
 
   /**
@@ -252,7 +307,8 @@ export class DevServer {
    * Handles file change event
    */
   #handleFileChange(
-    filePath: string,
+    relativePath: string,
+    absolutePath: string,
     action: 'add' | 'update' | 'delete',
     info?: {
       source: 'hot-hook' | 'watcher'
@@ -268,7 +324,7 @@ export class DevServer {
      * file is being imported.
      */
     if ((action === 'add' || action === 'delete') && this.mode === 'hmr') {
-      debug('ignoring add and delete actions in HMR mode %s', filePath)
+      debug('ignoring add and delete actions in HMR mode %s', relativePath)
       return
     }
 
@@ -276,8 +332,8 @@ export class DevServer {
      * Notify about the invalidated file
      */
     if (info && info.source === 'hot-hook' && info.hotReloaded) {
-      debug('hot reloading %s, info %O', filePath, info)
-      this.ui.logger.log(`${this.ui.colors.green('invalidated')} ${filePath}`)
+      debug('hot reloading %s, info %O', relativePath, info)
+      this.ui.logger.log(`${this.ui.colors.green('invalidated')} ${relativePath}`)
       return
     }
 
@@ -285,23 +341,34 @@ export class DevServer {
      * Do not do anything when fullReload is not enabled.
      */
     if (info && !info.fullReload) {
-      debug('ignoring full reload', filePath, info)
+      debug('ignoring full reload', relativePath, info)
       return
     }
 
-    const file = this.#fileSystem.inspect(filePath)
+    const file = this.#fileSystem.inspect(absolutePath, relativePath)
     if (!file) {
       return
     }
 
     if (file.reloadServer) {
       this.#clearScreen()
-      this.ui.logger.log(`${this.ui.colors.green(action)} ${filePath}`)
+      this.ui.logger.log(`${this.ui.colors.green(action)} ${relativePath}`)
       this.#restartHTTPServer()
       return
     }
 
-    this.ui.logger.log(`${this.ui.colors.green(action)} ${filePath}`)
+    this.ui.logger.log(`${this.ui.colors.green(action)} ${relativePath}`)
+  }
+
+  /**
+   * Re-generates the index when a file is changed, but only in HMR
+   * mode
+   */
+  #regenerateIndex(filePath: string, action: 'add' | 'delete') {
+    if (action === 'add') {
+      return this.#indexGenerator.addFile(filePath)
+    }
+    return this.#indexGenerator.removeFile(filePath)
   }
 
   /**
@@ -309,11 +376,62 @@ export class DevServer {
    * HTTP server when a file gets changed.
    */
   #registerServerRestartHooks() {
-    this.#hooks.add('fileAdded', (filePath) => this.#handleFileChange(filePath, 'add'))
-    this.#hooks.add('fileChanged', (filePath, info) =>
-      this.#handleFileChange(filePath, 'update', info)
+    this.#hooks.add('fileAdded', (relativePath, absolutePath) => {
+      this.#regenerateIndex(absolutePath, 'add')
+      this.#handleFileChange(relativePath, absolutePath, 'add')
+    })
+    this.#hooks.add('fileChanged', (relativePath, absolutePath, info) =>
+      this.#handleFileChange(relativePath, absolutePath, 'update', info)
     )
-    this.#hooks.add('fileRemoved', (filePath) => this.#handleFileChange(filePath, 'delete'))
+    this.#hooks.add('fileRemoved', (relativePath, absolutePath) => {
+      this.#regenerateIndex(absolutePath, 'delete')
+      this.#handleFileChange(relativePath, absolutePath, 'delete')
+    })
+  }
+
+  /**
+   * Initiate the state for DevServer and executes the init hooks
+   */
+  async #init(ts: typeof tsStatic, mode: 'hmr' | 'watch' | 'static'): Promise<boolean> {
+    const tsConfig = parseConfig(this.cwd, ts)
+    if (!tsConfig) {
+      this.#onError?.(new RuntimeException('Unable to parse tsconfig file'))
+      return false
+    }
+
+    this.#mode = mode
+    this.ui.logger.info(`starting server in ${this.#mode} mode...`)
+
+    this.#stickyPort = String(await getPort(this.cwd))
+    this.#fileSystem = new FileSystem(this.cwd, tsConfig, this.options)
+
+    this.ui.logger.info('loading hooks...')
+    this.#hooks = await loadHooks(this.options.hooks, [
+      'init',
+      'routesCommitted',
+      'routesScanning',
+      'routesScanned',
+      'devServerStarting',
+      'devServerStarted',
+      'fileAdded',
+      'fileChanged',
+      'fileRemoved',
+    ])
+
+    this.#registerServerRestartHooks()
+    this.#clearScreen()
+    this.#setupKeyboardShortcuts()
+
+    /**
+     * Run init hooks and clear them as they won't be executed
+     * ever again
+     */
+    await this.#hooks.runner('init').run(this, this.#indexGenerator)
+    this.#hooks.clear('init')
+
+    this.ui.logger.info('generating indexes...')
+    await this.#indexGenerator.generate()
+    return true
   }
 
   /**
@@ -347,50 +465,29 @@ export class DevServer {
           resolve()
         } else if (this.#mode === 'hmr' && this.#isHotHookMessage(message)) {
           debug('received hot-hook message %O', message)
+          const absolutePath = message.path ? string.toUnixSlash(message.path) : ''
+          const relativePath = string.toUnixSlash(relative(this.#cwdPath, message.path))
 
           if (message.type === 'hot-hook:file-changed') {
-            switch (message.action) {
-              case 'add':
-                this.#hooks
-                  .runner('fileAdded')
-                  .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), this)
-                break
-              case 'change':
-                this.#hooks.runner('fileChanged').run(
-                  string.toUnixSlash(relative(this.#cwdPath, message.path)),
-                  {
-                    source: 'hot-hook',
-                    fullReload: false,
-                    hotReloaded: false,
-                  },
-                  this
-                )
-                break
-              case 'unlink':
-                this.#hooks
-                  .runner('fileRemoved')
-                  .run(string.toUnixSlash(relative(this.#cwdPath, message.path)), this)
+            const { action } = message
+
+            if (action === 'add') {
+              this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
+            } else if (action === 'change') {
+              this.#hooks
+                .runner('fileChanged')
+                .run(relativePath, absolutePath, DevServer.#HOT_HOOK_CHANGE_INFO, this)
+            } else if (action === 'unlink') {
+              this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
             }
           } else if (message.type === 'hot-hook:full-reload') {
-            this.#hooks.runner('fileChanged').run(
-              string.toUnixSlash(relative(this.#cwdPath, message.path)),
-              {
-                source: 'hot-hook',
-                fullReload: true,
-                hotReloaded: false,
-              },
-              this
-            )
+            this.#hooks
+              .runner('fileChanged')
+              .run(relativePath, absolutePath, DevServer.#HOT_HOOK_FULL_RELOAD_INFO, this)
           } else if (message.type === 'hot-hook:invalidated') {
-            this.#hooks.runner('fileChanged').run(
-              string.toUnixSlash(relative(this.#cwdPath, message.path)),
-              {
-                source: 'hot-hook',
-                fullReload: false,
-                hotReloaded: true,
-              },
-              this
-            )
+            this.#hooks
+              .runner('fileChanged')
+              .run(relativePath, absolutePath, DevServer.#HOT_HOOK_INVALIDATED_INFO, this)
           }
         }
       })
@@ -456,26 +553,13 @@ export class DevServer {
    * @param ts - TypeScript module reference
    */
   async start(ts: typeof tsStatic) {
-    const tsConfig = parseConfig(this.cwd, ts)
-    if (!tsConfig) {
-      this.#onError?.(new RuntimeException('Unable to parse tsconfig file'))
+    const initiated = await this.#init(ts, this.options.hmr ? 'hmr' : 'static')
+    if (!initiated) {
       return
     }
 
-    this.#stickyPort = String(await getPort(this.cwd))
-    this.#fileSystem = new FileSystem(this.cwd, tsConfig, this.options)
-    this.#hooks = await loadHooks(this.options.hooks, [
-      'devServerStarting',
-      'devServerStarted',
-      'fileAdded',
-      'fileChanged',
-      'fileRemoved',
-    ])
-    this.#registerServerRestartHooks()
-
-    if (this.options.hmr) {
-      this.#mode = 'hmr'
-      this.options.nodeArgs = this.options.nodeArgs.concat('--import=hot-hook/register')
+    if (this.#mode === 'hmr') {
+      this.options.nodeArgs.push('--import=hot-hook/register')
       this.options.env = {
         ...this.options.env,
         HOT_HOOK_INCLUDE: this.#fileSystem.includes.join(','),
@@ -487,8 +571,6 @@ export class DevServer {
       }
     }
 
-    this.#clearScreen()
-    this.#setupKeyboardShortcuts()
     this.ui.logger.info('starting HTTP server...')
     await this.#startHTTPServer(this.#stickyPort)
   }
@@ -500,26 +582,11 @@ export class DevServer {
    * @param options - Watch options including polling mode
    */
   async startAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
-    const tsConfig = parseConfig(this.cwd, ts)
-    if (!tsConfig) {
-      this.#onError?.(new RuntimeException('Unable to parse tsconfig file'))
+    const initiated = await this.#init(ts, 'watch')
+    if (!initiated) {
       return
     }
 
-    this.#mode = 'watch'
-    this.#stickyPort = String(await getPort(this.cwd))
-    this.#fileSystem = new FileSystem(this.cwd, tsConfig, this.options)
-    this.#hooks = await loadHooks(this.options.hooks, [
-      'devServerStarting',
-      'devServerStarted',
-      'fileAdded',
-      'fileChanged',
-      'fileRemoved',
-    ])
-    this.#registerServerRestartHooks()
-
-    this.#clearScreen()
-    this.#setupKeyboardShortcuts()
     this.ui.logger.info('starting HTTP server...')
     await this.#startHTTPServer(this.#stickyPort)
 
@@ -559,22 +626,22 @@ export class DevServer {
       this.#watcher?.close()
     })
 
-    this.#watcher.on('add', (filePath) =>
-      this.#hooks.runner('fileAdded').run(string.toUnixSlash(filePath), this)
-    )
-    this.#watcher.on('change', (filePath) =>
-      this.#hooks.runner('fileChanged').run(
-        string.toUnixSlash(filePath),
-        {
-          source: 'watcher',
-          fullReload: true,
-          hotReloaded: false,
-        },
-        this
-      )
-    )
-    this.#watcher.on('unlink', (filePath) =>
-      this.#hooks.runner('fileRemoved').run(string.toUnixSlash(filePath), this)
-    )
+    this.#watcher.on('add', (filePath) => {
+      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
+      const relativePath = string.toUnixSlash(filePath)
+      this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
+    })
+    this.#watcher.on('change', (filePath) => {
+      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
+      const relativePath = string.toUnixSlash(filePath)
+      this.#hooks
+        .runner('fileChanged')
+        .run(relativePath, absolutePath, DevServer.#WATCHER_INFO, this)
+    })
+    this.#watcher.on('unlink', (filePath) => {
+      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
+      const relativePath = string.toUnixSlash(filePath)
+      this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
+    })
   }
 }

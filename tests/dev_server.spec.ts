@@ -8,30 +8,17 @@
  */
 
 import ts from 'typescript'
-import { platform } from 'node:os'
+import { join } from 'node:path'
 import { test } from '@japa/runner'
-import { join, sep } from 'node:path'
 import { cliui } from '@poppinss/cliui'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { RuntimeException } from '@poppinss/utils/exception'
 
 import { DevServer } from '../index.ts'
-
-/**
- * When filePath using backward slashes is written to a file, the backslashes
- * are considered as escape charcaters, hence results in a wrong path.
- *
- * This method replaces the backward slashes with two backward slashes
- */
-function normalizePathForWindows(filePath: string) {
-  if (platform() === 'win32') {
-    filePath = filePath.split(sep).join('\\\\')
-  }
-  return filePath
-}
+import { normalizePathForWindows, setupFakeAdonisproject } from './helpers.ts'
 
 test.group('DevServer', () => {
-  test('start() and execute dev server hook', async ({ fs, assert, cleanup }) => {
+  test('start in static mode and execute hooks', async ({ fs, assert, cleanup }) => {
     let hooksStack: string[] = []
 
     await fs.createJson('tsconfig.json', {
@@ -53,6 +40,13 @@ test.group('DevServer', () => {
       metaFiles: [],
       suites: [],
       hooks: {
+        init: [
+          async () => ({
+            default: () => {
+              hooksStack.push('init')
+            },
+          }),
+        ],
         devServerStarted: [
           async () => ({
             default: () => {
@@ -78,6 +72,18 @@ test.group('DevServer', () => {
 
     assert.deepEqual(devServer.ui.logger.getLogs(), [
       {
+        message: '[ blue(info) ] starting server in static mode...',
+        stream: 'stdout',
+      },
+      {
+        message: '[ blue(info) ] loading hooks...',
+        stream: 'stdout',
+      },
+      {
+        message: '[ blue(info) ] generating indexes...',
+        stream: 'stdout',
+      },
+      {
         message: '[ blue(info) ] starting HTTP server...',
         stream: 'stdout',
       },
@@ -87,10 +93,10 @@ test.group('DevServer', () => {
         stream: 'stdout',
       },
     ])
-    assert.deepEqual(hooksStack, ['devServerStarting', 'devServerStarted'])
+    assert.deepEqual(hooksStack, ['init', 'devServerStarting', 'devServerStarted'])
   })
 
-  test('startAndWatch() and execute dev server hook', async ({ fs, assert, cleanup }) => {
+  test('start in watch mode and execute hook', async ({ fs, assert, cleanup }) => {
     let hooksStack: string[] = []
 
     await fs.createJson('tsconfig.json', {
@@ -112,6 +118,13 @@ test.group('DevServer', () => {
       metaFiles: [],
       suites: [],
       hooks: {
+        init: [
+          async () => ({
+            default: () => {
+              hooksStack.push('init')
+            },
+          }),
+        ],
         devServerStarted: [
           async () => ({
             default: () => {
@@ -137,6 +150,18 @@ test.group('DevServer', () => {
 
     assert.deepEqual(devServer.ui.logger.getLogs(), [
       {
+        message: '[ blue(info) ] starting server in watch mode...',
+        stream: 'stdout',
+      },
+      {
+        message: '[ blue(info) ] loading hooks...',
+        stream: 'stdout',
+      },
+      {
+        message: '[ blue(info) ] generating indexes...',
+        stream: 'stdout',
+      },
+      {
         message: '[ blue(info) ] starting HTTP server...',
         stream: 'stdout',
       },
@@ -146,7 +171,7 @@ test.group('DevServer', () => {
         stream: 'stdout',
       },
     ])
-    assert.deepEqual(hooksStack, ['devServerStarting', 'devServerStarted'])
+    assert.deepEqual(hooksStack, ['init', 'devServerStarting', 'devServerStarted'])
   })
 
   test('execute file watcher hooks', async ({ fs, assert, cleanup }) => {
@@ -371,4 +396,139 @@ test.group('DevServer', () => {
     assert.deepEqual(devServer.ui.logger.getLogs(), [])
     assert.deepEqual(hooksStack, [])
   })
+
+  test('regenerate index file on related file changes in hmr mode', async ({
+    fs,
+    assert,
+    cleanup,
+  }) => {
+    await setupFakeAdonisproject(fs)
+
+    await fs.create(
+      'bin/server.ts',
+      `process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })`
+    )
+    await fs.create('.env', 'PORT=3336')
+
+    const devServer = new DevServer(fs.baseUrl, {
+      hmr: true,
+      nodeArgs: [],
+      scriptArgs: [],
+      metaFiles: [],
+      suites: [],
+      hooks: {
+        init: [
+          async () => ({
+            default: (_, indexGenerator) => {
+              indexGenerator.add('controllers', {
+                as: 'barrelFile',
+                output: '.adonisjs/server/controllers.ts',
+                exportName: 'controllers',
+                source: 'app/controllers',
+                importAlias: '#controllers',
+              })
+            },
+          }),
+        ],
+      },
+    })
+
+    devServer.ui = cliui()
+    devServer.ui.switchMode('raw')
+
+    await devServer.start(ts)
+    cleanup(() => devServer.close())
+
+    assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
+      "export const controllers = {
+      }"
+    `)
+
+    await sleep(1000)
+    await fs.create('app/controllers/users_controller.ts', 'foo')
+
+    await sleep(1000)
+    await fs.create('app/controllers/posts_controller.ts', 'bar')
+
+    await sleep(1000)
+    await fs.create('app/models/user.ts', 'bar')
+
+    await sleep(1000)
+    await fs.create('app/models/post.ts', 'bar')
+
+    await sleep(1000)
+    const logs = devServer.ui.logger.getLogs()
+
+    const indexGenerationLogs = logs.filter(({ message }) =>
+      message.includes('.adonisjs/server/controllers.ts')
+    )
+    assert.lengthOf(indexGenerationLogs, 3)
+  }).timeout(10 * 1000)
+
+  test('regenerate index file on related file changes in watch mode', async ({
+    fs,
+    assert,
+    cleanup,
+  }) => {
+    await setupFakeAdonisproject(fs)
+
+    await fs.create(
+      'bin/server.ts',
+      `process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })`
+    )
+    await fs.create('.env', 'PORT=3336')
+
+    const devServer = new DevServer(fs.baseUrl, {
+      nodeArgs: [],
+      scriptArgs: [],
+      metaFiles: [],
+      suites: [],
+      hooks: {
+        init: [
+          async () => ({
+            default: (_, indexGenerator) => {
+              indexGenerator.add('controllers', {
+                as: 'barrelFile',
+                output: '.adonisjs/server/controllers.ts',
+                exportName: 'controllers',
+                source: 'app/controllers',
+                importAlias: '#controllers',
+              })
+            },
+          }),
+        ],
+      },
+    })
+
+    devServer.ui = cliui()
+    devServer.ui.switchMode('raw')
+
+    await devServer.startAndWatch(ts)
+    cleanup(() => devServer.close())
+
+    assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
+      "export const controllers = {
+      }"
+    `)
+
+    await sleep(1000)
+    await fs.create('app/controllers/users_controller.ts', 'foo')
+
+    await sleep(1000)
+    await fs.create('app/controllers/posts_controller.ts', 'bar')
+
+    await sleep(1000)
+    await fs.create('app/models/user.ts', 'bar')
+
+    await sleep(1000)
+    await fs.create('app/models/post.ts', 'bar')
+
+    await sleep(1000)
+    const logs = devServer.ui.logger.getLogs()
+
+    const indexGenerationLogs = logs.filter(({ message }) =>
+      message.includes('.adonisjs/server/controllers.ts')
+    )
+    assert.lengthOf(indexGenerationLogs, 3)
+  }).timeout(10 * 1000)
 })

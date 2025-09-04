@@ -53,6 +53,18 @@ export class IndexGenerator {
   }
 
   /**
+   * Set the logger instance used for CLI output
+   *
+   * Updates the CLI logger instance for this index generator and all
+   * registered sources to use the new logger for output.
+   *
+   * @param cliLogger - New logger instance to use
+   */
+  setLogger(cliLogger: Logger) {
+    this.#cliLogger = cliLogger
+  }
+
+  /**
    * Add a new index generator source
    *
    * @param name - Unique name for the source

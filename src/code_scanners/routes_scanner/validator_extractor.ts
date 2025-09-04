@@ -26,7 +26,7 @@ import {
 
 /**
  * Extracts the VineJS validator usage from within a controller method.
- * 
+ *
  * This function analyzes controller method code to detect validator usage patterns
  * and extracts the validator references along with their import information.
  * The following syntaxes are supported:

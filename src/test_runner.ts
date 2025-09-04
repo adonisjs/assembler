@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import { join } from 'node:path'
 import type tsStatic from 'typescript'
 import { cliui } from '@poppinss/cliui'
 import type Hooks from '@poppinss/hooks'
@@ -114,6 +115,7 @@ export class TestRunner {
    * The script file to run as a child process
    */
   scriptFile: string = 'bin/test.ts'
+  #cwdPath: string
 
   /**
    * Create a new TestRunner instance
@@ -124,7 +126,9 @@ export class TestRunner {
   constructor(
     public cwd: URL,
     public options: TestRunnerOptions
-  ) {}
+  ) {
+    this.#cwdPath = fileURLToPath(this.cwd)
+  }
 
   /**
    * Convert test runner options to the CLI args
@@ -288,17 +292,17 @@ export class TestRunner {
    * @param filePath - The path of the changed file
    * @param action - The type of change (add, update, delete)
    */
-  #handleFileChange(filePath: string, action: string) {
-    const file = this.#fileSystem.inspect(filePath)
+  #handleFileChange(relativePath: string, absolutePath: string, action: string) {
+    const file = this.#fileSystem.inspect(absolutePath, relativePath)
     if (!file) {
       return
     }
 
     this.#clearScreen()
-    this.ui.logger.log(`${this.ui.colors.green(action)} ${filePath}`)
+    this.ui.logger.log(`${this.ui.colors.green(action)} ${relativePath}`)
 
     if (file.fileType === 'test') {
-      this.#reRunTests({ files: [filePath] })
+      this.#reRunTests({ files: [relativePath] })
     } else {
       this.#reRunTests()
     }
@@ -311,9 +315,15 @@ export class TestRunner {
    * triggering appropriate test runs based on the changed files.
    */
   #registerServerRestartHooks() {
-    this.#hooks.add('fileAdded', (filePath) => this.#handleFileChange(filePath, 'add'))
-    this.#hooks.add('fileChanged', (filePath) => this.#handleFileChange(filePath, 'update'))
-    this.#hooks.add('fileRemoved', (filePath) => this.#handleFileChange(filePath, 'delete'))
+    this.#hooks.add('fileAdded', (relativePath, absolutePath) =>
+      this.#handleFileChange(relativePath, absolutePath, 'add')
+    )
+    this.#hooks.add('fileChanged', (relativePath, absolutePath) =>
+      this.#handleFileChange(relativePath, absolutePath, 'update')
+    )
+    this.#hooks.add('fileRemoved', (relativePath, absolutePath) =>
+      this.#handleFileChange(relativePath, absolutePath, 'delete')
+    )
   }
 
   /**
@@ -419,7 +429,7 @@ export class TestRunner {
      */
     this.#watcher = watch({
       usePolling: options?.poll ?? false,
-      cwd: fileURLToPath(this.cwd),
+      cwd: this.#cwdPath,
       ignoreInitial: true,
       ignored: (file, stats) => {
         if (!stats) {
@@ -450,12 +460,17 @@ export class TestRunner {
       this.#watcher?.close()
     })
 
-    this.#watcher.on('add', (filePath) =>
-      this.#hooks.runner('fileAdded').run(string.toUnixSlash(filePath), this)
-    )
-    this.#watcher.on('change', (filePath) =>
+    this.#watcher.on('add', (filePath) => {
+      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
+      const relativePath = string.toUnixSlash(filePath)
+      this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
+    })
+    this.#watcher.on('change', (filePath) => {
+      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
+      const relativePath = string.toUnixSlash(filePath)
       this.#hooks.runner('fileChanged').run(
-        string.toUnixSlash(filePath),
+        relativePath,
+        absolutePath,
         {
           source: 'watcher',
           fullReload: true,
@@ -463,9 +478,11 @@ export class TestRunner {
         },
         this
       )
-    )
-    this.#watcher.on('unlink', (filePath) =>
-      this.#hooks.runner('fileRemoved').run(string.toUnixSlash(filePath), this)
-    )
+    })
+    this.#watcher.on('unlink', (filePath) => {
+      const absolutePath = string.toUnixSlash(join(this.#cwdPath, filePath))
+      const relativePath = string.toUnixSlash(filePath)
+      this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
+    })
   }
 }

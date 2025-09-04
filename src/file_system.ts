@@ -18,7 +18,7 @@ import { memoize } from './utils.ts'
 import { type InspectedFile, type AssemblerRcFile } from './types/common.ts'
 
 const DEFAULT_INCLUDES = ['**/*']
-const ALWAYS_EXCLUDE = ['.git/**', 'coverage/**', '.github/**']
+const ALWAYS_EXCLUDE = ['.git/**', 'coverage/**', '.github/**', '.adonisjs/**']
 const DEFAULT_EXCLUDES = ['node_modules/**', 'bower_components/**', 'jspm_packages/**']
 
 /**
@@ -119,7 +119,22 @@ export class FileSystem {
   }
 
   /**
-   * Inspect a relative path to find its source in the project
+   * Inspect a file path to determine its type and properties within the project.
+   *
+   * This method analyzes a file to categorize it as a script file, test file, or meta file,
+   * and determines whether changes to the file should trigger server restarts. Results
+   * are memoized for performance optimization.
+   *
+   * @param absolutePath - The absolute Unix path to the file
+   * @param relativePath - The relative Unix path from the project root
+   * @returns File inspection result or null if the file should be ignored
+   *
+   * @example
+   * const file = fileSystem.inspect('/project/app/models/user.ts', 'app/models/user.ts')
+   * if (file) {
+   *   console.log(file.fileType) // 'script'
+   *   console.log(file.reloadServer) // true
+   * }
    */
   inspect = memoize<[string], InspectedFile | null>((absolutePath, relativePath) => {
     /**
@@ -175,11 +190,20 @@ export class FileSystem {
   })
 
   /**
-   * Returns true if the directory should be watched. Chokidar sends
-   * absolute unix paths to the ignored callback.
+   * Determines if a directory should be watched by the file watcher.
    *
-   * You must use "shouldWatchFile" method for files and call this method
-   * for directories only.
+   * This method checks if a directory should be monitored for file changes
+   * based on the TypeScript configuration includes/excludes patterns.
+   * Results are memoized for performance. Chokidar sends absolute Unix paths.
+   *
+   * Note: Use shouldWatchFile for files and this method for directories only.
+   *
+   * @param absolutePath - The absolute Unix path to the directory
+   * @returns True if the directory should be watched
+   *
+   * @example
+   * const shouldWatch = fileSystem.shouldWatchDirectory('/project/app/controllers')
+   * console.log(shouldWatch) // true
    */
   shouldWatchDirectory = memoize((absolutePath: string) => {
     /**
@@ -271,7 +295,7 @@ export class FileSystem {
 
     debug('initiating file system %O', {
       includes: this.#includes,
-      excludes: this.#includes,
+      excludes: this.#excludes,
       outDir,
       files,
       metaFiles,
@@ -280,11 +304,15 @@ export class FileSystem {
   }
 
   /**
-   * Returns a boolean telling if a file path is a script file or not.
+   * Determines if a file path represents a script file based on TypeScript configuration.
    *
-   * - Files ending with ".ts", ".tsx" are considered are script files.
-   * - Files ending with ".js" with "allowJs" option enabled are considered are script files.
-   * - Files ending with ".json" with "resolveJsonModule" option enabled are considered are script files.
+   * Script files are those that can be processed by the TypeScript compiler:
+   * - Files ending with ".ts" or ".tsx" (excluding ".d.ts" declaration files)
+   * - Files ending with ".js" when "allowJs" option is enabled in tsconfig
+   * - Files ending with ".json" when "resolveJsonModule" option is enabled in tsconfig
+   *
+   * @param relativePath - The relative file path to check
+   * @returns True if the file is a script file
    */
   #isScriptFile(relativePath: string): boolean {
     if (
@@ -303,9 +331,13 @@ export class FileSystem {
   }
 
   /**
-   * Check if the file path is part of the backend TypeScript project. We use
-   * tsconfig "includes", "excludes", and "files" paths to test if the file
-   * should be considered or not.
+   * Checks if a file path is part of the backend TypeScript project.
+   *
+   * Uses TypeScript configuration "includes", "excludes", and "files" paths
+   * to determine if a file should be considered part of the project compilation.
+   *
+   * @param relativePath - The relative file path to check
+   * @returns True if the file is part of the backend project
    */
   #isPartOfBackendProject(relativePath: string) {
     /**

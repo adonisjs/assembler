@@ -15,6 +15,7 @@ import { type DevServer } from '../dev_server.ts'
 import { type TestRunner } from '../test_runner.ts'
 import { type RoutesListItem } from './code_scanners.ts'
 import { type RoutesScanner } from '../code_scanners/routes_scanner/main.ts'
+import { type IndexGenerator } from '../index_generator/main.ts'
 
 /**
  * Common hooks executed by the dev-server, test runner and the bundler.
@@ -36,7 +37,9 @@ export type CommonHooks = {
    *
    * @param parent - The parent instance (DevServer, TestRunner, or Bundler)
    */
-  init: LazyImport<(parent: DevServer | TestRunner | Bundler) => AsyncOrSync<void>>[]
+  init: LazyImport<
+    (parent: DevServer | TestRunner | Bundler, indexGenerator: IndexGenerator) => AsyncOrSync<void>
+  >[]
 }
 
 /**
@@ -125,7 +128,8 @@ export type WatcherHooks = {
    */
   fileChanged: LazyImport<
     (
-      filePath: string,
+      relativePath: string,
+      absolutePath: string,
       info: {
         /** Source of the file change notification */
         source: 'hot-hook' | 'watcher'
@@ -145,7 +149,13 @@ export type WatcherHooks = {
    * @param filePath - The absolute path to the added file
    * @param server - The DevServer or TestRunner instance
    */
-  fileAdded: LazyImport<(filePath: string, server: DevServer | TestRunner) => AsyncOrSync<void>>[]
+  fileAdded: LazyImport<
+    (
+      relativePath: string,
+      absolutePath: string,
+      server: DevServer | TestRunner
+    ) => AsyncOrSync<void>
+  >[]
 
   /**
    * The hook is executed after a file has been removed from the filesystem.
@@ -154,7 +164,13 @@ export type WatcherHooks = {
    * @param filePath - The absolute path to the removed file
    * @param server - The DevServer or TestRunner instance
    */
-  fileRemoved: LazyImport<(filePath: string, server: DevServer | TestRunner) => AsyncOrSync<void>>[]
+  fileRemoved: LazyImport<
+    (
+      relativePath: string,
+      absolutePath: string,
+      server: DevServer | TestRunner
+    ) => AsyncOrSync<void>
+  >[]
 }
 
 /**

@@ -7,13 +7,20 @@
  * file that was distributed with this source code.
  */
 
-import { type FileSystem } from '@japa/file-system'
+import { sep } from 'node:path'
+import { platform } from 'node:os'
 import { test } from '@japa/runner'
 import { readFile } from 'node:fs/promises'
+import { type FileSystem } from '@japa/file-system'
 
 export async function setupFakeAdonisproject(fs: FileSystem) {
   await Promise.all([
-    fs.createJson('tsconfig.json', { compilerOptions: {} }),
+    fs.createJson('tsconfig.json', { compilerOptions: {}, include: ['**/*'], exclude: [] }),
+    fs.createJson('package.json', {
+      hotHook: {
+        boundaries: ['./app/controllers/**/*.ts'],
+      },
+    }),
     fs.create('start/kernel.ts', await readFile('./tests/fixtures/kernel.txt', 'utf-8')),
     fs.create('adonisrc.ts', await readFile('./tests/fixtures/adonisrc.txt', 'utf-8')),
     fs.create('start/env.ts', await readFile('./tests/fixtures/env.txt', 'utf-8')),
@@ -36,3 +43,16 @@ export const createControllers = test.macro(async (t) => {
     t.context.fs.create('app/controllers/public/home_controller.ts', ''),
   ])
 })
+
+/**
+ * When filePath using backward slashes is written to a file, the backslashes
+ * are considered as escape charcaters, hence results in a wrong path.
+ *
+ * This method replaces the backward slashes with two backward slashes
+ */
+export function normalizePathForWindows(filePath: string) {
+  if (platform() === 'win32') {
+    filePath = filePath.split(sep).join('\\\\')
+  }
+  return filePath
+}

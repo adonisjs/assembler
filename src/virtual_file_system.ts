@@ -10,8 +10,9 @@
 import { fdir } from 'fdir'
 import Cache from 'tmp-cache'
 import { relative } from 'node:path'
-import { readFile } from 'node:fs/promises'
 import lodash from '@poppinss/utils/lodash'
+import string from '@poppinss/utils/string'
+import { readFile } from 'node:fs/promises'
 import { naturalSort } from '@poppinss/utils'
 import { Lang, parse, type SgNode } from '@ast-grep/napi'
 import picomatch, { type PicomatchOptions, type Matcher } from 'picomatch'
@@ -80,7 +81,6 @@ export class VirtualFileSystem {
     this.#source = source
     this.#options = options ?? {}
     this.#picoMatchOptions = {
-      posixSlashes: true,
       cwd: this.#source,
     }
     this.#matcher = picomatch(this.#options.glob ?? DEFAULT_GLOB, this.#picoMatchOptions)
@@ -106,8 +106,8 @@ export class VirtualFileSystem {
     this.#files.clear()
 
     for (const filePath of sortedFiles) {
-      const relativePath = removeExtension(relative(this.#source, filePath))
-      this.#files.set(filePath, relativePath)
+      const relativePath = string.toUnixSlash(removeExtension(relative(this.#source, filePath)))
+      this.#files.set(string.toUnixSlash(filePath), relativePath)
     }
   }
 

@@ -10,7 +10,7 @@
 import string from '@poppinss/utils/string'
 import { type Logger } from '@poppinss/cliui'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join, relative } from 'node:path/posix'
 import StringBuilder from '@poppinss/utils/string_builder'
 
 import debug from '../debug.ts'

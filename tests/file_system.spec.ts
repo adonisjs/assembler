@@ -8,8 +8,8 @@
  */
 
 import ts from 'typescript'
-import { join } from 'node:path'
 import { test } from '@japa/runner'
+import { join } from 'node:path/posix'
 
 import { parseConfig } from '../src/utils.ts'
 import { FileSystem } from '../src/file_system.ts'

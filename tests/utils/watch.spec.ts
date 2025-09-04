@@ -10,9 +10,9 @@
 import ts from 'typescript'
 import chokidar from 'chokidar'
 import { test } from '@japa/runner'
+import string from '@poppinss/utils/string'
 import { parseConfig } from '../../src/utils.ts'
 import { FileSystem } from '../../src/file_system.ts'
-import string from '@poppinss/utils/string'
 
 test.group('Watch', () => {
   test('get watch files list based using file system', async ({ assert, cleanup, fs }, done) => {
@@ -30,15 +30,19 @@ test.group('Watch', () => {
     await fs.create('node_modules/colors/index.ts', '')
     await fs.create('.git/refs/heads/foo', '')
 
-    const fileSystem = new FileSystem(fs.basePath, parseConfig(fs.basePath, ts)!, {
-      suites: [],
-      metaFiles: [
-        {
-          pattern: 'public/**/*.edge',
-          reloadServer: false,
-        },
-      ],
-    })
+    const fileSystem = new FileSystem(
+      string.toUnixSlash(fs.basePath),
+      parseConfig(fs.basePath, ts)!,
+      {
+        suites: [],
+        metaFiles: [
+          {
+            pattern: 'public/**/*.edge',
+            reloadServer: false,
+          },
+        ],
+      }
+    )
 
     const watcher = chokidar.watch(['.'], {
       ignored(file, stats) {

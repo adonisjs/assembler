@@ -8,8 +8,8 @@
  */
 
 import ts from 'typescript'
-import { join } from 'node:path'
 import { test } from '@japa/runner'
+import { join } from 'node:path/posix'
 import { cliui } from '@poppinss/cliui'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { RuntimeException } from '@poppinss/utils/exception'

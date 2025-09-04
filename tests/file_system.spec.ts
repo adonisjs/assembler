@@ -89,11 +89,11 @@ test.group('File system', () => {
       })
 
       if (matchType) {
-        assert.isNotNull(fs.inspect(input))
-        assert.property(fs.inspect(input), 'fileType')
-        assert.equal(fs.inspect(input)!.fileType, matchType)
+        assert.isNotNull(fs.inspect(join(BASE_PATH, input), input))
+        assert.property(fs.inspect(join(BASE_PATH, input), input), 'fileType')
+        assert.equal(fs.inspect(join(BASE_PATH, input), input)!.fileType, matchType)
       } else {
-        assert.isNull(fs.inspect(input))
+        assert.isNull(fs.inspect(join(BASE_PATH, input), input))
       }
     })
 
@@ -174,18 +174,18 @@ test.group('File system', () => {
   test('do not consider .js files until allowJS flag is enabled', ({ assert }) => {
     const config = parseConfig(BASE_PATH, ts)!
     const fs = new FileSystem(BASE_PATH, config, {})
-    assert.isNull(fs.inspect('src/foo.js'))
+    assert.isNull(fs.inspect(join(BASE_PATH, 'src/foo.js'), 'src/foo.js'))
 
     config.options.allowJs = true
-    assert.equal(fs.inspect('src/foo.js')!.fileType, 'script')
+    assert.equal(fs.inspect(join(BASE_PATH, 'src/foo.js'), 'src/foo.js')!.fileType, 'script')
   })
 
   test('do not consider .json files until resolveJsonModule flag is enabled', ({ assert }) => {
     const config = parseConfig(BASE_PATH, ts)!
     const fs = new FileSystem(BASE_PATH, config, {})
-    assert.isNull(fs.inspect('src/foo.json'))
+    assert.isNull(fs.inspect(join(BASE_PATH, 'src/foo.json'), 'src/foo.json'))
 
     config.options.resolveJsonModule = true
-    assert.equal(fs.inspect('src/foo.json')!.fileType, 'script')
+    assert.equal(fs.inspect(join(BASE_PATH, 'src/foo.json'), 'src/foo.json')!.fileType, 'script')
   })
 })

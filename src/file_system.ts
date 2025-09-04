@@ -8,9 +8,9 @@
  */
 
 import picomatch from 'picomatch'
+import { relative } from 'node:path'
 import type tsStatic from 'typescript'
 import { fileURLToPath } from 'node:url'
-import { join, relative } from 'node:path'
 import string from '@poppinss/utils/string'
 
 import debug from './debug.ts'
@@ -121,10 +121,7 @@ export class FileSystem {
   /**
    * Inspect a relative path to find its source in the project
    */
-  inspect = memoize<InspectedFile | null>((filePath) => {
-    const relativePath = filePath
-    const absolutePath = string.toUnixSlash(join(this.#cwd, relativePath))
-
+  inspect = memoize<[string], InspectedFile | null>((absolutePath, relativePath) => {
     /**
      * If a file is a script file and part of the backend project, then we consider
      * the file.
@@ -341,6 +338,6 @@ export class FileSystem {
    * @returns True if the file should be watched
    */
   shouldWatchFile(absolutePath: string) {
-    return this.inspect(relative(this.#cwd, absolutePath)) !== null
+    return this.inspect(absolutePath, relative(this.#cwd, absolutePath)) !== null
   }
 }

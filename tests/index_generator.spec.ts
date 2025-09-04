@@ -9,8 +9,8 @@
 
 import { test } from '@japa/runner'
 import { cliui } from '@poppinss/cliui'
-import { join, relative } from 'node:path'
 import string from '@poppinss/utils/string'
+import { join, relative } from 'node:path/posix'
 import { IndexGenerator } from '../src/index_generator/main.ts'
 
 const ui = cliui({

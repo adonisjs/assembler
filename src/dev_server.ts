@@ -144,6 +144,8 @@ export class DevServer {
     }
   >
 
+  #ui = cliui()
+
   /**
    * Restarts the HTTP server and throttle concurrent calls to
    * ensure we do not end up with a long loop of restarts
@@ -178,8 +180,6 @@ export class DevServer {
   #cleanupKeyboardShortcuts() {
     this.#shortcutsManager?.cleanup()
   }
-
-  #ui = cliui()
 
   /**
    * CLI UI instance to log colorful messages and progress information
@@ -400,6 +400,7 @@ export class DevServer {
     }
 
     this.#mode = mode
+    this.#clearScreen()
     this.ui.logger.info(`starting server in ${this.#mode} mode...`)
 
     this.#stickyPort = String(await getPort(this.cwd))
@@ -419,7 +420,6 @@ export class DevServer {
     ])
 
     this.#registerServerRestartHooks()
-    this.#clearScreen()
     this.#setupKeyboardShortcuts()
 
     /**

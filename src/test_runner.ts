@@ -21,8 +21,9 @@ import { type UnWrapLazyImport } from '@poppinss/utils/types'
 import debug from './debug.ts'
 import { FileSystem } from './file_system.ts'
 import type { TestRunnerOptions } from './types/common.ts'
-import { type WatcherHooks, type TestRunnerHooks } from './types/hooks.ts'
+import { type WatcherHooks, type TestRunnerHooks, type CommonHooks } from './types/hooks.ts'
 import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
+import { IndexGenerator } from './index_generator/main.ts'
 
 /**
  * Exposes the API to run Japa tests and optionally watch for file
@@ -82,6 +83,11 @@ export class TestRunner {
    */
   #hooks!: Hooks<
     {
+      [K in keyof CommonHooks]: [
+        Parameters<UnWrapLazyImport<CommonHooks[K][number]>>,
+        Parameters<UnWrapLazyImport<CommonHooks[K][number]>>,
+      ]
+    } & {
       [K in keyof TestRunnerHooks]: [
         Parameters<UnWrapLazyImport<TestRunnerHooks[K][number]>>,
         Parameters<UnWrapLazyImport<TestRunnerHooks[K][number]>>,
@@ -93,6 +99,11 @@ export class TestRunner {
       ]
     }
   >
+
+  #cwdPath: string
+
+  #indexGenerator: IndexGenerator
+  #ui = cliui()
 
   /**
    * Re-runs the test child process and throttle concurrent calls to
@@ -109,13 +120,22 @@ export class TestRunner {
   /**
    * CLI UI instance to log colorful messages and progress information
    */
-  ui = cliui()
+  get ui() {
+    return this.#ui
+  }
+
+  /**
+   * CLI UI instance to log colorful messages and progress information
+   */
+  set ui(ui: ReturnType<typeof cliui>) {
+    this.#ui = ui
+    this.#indexGenerator.setLogger(ui.logger)
+  }
 
   /**
    * The script file to run as a child process
    */
   scriptFile: string = 'bin/test.ts'
-  #cwdPath: string
 
   /**
    * Create a new TestRunner instance
@@ -128,6 +148,7 @@ export class TestRunner {
     public options: TestRunnerOptions
   ) {
     this.#cwdPath = fileURLToPath(this.cwd)
+    this.#indexGenerator = new IndexGenerator(this.#cwdPath, this.ui.logger)
   }
 
   /**
@@ -309,21 +330,35 @@ export class TestRunner {
   }
 
   /**
+   * Re-generates the index when a file is changed, but only in HMR
+   * mode
+   */
+  #regenerateIndex(filePath: string, action: 'add' | 'delete') {
+    if (action === 'add') {
+      return this.#indexGenerator.addFile(filePath)
+    }
+    return this.#indexGenerator.removeFile(filePath)
+  }
+
+  /**
    * Registers inline hooks for file changes and test re-runs
    *
    * Sets up event handlers that respond to file system changes by
    * triggering appropriate test runs based on the changed files.
    */
   #registerServerRestartHooks() {
-    this.#hooks.add('fileAdded', (relativePath, absolutePath) =>
+    this.#hooks.add('fileAdded', (relativePath, absolutePath) => {
+      this.#regenerateIndex(absolutePath, 'add')
       this.#handleFileChange(relativePath, absolutePath, 'add')
-    )
-    this.#hooks.add('fileChanged', (relativePath, absolutePath) =>
+    })
+    this.#hooks.add('fileChanged', (relativePath, absolutePath) => {
+      this.#regenerateIndex(absolutePath, 'add')
       this.#handleFileChange(relativePath, absolutePath, 'update')
-    )
-    this.#hooks.add('fileRemoved', (relativePath, absolutePath) =>
+    })
+    this.#hooks.add('fileRemoved', (relativePath, absolutePath) => {
+      this.#regenerateIndex(absolutePath, 'add')
       this.#handleFileChange(relativePath, absolutePath, 'delete')
-    )
+    })
   }
 
   /**
@@ -370,7 +405,11 @@ export class TestRunner {
    */
   async run() {
     this.#stickyPort = String(await getPort(this.cwd))
+    this.#clearScreen()
+
+    this.ui.logger.info('loading hooks...')
     this.#hooks = await loadHooks(this.options.hooks, [
+      'init',
       'testsStarting',
       'testsFinished',
       'fileAdded',
@@ -378,7 +417,16 @@ export class TestRunner {
       'fileRemoved',
     ])
 
-    this.#clearScreen()
+    /**
+     * Run init hooks and clear them as they won't be executed
+     * ever again
+     */
+    await this.#hooks.runner('init').run(this, this.#indexGenerator)
+    this.#hooks.clear('init')
+
+    this.ui.logger.info('generating indexes...')
+    await this.#indexGenerator.generate()
+
     this.ui.logger.info('booting application to run tests...')
     await this.#runTests(this.#stickyPort)
   }
@@ -411,16 +459,30 @@ export class TestRunner {
         return true
       }),
     })
+
+    this.#clearScreen()
+    this.ui.logger.info('loading hooks...')
     this.#hooks = await loadHooks(this.options.hooks, [
+      'init',
       'testsStarting',
       'testsFinished',
       'fileAdded',
       'fileChanged',
       'fileRemoved',
     ])
+
     this.#registerServerRestartHooks()
 
-    this.#clearScreen()
+    /**
+     * Run init hooks and clear them as they won't be executed
+     * ever again
+     */
+    await this.#hooks.runner('init').run(this, this.#indexGenerator)
+    this.#hooks.clear('init')
+
+    this.ui.logger.info('generating indexes...')
+    await this.#indexGenerator.generate()
+
     this.ui.logger.info('booting application to run tests...')
     await this.#runTests(this.#stickyPort)
 

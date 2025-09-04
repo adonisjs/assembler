@@ -7,8 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import { EOL } from 'node:os'
-
 /**
  * Buffer class to construct template output with proper indentation and formatting.
  *
@@ -121,7 +119,7 @@ export class FileBuffer {
       return this.#compiledOutput
     }
 
-    this.#compiledOutput = this.#buffer.join(EOL)
+    this.#compiledOutput = this.#buffer.join('\n')
     return this.#compiledOutput
   }
 }

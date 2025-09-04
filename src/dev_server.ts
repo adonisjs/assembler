@@ -28,8 +28,8 @@ import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './uti
 import {
   type RouterHooks,
   type CommonHooks,
-  type DevServerHooks,
   type WatcherHooks,
+  type DevServerHooks,
 } from './types/hooks.ts'
 
 /**

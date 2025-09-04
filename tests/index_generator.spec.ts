@@ -20,12 +20,14 @@ const ui = cliui({
 test.group('Index generator', () => {
   test('create index from flat and nested files', async ({ assert, fs }) => {
     const outputPath = '.adonisjs/backend/controllers.ts'
+    const source = string.toUnixSlash(fs.basePath)
+
     await fs.create('app/controllers/posts_controller.ts', '')
     await fs.create('app/controllers/user/posts_controller.ts', '')
     await fs.create('app/controllers/auth/signup_controller.ts', '')
     await fs.create('app/controllers/public/home_page.ts', '')
 
-    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
+    const transformer = new IndexGenerator(source, ui.logger)
     transformer.add('controllers', {
       as: 'barrelFile',
       exportName: 'controllers',
@@ -53,13 +55,14 @@ test.group('Index generator', () => {
 
   test('create index without the import alias', async ({ assert, fs }) => {
     const outputPath = './.adonisjs/backend/controllers.ts'
+    const source = string.toUnixSlash(fs.basePath)
 
     await fs.create('app/controllers/posts_controller.ts', '')
     await fs.create('app/controllers/user/posts_controller.ts', '')
     await fs.create('app/controllers/auth/signup_controller.ts', '')
     await fs.create('app/controllers/public/home_page.ts', '')
 
-    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
+    const transformer = new IndexGenerator(source, ui.logger)
     transformer.add('controllers', {
       as: 'barrelFile',
       exportName: 'controllers',
@@ -86,13 +89,14 @@ test.group('Index generator', () => {
 
   test('remove name suffix', async ({ assert, fs }) => {
     const outputPath = './.adonisjs/backend/controllers.ts'
+    const source = string.toUnixSlash(fs.basePath)
 
     await fs.create('app/controllers/posts_controller.ts', '')
     await fs.create('app/controllers/user/posts_controller.ts', '')
     await fs.create('app/controllers/auth/signup_controller.ts', '')
     await fs.create('app/controllers/public/home_page.ts', '')
 
-    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
+    const transformer = new IndexGenerator(source, ui.logger)
     transformer.add('controllers', {
       as: 'barrelFile',
       exportName: 'controllers',
@@ -121,18 +125,19 @@ test.group('Index generator', () => {
 
   test('self compute output', async ({ assert, fs }) => {
     const outputPath = './.adonisjs/server/inertia.d.ts'
+    const source = string.toUnixSlash(fs.basePath)
 
     await fs.create('inertia/pages/home.tsx', '')
     await fs.create('inertia/pages/blog/posts/index.tsx', '')
     await fs.create('inertia/pages/blog/comments/index.tsx', '')
     await fs.create('inertia/pages/blog/comments/show.tsx', '')
 
-    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
+    const transformer = new IndexGenerator(source, ui.logger)
     transformer.add('inertiaPages', {
       as(vfs, buffer) {
         const list = vfs.asList({
           transformValue(filePath) {
-            return `InferPageProps<typeof import('${relative(join(fs.basePath, outputPath), filePath)}').default>`
+            return `InferPageProps<typeof import('${relative(join(source, outputPath), filePath)}').default>`
           },
         })
 
@@ -163,13 +168,14 @@ test.group('Index generator', () => {
 
   test('re-generate index when a new file is added', async ({ assert, fs }) => {
     const outputPath = './.adonisjs/backend/controllers.ts'
+    const source = string.toUnixSlash(fs.basePath)
 
     await fs.create('app/controllers/posts_controller.ts', '')
     await fs.create('app/controllers/user/posts_controller.ts', '')
     await fs.create('app/controllers/auth/signup_controller.ts', '')
     await fs.create('app/controllers/public/home_page.ts', '')
 
-    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
+    const transformer = new IndexGenerator(source, ui.logger)
     transformer.add('controllers', {
       as: 'barrelFile',
       exportName: 'controllers',
@@ -182,16 +188,16 @@ test.group('Index generator', () => {
     /**
      * Considered
      */
-    await transformer.addFile(join(fs.basePath, 'app/controllers/post_comments_controller.ts'))
+    await transformer.addFile(join(source, 'app/controllers/post_comments_controller.ts'))
 
     /**
      * Ignored (model file)
      */
-    await transformer.addFile(join(fs.basePath, 'app/models/post_comment.ts'))
+    await transformer.addFile(join(source, 'app/models/post_comment.ts'))
     /**
      * Ignored (markdown file)
      */
-    await transformer.addFile(join(fs.basePath, 'app/controllers/README.md'))
+    await transformer.addFile(join(source, 'app/controllers/README.md'))
 
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "export const controllers = {
@@ -212,13 +218,14 @@ test.group('Index generator', () => {
 
   test('re-generate index when an existing file is removed', async ({ assert, fs }) => {
     const outputPath = './.adonisjs/backend/controllers.ts'
+    const source = string.toUnixSlash(fs.basePath)
 
     await fs.create('app/controllers/posts_controller.ts', '')
     await fs.create('app/controllers/user/posts_controller.ts', '')
     await fs.create('app/controllers/auth/signup_controller.ts', '')
     await fs.create('app/controllers/public/home_page.ts', '')
 
-    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
+    const transformer = new IndexGenerator(source, ui.logger)
     transformer.add('controllers', {
       as: 'barrelFile',
       exportName: 'controllers',
@@ -231,12 +238,12 @@ test.group('Index generator', () => {
     /**
      * Considered
      */
-    await transformer.removeFile(join(fs.basePath, 'app/controllers/user/posts_controller.ts'))
+    await transformer.removeFile(join(source, 'app/controllers/user/posts_controller.ts'))
 
     /**
      * Noop, since file never existed
      */
-    await transformer.removeFile(join(fs.basePath, 'app/controllers/user/users.ts'))
+    await transformer.removeFile(join(source, 'app/controllers/user/users.ts'))
 
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "export const controllers = {

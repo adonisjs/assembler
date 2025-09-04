@@ -286,21 +286,21 @@ export async function copyFiles(files: string[], cwd: string, outDir: string) {
  * This utility provides caching for expensive function calls to improve
  * performance by storing results in memory.
  *
- * @param fn - Function to memoize (must accept single string argument)
+ * @param fn - Function to memoize (only first argument is considered for memoization)
  * @param maxKeys - Optional maximum number of cached keys
  * @returns Memoized version of the function
  */
-export function memoize<Result>(
-  fn: (input: string) => any,
+export function memoize<T extends any[], Result>(
+  fn: (input: string, ...args: T) => any,
   maxKeys?: number
-): (input: string) => Result {
+): (input: string, ...args: T) => Result {
   const cache = new Cache<string, Result>({ max: maxKeys })
 
-  return (input: string) => {
+  return (input: string, ...args: T) => {
     if (cache.has(input)) {
       return cache.get(input)!
     }
-    return fn(input)
+    return fn(input, ...args)
   }
 }
 

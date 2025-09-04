@@ -14,8 +14,8 @@ import { dirname, join, relative } from 'node:path'
 import StringBuilder from '@poppinss/utils/string_builder'
 
 import debug from '../debug.ts'
-import { removeExtension, throttle } from '../utils.ts'
 import { FileBuffer } from '../file_buffer.ts'
+import { removeExtension, throttle } from '../utils.ts'
 import { VirtualFileSystem } from '../virtual_file_system.ts'
 import { type RecursiveFileTree, type IndexGeneratorSourceConfig } from '../types/common.ts'
 

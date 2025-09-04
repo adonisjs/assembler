@@ -420,83 +420,111 @@ export const policies = {
 }
 ```
 
-### makeEntityIndex
-The method is used to create an index file for a collection of entities discovered from one or more root folders. We use this method to create an index file for controllers or generate types for Inertia pages.
+## Index generator
+
+The `IndexGenerator` is a core concept in Assembler that is used to watch the filesystem and create barrel files or types from a source directory.
+
+For example, the core of the framework uses the following config to generate controllers, events, and listeners barrel file.
 
 ```ts
-const transformer = new CodeTransformer(appRoot)
+import hooks from '@adonisjs/assembler/hooks'
 
-const output = await transformer.makeEntityIndex({
-  source: 'app/controllers',
-  importAlias: '#controllers'
-}, {
-  destination: '.adonisjs/backend/controllers',
-  exportName: 'controllers'
+export default hooks.init((type, parent, indexGenerator) => {
+  indexGenerator.add('controllers', {
+    source: './app/controllers',
+    importAlias: '#controllers',
+    as: 'barrelFile',
+    exportName: 'controllers',
+    removeSuffix: 'controllers',
+    output: './.adonisjs/server/controllers.ts',
+  })
+
+  indexGenerator.add('events', {
+    source: './app/events',
+    importAlias: '#events',
+    as: 'barrelFile',
+    exportName: 'events',
+    output: './.adonisjs/server/events.ts',
+  })
+
+  indexGenerator.add('listeners', {
+    source: './app/listeners',
+    importAlias: '#listeners',
+    as: 'barrelFile',
+    exportName: 'listeners',
+    removeSuffix: 'listener',
+    output: './.adonisjs/server/listeners.ts',
+  })
 })
-
-/**
-  export const controllers = {
-    SignupController: () => import('#controllers/auth/signup_controller'),
-    PostsController: () => import('#controllers/posts_controller'),
-    HomePage: () => import('#controllers/public/home_page'),
-    UserPostsController: () => import('#controllers/user/posts_controller'),
-  }
- */
 ```
 
-If you would like to remove the `Controller` suffix from the key (which we do in our official generator), then you can specify the `removeNameSuffix` option.
+Once the configurations have been registered with the `IndexGenerator`, it will scan the needed directories and generate the output files. Additionally, the file watchers will re-trigger the index generation when a file is added or removed from the source directory.
 
-```ts
-const output = await transformer.makeEntityIndex({
-  source: 'app/controllers',
-  importAlias: '#controllers'
-}, {
-  destination: '.adonisjs/backend/controllers',
-  exportName: 'controllers',
-  removeNameSuffix: 'controller'
-})
+### Barrel file generation
+
+Barrel files provide a single entry point by exporting a collection of lazily imported entities, recursively gathered from a source directory. The `IndexGenerator` automates this process by scanning nested directories and generating import mappings that mirror the file structure.
+
+For example, given the following `controllers` directory structure:
+
+```sh
+app/controllers/
+├── auth/
+│   ├── login_controller.ts
+│   └── register_controller.ts
+├── blog/
+│   ├── posts_controller.ts
+│   └── post_comments_controller.ts
+└── users_controller.ts
 ```
 
-For more advanced use-cases, you can specify the `computeBaseName` method to self compute the key name for the collection.
+When processed with the controllers configuration, the `IndexGenerator` produces a barrel file that reflects the directory hierarchy as nested objects, using capitalized file names as property keys.
 
 ```ts
-import StringBuilder from '@poppinss/utils/string_builder'
-
-const output = await transformer.makeEntityIndex({
-  source: 'app/controllers',
-  importAlias: '#controllers'
-}, {
-  destination: '.adonisjs/backend/controllers',
-  exportName: 'controllers',
-  computeBaseName(filePath, sourcePath) {
-    const baseName = relative(sourcePath, filePath)
-    return new StringBuilder(baseName).toUnixSlash().removeExtension().removeSuffix('Controller').toString()
+export const controllers = {
+  auth: {
+    Login: () => import('#controllers/auth/login_controller'),
+    Register: () => import('#controllers/auth/register_controller'),
   },
-})
+  blog: {
+    Posts: () => import('#controllers/blog/posts_controller'),
+    PostComments: () => import('#controllers/blog/post_comments_controller'),
+  },
+  Users: () => import('#controllers/users_controller'),
+}
 ```
 
-#### Controlling the output
-The output is an object with key-value pair in which the value is a lazily imported module. However, you can customize the output to generate a TypeScript type using the `computeOutput` method.
+### Types generation
+
+To generate a types file, register a custom callback that takes an instance of the `VirtualFileSystem` and updates the output string via the `buffer` object. 
+
+The collection is represented as key–value pairs:
+
+- **Key** — the relative path (without extension) from the root of the source directory.
+- **Value** — an object containing the file's `importPath`, `relativePath`, and `absolutePath`.
 
 ```ts
-const output = await transformer.makeEntityIndex(
-  { source: './inertia/pages', allowedExtensions: ['.tsx'] },
-  {
-    destination: outputPath,
-    computeOutput(entries) {
-      return entries
-        .reduce<string[]>(
-          (result, entry) => {
-            result.push(`${entry.name}: typeof import('${entry.importPath}')`)
-            return result
-          },
-          [`declare module '@adonisjs/inertia' {`, 'export interface Pages {']
+import hooks from '@adonisjs/assembler/hooks'
+
+export default hooks.init((type, parent, indexGenerator) => {
+  indexGenerator.add('inertiaPages', {
+    source: './inertia/pages',
+    as: (vfs, buffer) => {
+      buffer.write(`declare module '@adonisjs/inertia' {`).indent()
+      buffer.write(`export interface Pages {`).indent()
+
+      const files = vfs.asList()
+      Object.keys(files).forEach((filePath) => {
+        buffer.write(
+          `'${filePath}': InferPageProps<typeof import('${file.importPath}').default>`
         )
-        .concat('}', '}')
-        .join('\n')
+      })
+
+      buffer.dedent().write('}')
+      buffer.dedent().write('}')
     },
-  }
-)
+    output: './.adonisjs/server/inertia_pages.d.ts',
+  })
+})
 ```
 
 ## Contributing

@@ -19,6 +19,7 @@
     ".": "./build/index.js",
     "./code_transformer": "./build/src/code_transformer/main.js",
     "./routes_scanner": "./build/src/code_scanners/routes_scanner/main.js",
+    "./index_generator": "./build/src/index_generator/main.js",
     "./helpers": "./build/src/helpers.js",
     "./types": "./build/src/types/main.js"
   },
@@ -109,6 +110,7 @@
       "./src/types/main.ts",
       "./src/helpers.ts",
       "./src/code_scanners/routes_scanner/main.ts",
+      "./src/index_generator/main.ts",
       "./src/code_transformer/main.ts"
     ],
     "outDir": "./build",

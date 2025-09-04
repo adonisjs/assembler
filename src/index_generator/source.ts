@@ -66,6 +66,10 @@ export class IndexGeneratorSource {
    * Configuration for this index generator source
    */
   #config: IndexGeneratorSourceConfig
+
+  /**
+   * CLI logger instance for output messages
+   */
   #cliLogger: Logger
 
   /**
@@ -88,6 +92,11 @@ export class IndexGeneratorSource {
   })
 
   /**
+   * Unique name for this index generator source
+   */
+  public name: string
+
+  /**
    * Create a new IndexGeneratorSource instance
    *
    * @param name - Unique name for this index generator source
@@ -96,11 +105,12 @@ export class IndexGeneratorSource {
    * @param config - Configuration for this index generator source
    */
   constructor(
-    public name: string,
+    name: string,
     appRoot: string,
     cliLogger: Logger,
     config: IndexGeneratorSourceConfig
   ) {
+    this.name = name
     this.#config = config
     this.#appRoot = appRoot
     this.#cliLogger = cliLogger

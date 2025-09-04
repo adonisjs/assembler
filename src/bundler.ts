@@ -94,17 +94,25 @@ export class Bundler {
   declare packageManager: SupportedPackageManager
 
   /**
+   * The current working directory URL
+   */
+  public cwd: URL
+
+  /**
+   * Bundler configuration options including hooks and meta files
+   */
+  public options: BundlerOptions
+
+  /**
    * Create a new bundler instance
    *
    * @param cwd - The current working directory URL
    * @param ts - TypeScript module reference
    * @param options - Bundler configuration options
    */
-  constructor(
-    public cwd: URL,
-    ts: typeof tsStatic,
-    public options: BundlerOptions
-  ) {
+  constructor(cwd: URL, ts: typeof tsStatic, options: BundlerOptions) {
+    this.cwd = cwd
+    this.options = options
     this.#cwdPath = fileURLToPath(this.cwd)
     this.#ts = ts
   }

@@ -21,9 +21,9 @@ import { type UnWrapLazyImport } from '@poppinss/utils/types'
 import debug from './debug.ts'
 import { FileSystem } from './file_system.ts'
 import type { TestRunnerOptions } from './types/common.ts'
-import { type WatcherHooks, type TestRunnerHooks, type CommonHooks } from './types/hooks.ts'
-import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
 import { IndexGenerator } from './index_generator/main.ts'
+import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
+import { type WatcherHooks, type TestRunnerHooks, type CommonHooks } from './types/hooks.ts'
 
 /**
  * Exposes the API to run Japa tests and optionally watch for file
@@ -100,9 +100,19 @@ export class TestRunner {
     }
   >
 
+  /**
+   * The current working directory path as a string
+   */
   #cwdPath: string
 
+  /**
+   * Index generator for managing auto-generated index files
+   */
   #indexGenerator: IndexGenerator
+
+  /**
+   * CLI UI instance for displaying colorful messages and progress information
+   */
   #ui = cliui()
 
   /**
@@ -138,15 +148,24 @@ export class TestRunner {
   scriptFile: string = 'bin/test.ts'
 
   /**
+   * The current working directory URL
+   */
+  public cwd: URL
+
+  /**
+   * Test runner configuration options including filters, reporters, and hooks
+   */
+  public options: TestRunnerOptions
+
+  /**
    * Create a new TestRunner instance
    *
    * @param cwd - The current working directory URL
    * @param options - Test runner configuration options
    */
-  constructor(
-    public cwd: URL,
-    public options: TestRunnerOptions
-  ) {
+  constructor(cwd: URL, options: TestRunnerOptions) {
+    this.cwd = cwd
+    this.options = options
     this.#cwdPath = fileURLToPath(this.cwd)
     this.#indexGenerator = new IndexGenerator(this.#cwdPath, this.ui.logger)
   }
@@ -258,14 +277,12 @@ export class TestRunner {
        * If inline filters are defined, then we ignore the
        * initial filters
        */
-      const scriptArgs = this.#convertOptionsToArgs()
-        .concat(this.options.scriptArgs)
-        .concat(
-          this.#convertFiltersToArgs({
-            ...this.options.filters,
-            ...filters,
-          })
-        )
+      const mergedFilters = { ...this.options.filters, ...filters }
+      const scriptArgs = [
+        ...this.#convertOptionsToArgs(),
+        ...this.options.scriptArgs,
+        ...this.#convertFiltersToArgs(mergedFilters),
+      ]
 
       this.#testsProcess = runNode(this.cwd, {
         script: this.scriptFile,
@@ -356,7 +373,7 @@ export class TestRunner {
       this.#handleFileChange(relativePath, absolutePath, 'update')
     })
     this.#hooks.add('fileRemoved', (relativePath, absolutePath) => {
-      this.#regenerateIndex(absolutePath, 'add')
+      this.#regenerateIndex(absolutePath, 'delete')
       this.#handleFileChange(relativePath, absolutePath, 'delete')
     })
   }

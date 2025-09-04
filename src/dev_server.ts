@@ -48,23 +48,35 @@ import {
  */
 export class DevServer {
   /**
-   * Pre-allocated info objects for hot-hook events to avoid repeated object creation
+   * Pre-allocated info object for hot-hook change events to avoid repeated object creation
    */
   static readonly #HOT_HOOK_CHANGE_INFO = {
     source: 'hot-hook' as const,
     fullReload: false,
     hotReloaded: false,
   }
+
+  /**
+   * Pre-allocated info object for hot-hook full reload events
+   */
   static readonly #HOT_HOOK_FULL_RELOAD_INFO = {
     source: 'hot-hook' as const,
     fullReload: true,
     hotReloaded: false,
   }
+
+  /**
+   * Pre-allocated info object for hot-hook invalidation events
+   */
   static readonly #HOT_HOOK_INVALIDATED_INFO = {
     source: 'hot-hook' as const,
     fullReload: false,
     hotReloaded: true,
   }
+
+  /**
+   * Pre-allocated info object for file watcher events
+   */
   static readonly #WATCHER_INFO = {
     source: 'watcher' as const,
     fullReload: true,
@@ -115,6 +127,9 @@ export class DevServer {
    */
   #fileSystem!: FileSystem
 
+  /**
+   * Index generator for managing auto-generated index files
+   */
   #indexGenerator: IndexGenerator
 
   /**
@@ -144,6 +159,9 @@ export class DevServer {
     }
   >
 
+  /**
+   * CLI UI instance for displaying colorful messages and progress information
+   */
   #ui = cliui()
 
   /**
@@ -159,7 +177,10 @@ export class DevServer {
   }, 'restartHTTPServer')
 
   /**
-   * Sets up keyboard shortcuts
+   * Sets up keyboard shortcuts for development server interactions
+   *
+   * Initializes the shortcuts manager with callbacks for restarting the server,
+   * clearing the screen, and quitting the application.
    */
   #setupKeyboardShortcuts() {
     this.#shortcutsManager = new ShortcutsManager({
@@ -175,7 +196,10 @@ export class DevServer {
   }
 
   /**
-   * Cleanup keyboard shortcuts
+   * Cleanup keyboard shortcuts and restore terminal state
+   *
+   * Removes keyboard shortcuts event listeners and restores the terminal
+   * to its normal state when shutting down the development server.
    */
   #cleanupKeyboardShortcuts() {
     this.#shortcutsManager?.cleanup()
@@ -209,21 +233,36 @@ export class DevServer {
   scriptFile: string = 'bin/server.ts'
 
   /**
+   * The current working directory URL
+   */
+  public cwd: URL
+
+  /**
+   * Development server configuration options including hooks and environment variables
+   */
+  public options: DevServerOptions
+
+  /**
    * Create a new DevServer instance
    *
    * @param cwd - The current working directory URL
    * @param options - Development server configuration options
    */
-  constructor(
-    public cwd: URL,
-    public options: DevServerOptions
-  ) {
+  constructor(cwd: URL, options: DevServerOptions) {
+    this.cwd = cwd
+    this.options = options
     this.#cwdPath = fileURLToPath(this.cwd)
     this.#indexGenerator = new IndexGenerator(this.#cwdPath, this.ui.logger)
   }
 
   /**
-   * Inspect if child process message is from AdonisJS HTTP server
+   * Type guard to check if child process message is from AdonisJS HTTP server
+   *
+   * Validates that a message from the child process contains the expected
+   * structure indicating the AdonisJS server is ready and listening.
+   *
+   * @param message - Unknown message from child process
+   * @returns True if message is an AdonisJS ready message
    */
   #isAdonisJSReadyMessage(message: unknown): message is {
     isAdonisJS: true
@@ -242,8 +281,12 @@ export class DevServer {
   }
 
   /**
-   * Displays the server info and executes the hooks after the server has been
-   * started.
+   * Displays server information and executes hooks after server startup
+   *
+   * Shows server URL, mode, startup duration, and help instructions.
+   * Also executes the devServerStarted hooks to allow custom post-startup logic.
+   *
+   * @param message - Server ready message containing port, host, and optional duration
    */
   async #postServerReady(message: { port: number; host: string; duration?: [number, number] }) {
     const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
@@ -277,7 +320,13 @@ export class DevServer {
   }
 
   /**
-   * Inspect if child process message is coming from hot-hook
+   * Type guard to check if child process message is from hot-hook
+   *
+   * Validates that a message from the child process is a hot-hook notification
+   * about file changes, invalidations, or full reloads.
+   *
+   * @param message - Unknown message from child process
+   * @returns True if message is a hot-hook message
    */
   #isHotHookMessage(message: unknown): message is {
     type: 'hot-hook:file-changed' | 'hot-hook:invalidated' | 'hot-hook:full-reload'
@@ -295,7 +344,10 @@ export class DevServer {
   }
 
   /**
-   * Conditionally clear the terminal screen
+   * Conditionally clears the terminal screen based on configuration
+   *
+   * Clears the terminal screen if the clearScreen option is enabled,
+   * providing a clean view for development output.
    */
   #clearScreen() {
     if (this.options.clearScreen) {
@@ -304,7 +356,15 @@ export class DevServer {
   }
 
   /**
-   * Handles file change event
+   * Handles file change events and triggers appropriate server actions
+   *
+   * Processes file change notifications and determines whether to restart
+   * the server, hot reload, or ignore the change based on file type and mode.
+   *
+   * @param relativePath - Relative path to the changed file
+   * @param absolutePath - Absolute path to the changed file
+   * @param action - Type of file change (add, update, delete)
+   * @param info - Optional information about the change source and reload behavior
    */
   #handleFileChange(
     relativePath: string,
@@ -361,8 +421,13 @@ export class DevServer {
   }
 
   /**
-   * Re-generates the index when a file is changed, but only in HMR
-   * mode
+   * Regenerates index files when a file is added or removed
+   *
+   * Updates the index generator to reflect file system changes by adding
+   * or removing files from the generated index files.
+   *
+   * @param filePath - Absolute path to the file that changed
+   * @param action - Whether the file was added or deleted
    */
   #regenerateIndex(filePath: string, action: 'add' | 'delete') {
     if (action === 'add') {
@@ -372,8 +437,10 @@ export class DevServer {
   }
 
   /**
-   * Registers inline hooks for the file changes and restarts the
-   * HTTP server when a file gets changed.
+   * Registers hooks for file system events and server restart triggers
+   *
+   * Sets up event handlers that respond to file additions, changes, and removals
+   * by regenerating indexes and handling server restarts as needed.
    */
   #registerServerRestartHooks() {
     this.#hooks.add('fileAdded', (relativePath, absolutePath) => {
@@ -435,7 +502,13 @@ export class DevServer {
   }
 
   /**
-   * Starts the HTTP server
+   * Starts the HTTP server as a child process
+   *
+   * Creates a new Node.js child process to run the server script with the
+   * specified port and configuration. Sets up message handlers for server
+   * ready notifications and hot-hook events.
+   *
+   * @param port - Port number for the server to listen on
    */
   async #startHTTPServer(port: string) {
     /**

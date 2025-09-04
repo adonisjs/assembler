@@ -59,6 +59,10 @@ export class CodeTransformer {
    * Directory of the adonisjs project
    */
   #cwd: URL
+
+  /**
+   * String path version of the current working directory
+   */
   #cwdPath: string
 
   /**

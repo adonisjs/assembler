@@ -8,6 +8,7 @@
  */
 
 import { fdir } from 'fdir'
+import Cache from 'tmp-cache'
 import { relative } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import lodash from '@poppinss/utils/lodash'
@@ -50,14 +51,14 @@ export class VirtualFileSystem {
   #options: VirtualFileSystemOptions
 
   /**
-   * Files collect from the initial scan
+   * Files collected from the initial scan with pre-computed relative paths
    */
-  #files: Set<string> = new Set()
+  #files: Map<string, string> = new Map()
 
   /**
-   * Cache map storing parsed AST nodes by file path
+   * LRU cache storing parsed AST nodes by file path with size limit
    */
-  #astCache: Map<string, SgNode> = new Map()
+  #astCache: Cache<string, SgNode> = new Cache({ max: 60 })
 
   /**
    * Matcher is defined when glob is defined via the options
@@ -101,7 +102,13 @@ export class VirtualFileSystem {
       .withPromise()
 
     debug('scanned files %O', filesList)
-    this.#files = new Set(filesList.sort(naturalSort))
+    const sortedFiles = filesList.sort(naturalSort)
+    this.#files.clear()
+
+    for (const filePath of sortedFiles) {
+      const relativePath = removeExtension(relative(this.#source, filePath))
+      this.#files.set(filePath, relativePath)
+    }
   }
 
   /**
@@ -150,10 +157,9 @@ export class VirtualFileSystem {
     const transformKey = options?.transformKey ?? BYPASS_FN
     const transformValue = options?.transformValue ?? BYPASS_FN
 
-    this.#files.forEach((filePath) => {
-      const key = removeExtension(relative(this.#source, filePath))
-      list[transformKey(key)] = transformValue(filePath)
-    })
+    for (const [filePath, relativePath] of this.#files) {
+      list[transformKey(relativePath)] = transformValue(filePath)
+    }
 
     return list
   }
@@ -175,10 +181,9 @@ export class VirtualFileSystem {
     const transformKey = options?.transformKey ?? BYPASS_FN
     const transformValue = options?.transformValue ?? BYPASS_FN
 
-    this.#files.forEach((filePath) => {
-      const key = removeExtension(relative(this.#source, filePath))
-      lodash.set(list, transformKey(key).split('/'), transformValue(filePath))
-    })
+    for (const [filePath, relativePath] of this.#files) {
+      lodash.set(list, transformKey(relativePath).split('/'), transformValue(filePath))
+    }
 
     return list
   }
@@ -193,7 +198,8 @@ export class VirtualFileSystem {
   add(filePath: string): boolean {
     if (this.has(filePath)) {
       debug('adding new "%s" file to the virtual file system', filePath)
-      this.#files.add(filePath)
+      const relativePath = removeExtension(relative(this.#source, filePath))
+      this.#files.set(filePath, relativePath)
       return true
     }
 

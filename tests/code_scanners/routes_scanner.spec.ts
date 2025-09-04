@@ -129,6 +129,9 @@ test.group('Routes scanner', () => {
       },
     ])
 
+    assert.deepEqual(scanner.getControllers(), [
+      join(fs.basePath, 'app/controllers/users_controller.ts'),
+    ])
     assert.snapshot(scanner.getScannedRoutes()).matchInline(`
       [
         {
@@ -425,6 +428,9 @@ test.group('Routes scanner', () => {
       },
     ])
 
+    assert.deepEqual(scanner.getControllers(), [
+      join(fs.basePath, 'app/controllers/users_controller.ts'),
+    ])
     assert.snapshot(scanner.getScannedRoutes()).matchInline(`
       [
         {

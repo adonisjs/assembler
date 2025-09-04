@@ -136,7 +136,9 @@ export class FileSystem {
    *   console.log(file.reloadServer) // true
    * }
    */
-  inspect = memoize<[string], InspectedFile | null>((absolutePath, relativePath) => {
+  inspect = memoize<[string?], InspectedFile | null>((absolutePath, relativePath) => {
+    relativePath = relativePath ?? string.toUnixSlash(relative(this.#cwd, absolutePath))
+
     /**
      * If a file is a script file and part of the backend project, then we consider
      * the file.
@@ -250,7 +252,9 @@ export class FileSystem {
     /**
      * Register files we know ahead of time
      */
-    files.forEach((file) => this.#scannedTypeScriptFiles.add(string.toUnixSlash(file)))
+    for (const file of files) {
+      this.#scannedTypeScriptFiles.add(string.toUnixSlash(file))
+    }
 
     /**
      * Compute includes and excludes
@@ -261,37 +265,30 @@ export class FileSystem {
     )
 
     /**
-     * Initiate picomatch matchers we will need to identify metafiles
+     * Pre-compute meta file patterns to avoid repeated array operations
      */
-    this.#isMetaFileWithReloadsEnabled = picomatch(
-      metaFiles.filter((file) => !!file.reloadServer).map((file) => file.pattern),
-      {
-        cwd: this.#cwd,
+    const metaFilesWithReloads: string[] = []
+    const metaFilesWithoutReloads: string[] = []
+
+    for (const file of metaFiles) {
+      if (file.reloadServer) {
+        metaFilesWithReloads.push(file.pattern)
+      } else {
+        metaFilesWithoutReloads.push(file.pattern)
       }
-    )
-    this.#isMetaFileWithReloadsDisabled = picomatch(
-      metaFiles.filter((file) => !file.reloadServer).map((file) => file.pattern),
-      {
-        cwd: this.#cwd,
-      }
-    )
-    this.#isTestFile = picomatch(
-      testSuites.flatMap((suite) => suite.files),
-      {
-        cwd: this.#cwd,
-      }
-    )
+    }
+
+    const testFilePatterns = testSuites.flatMap((suite) => suite.files)
+    const picomatcchOptions = { cwd: this.#cwd }
 
     /**
-     * Initiate picomatch matchers we will need to identify included or
-     * excluded files
+     * Initiate picomatch matchers we will need to identify metafiles
      */
-    this.#isIncluded = picomatch(this.#includes, {
-      cwd: this.#cwd,
-    })
-    this.#isExcluded = picomatch(this.#excludes, {
-      cwd: this.#cwd,
-    })
+    this.#isMetaFileWithReloadsEnabled = picomatch(metaFilesWithReloads, picomatcchOptions)
+    this.#isMetaFileWithReloadsDisabled = picomatch(metaFilesWithoutReloads, picomatcchOptions)
+    this.#isTestFile = picomatch(testFilePatterns, picomatcchOptions)
+    this.#isIncluded = picomatch(this.#includes, picomatcchOptions)
+    this.#isExcluded = picomatch(this.#excludes, picomatcchOptions)
 
     debug('initiating file system %O', {
       includes: this.#includes,
@@ -370,6 +367,6 @@ export class FileSystem {
    * @returns True if the file should be watched
    */
   shouldWatchFile(absolutePath: string) {
-    return this.inspect(absolutePath, relative(this.#cwd, absolutePath)) !== null
+    return this.inspect(absolutePath) !== null
   }
 }

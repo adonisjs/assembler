@@ -427,6 +427,16 @@ export class RoutesScanner {
   }
 
   /**
+   * Returns an array of controllers bound to the provided
+   * routes
+   *
+   * @returns Array of controller's absolute paths
+   */
+  getControllers() {
+    return Object.keys(this.#controllerRoutes)
+  }
+
+  /**
    * Invalidating a controller will trigger computing the validators,
    * request types and the response types.
    *

@@ -187,6 +187,8 @@ export class ShortcutsManager {
     }
 
     process.stdin.setRawMode(false)
+    process.stdin.pause()
+    process.stdin.unref()
     process.stdin.removeListener('data', this.#keyPressHandler!)
     this.#keyPressHandler = undefined
   }

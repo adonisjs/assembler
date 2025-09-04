@@ -166,7 +166,7 @@ export class TestRunner {
   constructor(cwd: URL, options: TestRunnerOptions) {
     this.cwd = cwd
     this.options = options
-    this.#cwdPath = fileURLToPath(this.cwd)
+    this.#cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
     this.#indexGenerator = new IndexGenerator(this.#cwdPath, this.ui.logger)
   }
 
@@ -467,7 +467,7 @@ export class TestRunner {
     }
 
     this.#stickyPort = String(await getPort(this.cwd))
-    this.#fileSystem = new FileSystem(this.cwd, tsConfig, {
+    this.#fileSystem = new FileSystem(this.#cwdPath, tsConfig, {
       ...this.options,
       suites: this.options.suites?.filter((suite) => {
         if (this.options.filters.suites) {

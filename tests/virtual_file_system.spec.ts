@@ -9,6 +9,7 @@
 
 import { join } from 'node:path'
 import { test } from '@japa/runner'
+import string from '@poppinss/utils/string'
 import StringBuilder from '@poppinss/utils/string_builder'
 import { createControllers, setupFakeAdonisproject } from '#tests/helpers'
 
@@ -19,7 +20,7 @@ test.group('Virtual file system', () => {
     await setupFakeAdonisproject(fs)
     await createControllers()
 
-    const source = join(fs.basePath, 'app/controllers')
+    const source = string.toUnixSlash(join(fs.basePath, 'app/controllers'))
     const vfs = new VirtualFileSystem(source)
     await vfs.scan()
 
@@ -47,7 +48,7 @@ test.group('Virtual file system', () => {
     await setupFakeAdonisproject(fs)
     await createControllers()
 
-    const source = join(fs.basePath, 'app/controllers')
+    const source = string.toUnixSlash(join(fs.basePath, 'app/controllers'))
     const vfs = new VirtualFileSystem(source)
     await vfs.scan()
 
@@ -87,7 +88,7 @@ test.group('Virtual file system', () => {
     await setupFakeAdonisproject(fs)
     await createControllers()
 
-    const source = join(fs.basePath, 'features')
+    const source = string.toUnixSlash(join(fs.basePath, 'features'))
     const vfs = new VirtualFileSystem(source, {
       glob: ['**/controllers/*.ts'],
     })
@@ -126,7 +127,7 @@ test.group('Virtual file system', () => {
     await setupFakeAdonisproject(fs)
     await createControllers()
 
-    const source = join(fs.basePath, 'app/controllers')
+    const source = string.toUnixSlash(join(fs.basePath, 'app/controllers'))
     const vfs = new VirtualFileSystem(source, {})
 
     await vfs.scan()
@@ -144,7 +145,7 @@ test.group('Virtual file system', () => {
     await setupFakeAdonisproject(fs)
     await createControllers()
 
-    const source = join(fs.basePath, 'app/controllers')
+    const source = string.toUnixSlash(join(fs.basePath, 'app/controllers'))
     const vfs = new VirtualFileSystem(source)
     await vfs.scan()
 

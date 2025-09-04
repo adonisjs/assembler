@@ -10,7 +10,6 @@
 import picomatch from 'picomatch'
 import { relative } from 'node:path'
 import type tsStatic from 'typescript'
-import { fileURLToPath } from 'node:url'
 import string from '@poppinss/utils/string'
 
 import debug from './debug.ts'
@@ -240,8 +239,8 @@ export class FileSystem {
    * @param tsConfig - Parsed TypeScript configuration
    * @param rcFile - AdonisJS RC file configuration
    */
-  constructor(cwd: URL | string, tsConfig: tsStatic.ParsedCommandLine, rcFile: AssemblerRcFile) {
-    this.#cwd = string.toUnixSlash(typeof cwd === 'string' ? cwd : fileURLToPath(cwd))
+  constructor(cwd: string, tsConfig: tsStatic.ParsedCommandLine, rcFile: AssemblerRcFile) {
+    this.#cwd = cwd
     this.#tsConfig = tsConfig
 
     const files = tsConfig.fileNames

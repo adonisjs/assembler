@@ -10,6 +10,7 @@
 import { test } from '@japa/runner'
 import { cliui } from '@poppinss/cliui'
 import { join, relative } from 'node:path'
+import string from '@poppinss/utils/string'
 import { IndexGenerator } from '../src/index_generator/main.ts'
 
 const ui = cliui({
@@ -24,7 +25,7 @@ test.group('Index generator', () => {
     await fs.create('app/controllers/auth/signup_controller.ts', '')
     await fs.create('app/controllers/public/home_page.ts', '')
 
-    const transformer = new IndexGenerator(fs.basePath, ui.logger)
+    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
     transformer.add('controllers', {
       as: 'barrelFile',
       exportName: 'controllers',
@@ -58,7 +59,7 @@ test.group('Index generator', () => {
     await fs.create('app/controllers/auth/signup_controller.ts', '')
     await fs.create('app/controllers/public/home_page.ts', '')
 
-    const transformer = new IndexGenerator(fs.basePath, ui.logger)
+    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
     transformer.add('controllers', {
       as: 'barrelFile',
       exportName: 'controllers',
@@ -91,7 +92,7 @@ test.group('Index generator', () => {
     await fs.create('app/controllers/auth/signup_controller.ts', '')
     await fs.create('app/controllers/public/home_page.ts', '')
 
-    const transformer = new IndexGenerator(fs.basePath, ui.logger)
+    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
     transformer.add('controllers', {
       as: 'barrelFile',
       exportName: 'controllers',
@@ -126,7 +127,7 @@ test.group('Index generator', () => {
     await fs.create('inertia/pages/blog/comments/index.tsx', '')
     await fs.create('inertia/pages/blog/comments/show.tsx', '')
 
-    const transformer = new IndexGenerator(fs.basePath, ui.logger)
+    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
     transformer.add('inertiaPages', {
       as(vfs, buffer) {
         const list = vfs.asList({
@@ -168,7 +169,7 @@ test.group('Index generator', () => {
     await fs.create('app/controllers/auth/signup_controller.ts', '')
     await fs.create('app/controllers/public/home_page.ts', '')
 
-    const transformer = new IndexGenerator(fs.basePath, ui.logger)
+    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
     transformer.add('controllers', {
       as: 'barrelFile',
       exportName: 'controllers',
@@ -217,7 +218,7 @@ test.group('Index generator', () => {
     await fs.create('app/controllers/auth/signup_controller.ts', '')
     await fs.create('app/controllers/public/home_page.ts', '')
 
-    const transformer = new IndexGenerator(fs.basePath, ui.logger)
+    const transformer = new IndexGenerator(string.toUnixSlash(fs.basePath), ui.logger)
     transformer.add('controllers', {
       as: 'barrelFile',
       exportName: 'controllers',

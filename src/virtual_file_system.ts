@@ -78,7 +78,7 @@ export class VirtualFileSystem {
    * @param options - Optional configuration for file filtering and processing
    */
   constructor(source: string, options?: VirtualFileSystemOptions) {
-    this.#source = string.toUnixSlash(source)
+    this.#source = source
     this.#options = options ?? {}
     this.#picoMatchOptions = {
       cwd: this.#source,

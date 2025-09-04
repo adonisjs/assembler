@@ -443,7 +443,6 @@ export class RoutesScanner {
    * @param controllerPath - Path to the controller file to invalidate
    */
   async invalidate(controllerPath: string) {
-    controllerPath = string.toUnixSlash(controllerPath)
     const controllerRoutes = this.#controllerRoutes[controllerPath]
     if (!controllerRoutes) {
       return

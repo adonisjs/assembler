@@ -251,7 +251,7 @@ export class DevServer {
   constructor(cwd: URL, options: DevServerOptions) {
     this.cwd = cwd
     this.options = options
-    this.#cwdPath = fileURLToPath(this.cwd)
+    this.#cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
     this.#indexGenerator = new IndexGenerator(this.#cwdPath, this.ui.logger)
   }
 
@@ -471,7 +471,7 @@ export class DevServer {
     this.ui.logger.info(`starting server in ${this.#mode} mode...`)
 
     this.#stickyPort = String(await getPort(this.cwd))
-    this.#fileSystem = new FileSystem(this.cwd, tsConfig, this.options)
+    this.#fileSystem = new FileSystem(this.#cwdPath, tsConfig, this.options)
 
     this.ui.logger.info('loading hooks...')
     this.#hooks = await loadHooks(this.options.hooks, [

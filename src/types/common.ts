@@ -21,6 +21,9 @@ import {
   type TestRunnerHooks,
 } from './hooks.ts'
 
+/**
+ * Recursive file tree structure for representing nested directory hierarchies
+ */
 export type RecursiveFileTree = {
   [key: string]: string | RecursiveFileTree
 }

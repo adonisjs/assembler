@@ -32,6 +32,11 @@ import type {
  * including updating middleware, environment validations, and other
  * code generation tasks.
  *
+ * The CodeTransformer provides methods for modifying various AdonisJS
+ * configuration files and code structures using AST manipulation through
+ * ts-morph. It can update middleware stacks, add environment validations,
+ * register plugins, and modify RC file configurations.
+ *
  * @example
  * const transformer = new CodeTransformer(cwd)
  * await transformer.addMiddlewareToStack('server', [{
@@ -89,8 +94,14 @@ export class CodeTransformer {
   }
 
   /**
-   * Add a new middleware to the middleware array of the
-   * given file
+   * Add a new middleware to the middleware array of the given file
+   *
+   * This method locates middleware stack calls (like server.use or router.use)
+   * and adds the middleware entry to the appropriate position in the array.
+   *
+   * @param file - The source file to modify
+   * @param target - The target method call (e.g., 'server.use', 'router.use')
+   * @param middlewareEntry - The middleware entry to add
    */
   #addToMiddlewareArray(file: SourceFile, target: string, middlewareEntry: MiddlewareNode) {
     const callExpressions = file
@@ -129,6 +140,12 @@ export class CodeTransformer {
 
   /**
    * Add a new middleware to the named middleware of the given file
+   *
+   * This method adds middleware entries to the named middleware object,
+   * typically used for route-specific middleware registration.
+   *
+   * @param file - The source file to modify
+   * @param middlewareEntry - The middleware entry to add (must have a name)
    */
   #addToNamedMiddleware(file: SourceFile, middlewareEntry: MiddlewareNode) {
     if (!middlewareEntry.name) {
@@ -163,7 +180,13 @@ export class CodeTransformer {
   }
 
   /**
-   * Add a policy to the list of pre-registered policy
+   * Add a policy to the list of pre-registered policies
+   *
+   * This method adds bouncer policy entries to the policies object,
+   * allowing them to be used in route authorization.
+   *
+   * @param file - The source file to modify
+   * @param policyEntry - The policy entry to add
    */
   #addToPoliciesList(file: SourceFile, policyEntry: BouncerPolicyNode) {
     const policiesObject = file

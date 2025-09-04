@@ -10,7 +10,21 @@
 import { EOL } from 'node:os'
 
 /**
- * Buffer class to construct template
+ * Buffer class to construct template output with proper indentation and formatting.
+ * 
+ * The FileBuffer class provides a fluent API for building text output with automatic
+ * indentation management. It's commonly used for generating code or template files
+ * where proper formatting is important.
+ *
+ * @example
+ * const buffer = new FileBuffer()
+ * buffer
+ *   .writeLine('function example() {')
+ *   .indent()
+ *   .writeLine('return "Hello World"')
+ *   .dedent()
+ *   .writeLine('}')
+ * console.log(buffer.flush())
  */
 export class FileBuffer {
   /**
@@ -32,6 +46,8 @@ export class FileBuffer {
 
   /**
    * Creates a new child buffer instance
+   *
+   * @returns A new FileBuffer instance
    */
   create() {
     return new FileBuffer()
@@ -39,13 +55,18 @@ export class FileBuffer {
 
   /**
    * Returns the size of buffer text
+   *
+   * @returns The number of lines in the buffer
    */
   get size() {
     return this.#buffer.length
   }
 
   /**
-   * Write a new line to the output
+   * Write a new line to the output with current indentation
+   *
+   * @param text - The text to write as a new line
+   * @returns This FileBuffer instance for method chaining
    */
   writeLine(text: string): this {
     this.#buffer.push(`${' '.repeat(this.#identationSize)}${text}\n`)
@@ -54,6 +75,9 @@ export class FileBuffer {
 
   /**
    * Write text to the output without adding a new line
+   *
+   * @param text - The text to write without a newline
+   * @returns This FileBuffer instance for method chaining
    */
   write(text: string): this {
     this.#buffer.push(`${' '.repeat(this.#identationSize)}${text}`)
@@ -61,7 +85,9 @@ export class FileBuffer {
   }
 
   /**
-   * Increase indentation
+   * Increase indentation by 2 spaces
+   *
+   * @returns This FileBuffer instance for method chaining
    */
   indent(): this {
     this.#identationSize += 2
@@ -69,7 +95,9 @@ export class FileBuffer {
   }
 
   /**
-   * Decrease indentation
+   * Decrease indentation by 2 spaces (minimum of 0)
+   *
+   * @returns This FileBuffer instance for method chaining
    */
   dedent(): this {
     this.#identationSize -= 2
@@ -81,7 +109,12 @@ export class FileBuffer {
   }
 
   /**
-   * Return template as a string
+   * Return template as a string, joining all buffer lines
+   *
+   * Once called, the output is cached and subsequent calls return the same result.
+   * The flush method becomes a no-op after the first call.
+   *
+   * @returns The complete buffer content as a string
    */
   flush(): string {
     if (this.#compiledOutput !== undefined) {

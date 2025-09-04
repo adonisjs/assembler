@@ -39,8 +39,15 @@ import {
 const DEFAULT_NODE_ARGS = ['--import=@poppinss/ts-exec', '--enable-source-maps']
 
 /**
- * Parses tsconfig.json and prints errors using typescript compiler
- * host
+ * Parses tsconfig.json and prints errors using typescript compiler host
+ *
+ * This function reads and parses the tsconfig.json file from the given directory,
+ * handling diagnostic errors and returning a parsed configuration that can be
+ * used by other TypeScript operations.
+ *
+ * @param cwd - The current working directory URL or string path
+ * @param ts - TypeScript module reference
+ * @returns Parsed TypeScript configuration or undefined if parsing failed
  */
 export function parseConfig(
   cwd: URL | string,
@@ -79,6 +86,14 @@ export function parseConfig(
 
 /**
  * Runs a Node.js script as a child process and inherits the stdio streams
+ *
+ * This function spawns a Node.js child process with TypeScript support enabled
+ * by default through ts-exec. It's primarily used for running development
+ * servers and test scripts.
+ *
+ * @param cwd - The current working directory URL or string path
+ * @param options - Script execution options including args, environment, etc.
+ * @returns Child process instance from execa
  */
 export function runNode(cwd: string | URL, options: RunScriptOptions) {
   const childProcess = execaNode(options.script, options.scriptArgs, {
@@ -101,6 +116,13 @@ export function runNode(cwd: string | URL, options: RunScriptOptions) {
 
 /**
  * Runs a script as a child process and inherits the stdio streams
+ *
+ * This function spawns a generic child process for running any executable
+ * script. Unlike runNode, this doesn't include TypeScript-specific Node.js arguments.
+ *
+ * @param cwd - The current working directory URL or string path
+ * @param options - Script execution options (excluding nodeArgs)
+ * @returns Child process instance from execa
  */
 export function run(cwd: string | URL, options: Omit<RunScriptOptions, 'nodeArgs'>) {
   const childProcess = execa(options.script, options.scriptArgs, {
@@ -120,7 +142,13 @@ export function run(cwd: string | URL, options: Omit<RunScriptOptions, 'nodeArgs
 }
 
 /**
- * Watches the file system using tsconfig file
+ * Watches the file system using chokidar with the provided options
+ *
+ * Creates a file system watcher that monitors the current directory
+ * for changes, supporting various chokidar options for customization.
+ *
+ * @param options - Chokidar watch options
+ * @returns Chokidar FSWatcher instance
  */
 export function watch(options: ChokidarOptions) {
   return chokidar.watch(['.'], options)
@@ -128,6 +156,12 @@ export function watch(options: ChokidarOptions) {
 
 /**
  * Check if file is a .env file
+ *
+ * Determines if a given file path represents an environment file,
+ * including .env and .env.* variants.
+ *
+ * @param filePath - The file path to check
+ * @returns True if the file is an environment file
  */
 export function isDotEnvFile(filePath: string) {
   if (filePath === '.env') {
@@ -138,16 +172,20 @@ export function isDotEnvFile(filePath: string) {
 }
 
 /**
- * Returns the port to use after inspect the dot-env files inside
+ * Returns the port to use after inspecting the dot-env files inside
  * a given directory.
  *
  * A random port is used when the specified port is in use. Following
- * is the logic for finding a specified port.
+ * is the logic for finding a specified port:
  *
  * - The "process.env.PORT" value is used if exists.
  * - The dot-env files are loaded using the "EnvLoader" and the PORT
  *   value is used by iterating over all the loaded files. The
  *   iteration stops after first find.
+ * - Falls back to port 3333 if no PORT is found in environment files.
+ *
+ * @param cwd - The current working directory URL
+ * @returns Promise resolving to an available port number
  */
 export async function getPort(cwd: URL): Promise<number> {
   /**
@@ -176,8 +214,16 @@ export async function getPort(cwd: URL): Promise<number> {
 }
 
 /**
- * Helper function to copy files from relative paths or glob
- * patterns
+ * Helper function to copy files from relative paths or glob patterns
+ *
+ * This function handles copying files and directories while preserving
+ * directory structure. It supports both direct file paths and glob patterns,
+ * and automatically filters out junk files.
+ *
+ * @param files - Array of file paths or glob patterns to copy
+ * @param cwd - Source directory path
+ * @param outDir - Destination directory path
+ * @returns Promise resolving when all files are copied
  */
 export async function copyFiles(files: string[], cwd: string, outDir: string) {
   /**
@@ -234,6 +280,13 @@ export async function copyFiles(files: string[], cwd: string, outDir: string) {
 /**
  * Memoize a function using an LRU cache. The function must accept
  * only one argument as a string value.
+ *
+ * This utility provides caching for expensive function calls to improve
+ * performance by storing results in memory.
+ *
+ * @param fn - Function to memoize (must accept single string argument)
+ * @param maxKeys - Optional maximum number of cached keys
+ * @returns Memoized version of the function
  */
 export function memoize<Result>(
   fn: (input: string) => any,
@@ -252,6 +305,9 @@ export function memoize<Result>(
 /**
  * Returns a boolean telling if the path value is a relative
  * path starting with "./" or "../"
+ *
+ * @param pathValue - The path string to check
+ * @returns True if the path is relative, false otherwise
  */
 export function isRelative(pathValue: string) {
   return pathValue.startsWith('./') || pathValue.startsWith('../')
@@ -260,6 +316,14 @@ export function isRelative(pathValue: string) {
 /**
  * Imports a selected set of lazy hooks and creates an instance of the
  * Hooks class
+ *
+ * This function dynamically imports and initializes hooks based on the
+ * provided configuration, supporting different types of hooks for various
+ * assembler operations.
+ *
+ * @param rcFileHooks - Hook configuration from the RC file
+ * @param names - Array of hook names to load
+ * @returns Promise resolving to configured Hooks instance
  */
 type AllHooks = WatcherHooks & DevServerHooks & BundlerHooks & TestRunnerHooks
 export async function loadHooks<K extends keyof AllHooks>(
@@ -293,6 +357,13 @@ export async function loadHooks<K extends keyof AllHooks>(
  * Wraps a function inside another function that throttles the concurrent
  * executions of a function. If the function is called too quickly, then
  * it may result in two invocations at max.
+ *
+ * This utility prevents overwhelming the system with rapid successive calls
+ * by ensuring only one execution happens at a time, with at most one queued call.
+ *
+ * @param fn - Function to throttle
+ * @param name - Optional name for debugging purposes
+ * @returns Throttled version of the function
  */
 export function throttle<Args extends any[]>(
   fn: (...args: Args) => PromiseLike<any>,
@@ -327,6 +398,12 @@ export function throttle<Args extends any[]>(
   return throttled
 }
 
+/**
+ * Removes the file extension from a file path
+ *
+ * @param filePath - The file path with extension
+ * @returns The file path without extension
+ */
 export function removeExtension(filePath: string) {
   return filePath.substring(0, filePath.lastIndexOf('.'))
 }

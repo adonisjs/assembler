@@ -27,8 +27,11 @@ import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './uti
  * Exposes the API to run Japa tests and optionally watch for file
  * changes to re-run the tests.
  *
- * The watch mode functions as follows.
+ * The TestRunner provides intelligent test execution with watch mode capabilities.
+ * When files change, it can selectively run specific tests or the entire suite
+ * based on what changed.
  *
+ * The watch mode functions as follows:
  *  - If the changed file is a test file, then only tests for that file
  *    will be re-run.
  *  - Otherwise, all tests will re-run with respect to the initial
@@ -37,6 +40,11 @@ import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './uti
  * @example
  * const testRunner = new TestRunner(cwd, { suites: [], hooks: [] })
  * await testRunner.run()
+ *
+ * @example
+ * // Run tests in watch mode
+ * const testRunner = new TestRunner(cwd, { suites: [], hooks: [] })
+ * await testRunner.runAndWatch(ts, { poll: false })
  */
 export class TestRunner {
   /**
@@ -120,6 +128,11 @@ export class TestRunner {
 
   /**
    * Convert test runner options to the CLI args
+   *
+   * Transforms the test runner configuration options into command-line
+   * arguments that can be passed to the test script.
+   *
+   * @returns Array of command-line arguments
    */
   #convertOptionsToArgs() {
     const args: string[] = []
@@ -147,7 +160,13 @@ export class TestRunner {
   }
 
   /**
-   * Converts all known filters to CLI args.
+   * Converts all known filters to CLI args
+   *
+   * Transforms test filters (suites, files, groups, tags, tests) into
+   * command-line arguments for the test script.
+   *
+   * @param filters - The test filters to convert
+   * @returns Array of command-line arguments representing the filters
    */
   #convertFiltersToArgs(filters: TestRunnerOptions['filters']): string[] {
     const args: string[] = []
@@ -181,6 +200,9 @@ export class TestRunner {
 
   /**
    * Conditionally clear the terminal screen
+   *
+   * Clears the terminal screen if the clearScreen option is enabled
+   * in the test runner configuration.
    */
   #clearScreen() {
     if (this.options.clearScreen) {
@@ -189,7 +211,14 @@ export class TestRunner {
   }
 
   /**
-   * Runs tests
+   * Runs tests as a child process
+   *
+   * Creates a Node.js child process to execute the test script with
+   * appropriate command-line arguments and environment variables.
+   * Handles process lifecycle and hook execution.
+   *
+   * @param port - The port number to set in the environment
+   * @param filters - Optional test filters to apply for this run
    */
   async #runTests(port: string, filters?: TestRunnerOptions['filters']) {
     /**
@@ -250,7 +279,14 @@ export class TestRunner {
   }
 
   /**
-   * Handles file change event
+   * Handles file change event during watch mode
+   *
+   * Determines whether to run specific tests or all tests based on
+   * the type of file that changed. Test files trigger selective runs,
+   * while other files trigger full test suite runs.
+   *
+   * @param filePath - The path of the changed file
+   * @param action - The type of change (add, update, delete)
    */
   #handleFileChange(filePath: string, action: string) {
     const file = this.#fileSystem.inspect(filePath)
@@ -269,8 +305,10 @@ export class TestRunner {
   }
 
   /**
-   * Registers inline hooks for the file changes and restarts the
-   * HTTP server when a file gets changed.
+   * Registers inline hooks for file changes and test re-runs
+   *
+   * Sets up event handlers that respond to file system changes by
+   * triggering appropriate test runs based on the changed files.
    */
   #registerServerRestartHooks() {
     this.#hooks.add('fileAdded', (filePath) => this.#handleFileChange(filePath, 'add'))
@@ -302,6 +340,9 @@ export class TestRunner {
 
   /**
    * Close watchers and running child processes
+   *
+   * Cleans up file system watchers and terminates any running test
+   * processes to ensure graceful shutdown.
    */
   async close() {
     await this.#watcher?.close()
@@ -313,6 +354,9 @@ export class TestRunner {
 
   /**
    * Runs tests once without watching for file changes
+   *
+   * Executes the test suite a single time and exits. This is the
+   * equivalent of running tests in CI/CD environments.
    */
   async run() {
     this.#stickyPort = String(await getPort(this.cwd))
@@ -332,8 +376,13 @@ export class TestRunner {
   /**
    * Run tests in watch mode and re-run them when files change
    *
-   * @param ts - TypeScript module reference
-   * @param options - Watch options including polling mode
+   * Starts the test runner in watch mode, monitoring the file system
+   * for changes and automatically re-running tests when relevant files
+   * are modified. Uses intelligent filtering to run only affected tests
+   * when possible.
+   *
+   * @param ts - TypeScript module reference for parsing configuration
+   * @param options - Watch options including polling mode for file system monitoring
    */
   async runAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
     const tsConfig = parseConfig(this.cwd, ts)

@@ -22,6 +22,20 @@ import { type RecursiveFileTree, type VirtualFileSystemOptions } from './types/c
 const BYPASS_FN = <T>(input: T) => input
 const DEFAULT_GLOB = ['**/!(*.d).ts', '**/*.tsx', '**/*.js']
 
+/**
+ * Virtual file system for managing and tracking files with AST parsing capabilities.
+ *
+ * The VirtualFileSystem provides an abstraction layer over the physical file system,
+ * allowing efficient file scanning, filtering, and AST parsing with caching. It's
+ * designed to work with TypeScript/JavaScript files and provides various output
+ * formats for different use cases.
+ *
+ * @example
+ * const vfs = new VirtualFileSystem('/src', { glob: ['**/*.ts'] })
+ * await vfs.scan()
+ * const fileTree = vfs.asTree()
+ * const astNode = await vfs.get('/src/app.ts')
+ */
 export class VirtualFileSystem {
   /**
    * Absolute path to the source directory from where to read the files.
@@ -50,6 +64,12 @@ export class VirtualFileSystem {
    */
   #matcher: Matcher
 
+  /**
+   * Create a new VirtualFileSystem instance
+   *
+   * @param source - Absolute path to the source directory
+   * @param options - Optional configuration for file filtering and processing
+   */
   constructor(source: string, options?: VirtualFileSystemOptions) {
     this.#source = source
     this.#options = options ?? {}
@@ -62,6 +82,9 @@ export class VirtualFileSystem {
   /**
    * Scans the filesystem to collect the files. Newly files must
    * be added via the ".add" method.
+   *
+   * This method performs an initial scan of the source directory using
+   * the configured glob patterns and populates the internal file list.
    */
   async scan() {
     debug('fetching entities from source "%s"', this.#source)
@@ -78,7 +101,10 @@ export class VirtualFileSystem {
 
   /**
    * Check if a given file is part of the virtual file system. The method
-   * checks for the scanned files as well if the globs
+   * checks for the scanned files as well as glob pattern matches.
+   *
+   * @param filePath - Absolute file path to check
+   * @returns True if the file is tracked or matches the configured patterns
    */
   has(filePath: string): boolean {
     /**
@@ -103,7 +129,13 @@ export class VirtualFileSystem {
   }
 
   /**
-   * Returns the files as a flat list of key-value pair.
+   * Returns the files as a flat list of key-value pairs
+   *
+   * Converts the tracked files into a flat object where keys are relative
+   * paths (without extensions) and values are absolute file paths.
+   *
+   * @param options - Optional transformation functions for keys and values
+   * @returns Object with file mappings
    */
   asList(options?: {
     transformKey?: (key: string) => string
@@ -122,7 +154,13 @@ export class VirtualFileSystem {
   }
 
   /**
-   * Returns the files as a nested tree
+   * Returns the files as a nested tree structure
+   *
+   * Converts the tracked files into a hierarchical object structure that
+   * mirrors the directory structure of the source files.
+   *
+   * @param options - Optional transformation functions for keys and values
+   * @returns Nested object representing the file tree
    */
   asTree(options?: {
     transformKey?: (key: string) => string
@@ -142,7 +180,9 @@ export class VirtualFileSystem {
 
   /**
    * Add a new file to the virtual file system. File is only added when it
-   * matches the pre-defined filters
+   * matches the pre-defined filters.
+   *
+   * @param filePath - Absolute path of the file to add
    */
   add(filePath: string) {
     if (this.has(filePath)) {
@@ -151,7 +191,9 @@ export class VirtualFileSystem {
   }
 
   /**
-   * Add a new file to the virtual file system
+   * Remove a file from the virtual file system
+   *
+   * @param filePath - Absolute path of the file to remove
    */
   remove(filePath: string) {
     this.#files.delete(filePath)
@@ -159,10 +201,12 @@ export class VirtualFileSystem {
 
   /**
    * Returns the file contents as AST-grep node and caches it
-   * forever. Use the "invalidate" method to remove it from the
-   * cache
+   * forever. Use the "invalidate" method to remove it from the cache.
    *
-   * @param filePath - The path to the file to parse
+   * This method reads the file content, parses it into an AST using ast-grep,
+   * and caches the result for future requests to improve performance.
+   *
+   * @param filePath - The absolute path to the file to parse
    * @returns Promise resolving to the AST-grep node
    */
   async get(filePath: string): Promise<SgNode> {
@@ -180,7 +224,10 @@ export class VirtualFileSystem {
   }
 
   /**
-   * Invalidates AST cache for a single file or all the files
+   * Invalidates AST cache for a single file or all files
+   *
+   * Use this method when files have been modified to ensure fresh
+   * AST parsing on subsequent get() calls.
    *
    * @param filePath - Optional file path to clear. If omitted, clears entire cache
    */
@@ -190,7 +237,10 @@ export class VirtualFileSystem {
   }
 
   /**
-   * Clear all scanned files from the memory
+   * Clear all scanned files from memory
+   *
+   * Removes all tracked files from the internal file list, effectively
+   * resetting the virtual file system.
    */
   clear() {
     this.#files.clear()

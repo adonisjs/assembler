@@ -13,10 +13,13 @@ import type { Import } from './types/common.ts'
 
 /**
  * Finds an import reference inside a code snippet by analyzing the import statements
- * and matching against the provided import reference identifier
+ * and matching against the provided import reference identifier.
+ *
+ * The function searches through all import statements in the code and matches
+ * against default, namespace, or named imports based on the import reference.
  *
  * @param code - The code snippet to search for imports
- * @param importReference - The import reference identifier to find
+ * @param importReference - The import reference identifier to find (can include dot notation)
  * @returns Promise that resolves to an Import object or null if not found
  *
  * @example
@@ -102,6 +105,9 @@ export async function findImport(code: string, importReference: string): Promise
  * Returns a node that represents a TypeScript class or null
  * when unable to find the class.
  *
+ * This function searches for class declarations within the provided AST node
+ * using ast-grep's pattern matching capabilities.
+ *
  * @param node - The AST node to search within for class declarations
  * @returns The SgNode representing the class or null if not found
  *
@@ -122,6 +128,9 @@ export function inspectClass(node: SgNode): SgNode | null {
 /**
  * Returns an array of SgNodes for class methods. The input node
  * must represent a class.
+ *
+ * This function finds all method definitions within a class node,
+ * including both regular methods and static methods.
  *
  * @param node - The AST node representing a class to search for methods
  * @returns Array of SgNodes representing method definitions within the class
@@ -148,6 +157,9 @@ export function inspectClassMethods(node: SgNode): SgNode[] {
  *
  * - MemberExpression
  * - Identifier
+ *
+ * This function recursively traverses the AST node and extracts only
+ * the meaningful text content without any formatting or whitespace.
  *
  * @param node - The AST node to convert to plain text
  * @returns String representation of the node without formatting
@@ -180,8 +192,11 @@ export function nodeToPlainText(node: SgNode) {
  * For example: In case of validators, we will first find the Controller
  * method for which we want the validation method calls.
  *
+ * This function searches for call expressions that match the provided method
+ * names and returns their argument nodes for further analysis.
+ *
  * @param node - The AST node to search within for method calls
- * @param methodCalls - Array of method call names to search for
+ * @param methodCalls - Array of method call names to search for (supports dot notation)
  * @returns Array of SgNodes representing the arguments of matching method calls
  *
  * @example
@@ -212,6 +227,9 @@ export function inspectMethodArguments(node: SgNode, methodCalls: string[]): SgN
  * Inspect the validator direct usage code snippets. A member expression
  * calling the ".validate" method is considered as direct usage of
  * the validator.
+ *
+ * This function specifically looks for patterns where validators are called
+ * directly with the `.validate()` method, which is common in AdonisJS applications.
  *
  * @param node - The AST node to search within for validator direct usage
  * @returns Array of SgNodes representing validator expressions that call validate method

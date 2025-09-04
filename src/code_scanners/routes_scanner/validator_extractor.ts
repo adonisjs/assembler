@@ -25,8 +25,11 @@ import {
 } from '../../helpers.ts'
 
 /**
- * Extracts the VineJS validator usage from within a controller
- * method. The following syntaxes are supported.
+ * Extracts the VineJS validator usage from within a controller method.
+ * 
+ * This function analyzes controller method code to detect validator usage patterns
+ * and extracts the validator references along with their import information.
+ * The following syntaxes are supported:
  *
  * - `request.validateUsing(validatorReference)`
  * - `vine.validate(validatorReference)`
@@ -38,6 +41,11 @@ import {
  *
  * The app root is needed to create relative validator imports in case
  * a relative import was used within the controller file.
+ *
+ * @param appRoot - The root directory of the application
+ * @param vfs - Virtual file system instance for code analysis
+ * @param controller - The controller to analyze for validator usage
+ * @returns Promise resolving to array of validator information or undefined
  */
 export async function extractValidators(
   appRoot: string,

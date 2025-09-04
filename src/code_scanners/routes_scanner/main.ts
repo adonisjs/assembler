@@ -29,6 +29,10 @@ import {
  * RoutesScanner is responsible for scanning application routes,
  * extracting their controllers, validators, request and response types.
  *
+ * The RoutesScanner analyzes route definitions to extract TypeScript type information
+ * for request validation, response types, and controller methods. It supports custom
+ * rules for overriding default behavior and provides hooks for extending functionality.
+ *
  * @example
  * const scanner = new RoutesScanner(appRoot, [rules])
  * scanner.defineResponse((route, controller) => {
@@ -127,8 +131,13 @@ export class RoutesScanner {
   }
 
   /**
-   * Assumes the validators are from VineJS and computes the request types
-   * from it.
+   * Assumes the validators are from VineJS and computes the request types from them
+   *
+   * This method generates TypeScript type definitions for request validation
+   * by analyzing VineJS validators and creating Infer types.
+   *
+   * @param route - The scanned route with validators
+   * @returns Request type definition or undefined
    */
   #prepareRequestTypes(route: ScannedRoute): ScannedRoute['request'] {
     if (!route.validators) {
@@ -442,6 +451,9 @@ export class RoutesScanner {
   /**
    * Scans an array of Route list items and fetches their validators,
    * controllers, and request/response types.
+   *
+   * This is the main method that processes all routes and extracts
+   * their type information for code generation purposes.
    *
    * @param routes - Array of route list items to scan
    */

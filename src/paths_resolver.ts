@@ -12,7 +12,11 @@ import { isRelative } from './utils.ts'
 
 /**
  * Encapsulates the API to resolve import specifiers with the ability
- * to define customer resolver.
+ * to define custom resolver functions.
+ *
+ * The PathsResolver provides a caching mechanism to avoid resolving the same
+ * specifier multiple times and supports custom resolvers for handling
+ * special import patterns like path aliases.
  *
  * @example
  * const resolver = new PathsResolver()
@@ -33,6 +37,9 @@ export class PathsResolver {
   /**
    * Define a custom resolver that resolves a path
    *
+   * The custom resolver function will be used instead of the default
+   * import.meta.resolve() for resolving import specifiers.
+   *
    * @param resolver - Function that takes a specifier and returns resolved path
    */
   use(resolver: (specifier: string) => string) {
@@ -40,13 +47,18 @@ export class PathsResolver {
   }
 
   /**
-   * Resolve import specifier
+   * Resolve import specifier to an absolute file path
    *
-   * @param specifier - The import specifier to resolve
+   * This method caches resolved paths to improve performance on repeated
+   * resolutions. Relative paths are not supported and will throw an error.
+   *
+   * @param specifier - The import specifier to resolve (must not be relative)
    * @returns The resolved absolute file path
+   * @throws Error when attempting to resolve relative paths
    *
    * @example
    * const path = resolver.resolve('#app/models/user')
+   * const path2 = resolver.resolve('@/utils/helper')
    */
   resolve(specifier: string) {
     if (isRelative(specifier)) {

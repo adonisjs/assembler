@@ -24,7 +24,11 @@ const ALLOWED_ENVIRONMENTS = ['web', 'console', 'test', 'repl'] as const
 
 /**
  * RcFileTransformer is used to transform the `adonisrc.ts` file
- * for adding new commands, providers, meta files etc
+ * for adding new commands, providers, meta files etc.
+ *
+ * This class provides a fluent API for modifying the AdonisJS configuration
+ * file (adonisrc.ts) by adding various types of entries like providers,
+ * commands, preloaded files, meta files, and test suites.
  *
  * @example
  * const transformer = new RcFileTransformer(cwd, project)
@@ -69,6 +73,9 @@ export class RcFileTransformer {
 
   /**
    * Get the `adonisrc.ts` source file
+   *
+   * @returns The adonisrc.ts source file
+   * @throws Error if the file cannot be found
    */
   #getRcFileOrThrow() {
     const kernelUrl = fileURLToPath(new URL('./adonisrc.ts', this.#cwd))
@@ -77,6 +84,9 @@ export class RcFileTransformer {
 
   /**
    * Check if environments array has a subset of available environments
+   *
+   * @param environments - Optional array of environment names
+   * @returns True if the provided environments are a subset of available ones
    */
   #isInSpecificEnvironment(environments?: (typeof ALLOWED_ENVIRONMENTS)[number][]): boolean {
     if (!environments) {
@@ -88,6 +98,10 @@ export class RcFileTransformer {
 
   /**
    * Locate the `defineConfig` call inside the `adonisrc.ts` file
+   *
+   * @param file - The source file to search in
+   * @returns The defineConfig call expression
+   * @throws Error if defineConfig call cannot be found
    */
   #locateDefineConfigCallOrThrow(file: SourceFile) {
     const call = file
@@ -103,6 +117,10 @@ export class RcFileTransformer {
 
   /**
    * Return the ObjectLiteralExpression of the defineConfig call
+   *
+   * @param defineConfigCall - The defineConfig call expression
+   * @returns The configuration object literal expression
+   * @throws Error if the object literal cannot be found
    */
   #getDefineConfigObjectOrThrow(defineConfigCall: CallExpression) {
     const configObject = defineConfigCall
@@ -115,6 +133,10 @@ export class RcFileTransformer {
   /**
    * Check if the defineConfig() call has the property assignment
    * inside it or not. If not, it will create one and return it.
+   *
+   * @param propertyName - The name of the property to find or create
+   * @param initializer - The initial value if the property needs to be created
+   * @returns The property assignment node
    */
   #getPropertyAssignmentInDefineConfigCall(propertyName: string, initializer: string) {
     const file = this.#getRcFileOrThrow()
@@ -321,7 +343,11 @@ export class RcFileTransformer {
   }
 
   /**
-   * Set directory name and path
+   * Set directory name and path in the directories configuration
+   *
+   * @param key - The directory key (e.g., 'controllers', 'models')
+   * @param value - The directory path
+   * @returns This RcFileTransformer instance for method chaining
    */
   setDirectory(key: string, value: string) {
     const property = this.#getPropertyAssignmentInDefineConfigCall('directories', '{}')
@@ -332,7 +358,11 @@ export class RcFileTransformer {
   }
 
   /**
-   * Set command alias
+   * Set command alias in the command aliases configuration
+   *
+   * @param alias - The alias name
+   * @param command - The full command name
+   * @returns This RcFileTransformer instance for method chaining
    */
   setCommandAlias(alias: string, command: string) {
     const aliasProperty = this.#getPropertyAssignmentInDefineConfigCall('commandsAliases', '{}')
@@ -344,6 +374,11 @@ export class RcFileTransformer {
 
   /**
    * Add a new test suite to the rcFile
+   *
+   * @param suiteName - The name of the test suite
+   * @param files - File patterns for the test suite (string or array)
+   * @param timeout - Optional timeout in milliseconds (defaults to 2000)
+   * @returns This RcFileTransformer instance for method chaining
    */
   addSuite(suiteName: string, files: string | string[], timeout?: number) {
     const testProperty = this.#getPropertyAssignmentInDefineConfigCall(
@@ -382,6 +417,10 @@ export class RcFileTransformer {
 
   /**
    * Add a new assembler hook
+   *
+   * @param type - The type of hook to add
+   * @param path - The path to the hook file
+   * @returns This RcFileTransformer instance for method chaining
    */
   addAssemblerHook(type: keyof Exclude<AssemblerRcFile['hooks'], undefined>, path: string) {
     const hooksProperty = this.#getPropertyAssignmentInDefineConfigCall('hooks', '{}')
@@ -406,6 +445,10 @@ export class RcFileTransformer {
 
   /**
    * Save the adonisrc.ts file with all applied transformations
+   *
+   * Formats the file according to editor settings and saves it to disk.
+   *
+   * @returns Promise that resolves when the file is saved
    */
   save() {
     const file = this.#getRcFileOrThrow()

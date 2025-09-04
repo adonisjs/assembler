@@ -7,8 +7,8 @@
  * file that was distributed with this source code.
  */
 
-import { join } from 'node:path'
 import { test } from '@japa/runner'
+import { join } from 'node:path/posix'
 import string from '@poppinss/utils/string'
 import StringBuilder from '@poppinss/utils/string_builder'
 import { createControllers, setupFakeAdonisproject } from '#tests/helpers'

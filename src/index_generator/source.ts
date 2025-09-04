@@ -188,9 +188,11 @@ export class IndexGeneratorSource {
   ) {
     return function (filePath: string) {
       if (config.importAlias) {
+        debug('converting "%s" to import alias, source "%s"', filePath, source)
         return `() => import('${removeExtension(filePath.replace(source, config.importAlias))}')`
       }
-      return `() => import('${relative(outputDirname, filePath)}')`
+      debug('converting "%s" to relative import, source "%s"', filePath, outputDirname)
+      return `() => import('${string.toUnixSlash(relative(outputDirname, filePath))}')`
     }
   }
 

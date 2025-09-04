@@ -14,7 +14,7 @@ import { dirname, join, relative } from 'node:path'
 import StringBuilder from '@poppinss/utils/string_builder'
 
 import debug from '../debug.ts'
-import { removeExtension } from '../utils.ts'
+import { removeExtension, throttle } from '../utils.ts'
 import { FileBuffer } from '../file_buffer.ts'
 import { VirtualFileSystem } from '../virtual_file_system.ts'
 import { type RecursiveFileTree, type IndexGeneratorSourceConfig } from '../types/common.ts'
@@ -67,6 +67,25 @@ export class IndexGeneratorSource {
    */
   #config: IndexGeneratorSourceConfig
   #cliLogger: Logger
+
+  /**
+   * Generate the output content and write it to the output file
+   *
+   * This method creates the file buffer, populates it with the generated
+   * content based on configuration, and writes it to disk.
+   */
+  #generateOutput = throttle(async () => {
+    const buffer = new FileBuffer()
+
+    if (this.#config.as === 'barrelFile') {
+      this.#asBarrelFile(this.#vfs, buffer, this.#config.exportName)
+    } else {
+      this.#config.as(this.#vfs, buffer, this.#config)
+    }
+
+    await mkdir(dirname(this.#output), { recursive: true })
+    await writeFile(this.#output, buffer.flush())
+  })
 
   /**
    * Create a new IndexGeneratorSource instance
@@ -191,25 +210,6 @@ export class IndexGeneratorSource {
     buffer.write(`export const ${exportName} = {`).indent()
     this.#treeToString(tree, buffer)
     buffer.dedent().write(`}`)
-  }
-
-  /**
-   * Generate the output content and write it to the output file
-   *
-   * This method creates the file buffer, populates it with the generated
-   * content based on configuration, and writes it to disk.
-   */
-  async #generateOutput() {
-    const buffer = new FileBuffer()
-
-    if (this.#config.as === 'barrelFile') {
-      this.#asBarrelFile(this.#vfs, buffer, this.#config.exportName)
-    } else {
-      this.#config.as(this.#vfs, buffer, this.#config)
-    }
-
-    await mkdir(dirname(this.#output), { recursive: true })
-    await writeFile(this.#output, buffer.flush())
   }
 
   /**

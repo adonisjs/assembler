@@ -8,6 +8,7 @@
  */
 
 import string from '@poppinss/utils/string'
+import { type Logger } from '@poppinss/cliui'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join, relative } from 'node:path'
 import StringBuilder from '@poppinss/utils/string_builder'
@@ -65,21 +66,25 @@ export class IndexGeneratorSource {
    * Configuration for this index generator source
    */
   #config: IndexGeneratorSourceConfig
+  #cliLogger: Logger
 
   /**
    * Create a new IndexGeneratorSource instance
    *
    * @param name - Unique name for this index generator source
    * @param appRoot - The application root directory path
+   * @param cliLogger - Logger instance for CLI output
    * @param config - Configuration for this index generator source
    */
   constructor(
     public name: string,
     appRoot: string,
+    cliLogger: Logger,
     config: IndexGeneratorSourceConfig
   ) {
     this.#config = config
     this.#appRoot = appRoot
+    this.#cliLogger = cliLogger
     this.#source = join(this.#appRoot, this.#config.source)
     this.#output = join(this.#appRoot, this.#config.output)
     this.#outputDirname = dirname(this.#output)
@@ -199,6 +204,18 @@ export class IndexGeneratorSource {
   }
 
   /**
+   * Create a log action for tracking file generation progress
+   *
+   * @example
+   * const action = this.#createLogAction()
+   * // ... perform operations
+   * action.displayDuration().succeeded()
+   */
+  #createLogAction() {
+    return this.#cliLogger.action(`create ${this.#config.output}`)
+  }
+
+  /**
    * Add a file to the virtual file system and regenerate index if needed
    *
    * If the file matches the configured glob patterns, it will be added
@@ -210,7 +227,9 @@ export class IndexGeneratorSource {
     const added = this.#vfs.add(filePath)
     if (added) {
       debug('file added, re-generating "%s" index', this.name)
+      const action = this.#createLogAction()
       await this.#generateOutput()
+      action.displayDuration().succeeded()
     }
   }
 
@@ -226,7 +245,9 @@ export class IndexGeneratorSource {
     const removed = this.#vfs.remove(filePath)
     if (removed) {
       debug('file removed, re-generating "%s" index', this.name)
+      const action = this.#createLogAction()
       await this.#generateOutput()
+      action.displayDuration().succeeded()
     }
   }
 
@@ -237,7 +258,9 @@ export class IndexGeneratorSource {
    * the configuration, and writes the generated index file to disk.
    */
   async generate() {
+    const action = this.#createLogAction()
     await this.#vfs.scan()
     await this.#generateOutput()
+    action.displayDuration().succeeded()
   }
 }

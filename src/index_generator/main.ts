@@ -7,6 +7,8 @@
  * file that was distributed with this source code.
  */
 
+import { type Logger } from '@poppinss/cliui'
+
 import { IndexGeneratorSource } from './source.ts'
 import { type IndexGeneratorSourceConfig } from '../types/common.ts'
 
@@ -37,14 +39,17 @@ export class IndexGenerator {
    * Collection of registered index generator sources
    */
   #sources: Record<string, IndexGeneratorSource> = {}
+  #cliLogger: Logger
 
   /**
    * Create a new IndexGenerator instance
    *
    * @param appRoot - The application root directory path
+   * @param cliLogger - Logger instance for CLI output
    */
-  constructor(appRoot: string) {
+  constructor(appRoot: string, cliLogger: Logger) {
     this.#appRoot = appRoot
+    this.#cliLogger = cliLogger
   }
 
   /**
@@ -55,7 +60,7 @@ export class IndexGenerator {
    * @returns This IndexGenerator instance for method chaining
    */
   add(name: string, config: IndexGeneratorSourceConfig) {
-    this.#sources[name] = new IndexGeneratorSource(name, this.#appRoot, config)
+    this.#sources[name] = new IndexGeneratorSource(name, this.#appRoot, this.#cliLogger, config)
     return this
   }
 

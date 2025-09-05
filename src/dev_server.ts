@@ -84,11 +84,6 @@ export class DevServer {
   }
 
   /**
-   * File path computed from the cwd
-   */
-  #cwdPath: string
-
-  /**
    * External listeners that are invoked when child process
    * gets an error or closes
    */
@@ -223,12 +218,17 @@ export class DevServer {
   /**
    * The current working directory URL
    */
-  public cwd: URL
+  cwd: URL
+
+  /**
+   * File path computed from the cwd
+   */
+  cwdPath: string
 
   /**
    * Development server configuration options including hooks and environment variables
    */
-  public options: DevServerOptions
+  options: DevServerOptions
 
   /**
    * Create a new DevServer instance
@@ -239,8 +239,8 @@ export class DevServer {
   constructor(cwd: URL, options: DevServerOptions) {
     this.cwd = cwd
     this.options = options
-    this.#cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
-    this.#indexGenerator = new IndexGenerator(this.#cwdPath, this.ui.logger)
+    this.cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
+    this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
   }
 
   /**
@@ -459,7 +459,7 @@ export class DevServer {
     this.ui.logger.info(`starting server in ${this.#mode} mode...`)
 
     this.#stickyPort = String(await getPort(this.cwd))
-    this.#fileSystem = new FileSystem(this.#cwdPath, tsConfig, this.options)
+    this.#fileSystem = new FileSystem(this.cwdPath, tsConfig, this.options)
 
     this.ui.logger.info('loading hooks...')
     this.#hooks = await loadHooks(this.options.hooks, [
@@ -527,7 +527,7 @@ export class DevServer {
         } else if (this.#mode === 'hmr' && this.#isHotHookMessage(message)) {
           debug('received hot-hook message %O', message)
           const absolutePath = message.path ? string.toUnixSlash(message.path) : ''
-          const relativePath = relative(this.#cwdPath, absolutePath)
+          const relativePath = relative(this.cwdPath, absolutePath)
 
           if (message.type === 'hot-hook:file-changed') {
             const { action } = message
@@ -656,7 +656,7 @@ export class DevServer {
      */
     this.#watcher = watch({
       usePolling: options?.poll ?? false,
-      cwd: this.#cwdPath,
+      cwd: this.cwdPath,
       ignoreInitial: true,
       ignored: (file, stats) => {
         if (!stats) {
@@ -689,19 +689,19 @@ export class DevServer {
 
     this.#watcher.on('add', (filePath) => {
       const relativePath = string.toUnixSlash(filePath)
-      const absolutePath = join(this.#cwdPath, relativePath)
+      const absolutePath = join(this.cwdPath, relativePath)
       this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
     })
     this.#watcher.on('change', (filePath) => {
       const relativePath = string.toUnixSlash(filePath)
-      const absolutePath = join(this.#cwdPath, relativePath)
+      const absolutePath = join(this.cwdPath, relativePath)
       this.#hooks
         .runner('fileChanged')
         .run(relativePath, absolutePath, DevServer.#WATCHER_INFO, this)
     })
     this.#watcher.on('unlink', (filePath) => {
       const relativePath = string.toUnixSlash(filePath)
-      const absolutePath = join(this.#cwdPath, relativePath)
+      const absolutePath = join(this.cwdPath, relativePath)
       this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
     })
   }

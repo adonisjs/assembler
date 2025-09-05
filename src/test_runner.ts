@@ -96,11 +96,6 @@ export class TestRunner {
   >
 
   /**
-   * The current working directory path as a string
-   */
-  #cwdPath: string
-
-  /**
    * Index generator for managing auto-generated index files
    */
   #indexGenerator: IndexGenerator
@@ -145,12 +140,17 @@ export class TestRunner {
   /**
    * The current working directory URL
    */
-  public cwd: URL
+  cwd: URL
+
+  /**
+   * The current working directory path as a string
+   */
+  cwdPath: string
 
   /**
    * Test runner configuration options including filters, reporters, and hooks
    */
-  public options: TestRunnerOptions
+  options: TestRunnerOptions
 
   /**
    * Create a new TestRunner instance
@@ -161,8 +161,8 @@ export class TestRunner {
   constructor(cwd: URL, options: TestRunnerOptions) {
     this.cwd = cwd
     this.options = options
-    this.#cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
-    this.#indexGenerator = new IndexGenerator(this.#cwdPath, this.ui.logger)
+    this.cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
+    this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
   }
 
   /**
@@ -462,7 +462,7 @@ export class TestRunner {
     }
 
     this.#stickyPort = String(await getPort(this.cwd))
-    this.#fileSystem = new FileSystem(this.#cwdPath, tsConfig, {
+    this.#fileSystem = new FileSystem(this.cwdPath, tsConfig, {
       ...this.options,
       suites: this.options.suites?.filter((suite) => {
         if (this.options.filters.suites) {
@@ -503,7 +503,7 @@ export class TestRunner {
      */
     this.#watcher = watch({
       usePolling: options?.poll ?? false,
-      cwd: this.#cwdPath,
+      cwd: this.cwdPath,
       ignoreInitial: true,
       ignored: (file, stats) => {
         if (!stats) {
@@ -536,12 +536,12 @@ export class TestRunner {
 
     this.#watcher.on('add', (filePath) => {
       const relativePath = string.toUnixSlash(filePath)
-      const absolutePath = join(this.#cwdPath, filePath)
+      const absolutePath = join(this.cwdPath, filePath)
       this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
     })
     this.#watcher.on('change', (filePath) => {
       const relativePath = string.toUnixSlash(filePath)
-      const absolutePath = join(this.#cwdPath, filePath)
+      const absolutePath = join(this.cwdPath, filePath)
       this.#hooks.runner('fileChanged').run(
         relativePath,
         absolutePath,
@@ -555,7 +555,7 @@ export class TestRunner {
     })
     this.#watcher.on('unlink', (filePath) => {
       const relativePath = string.toUnixSlash(filePath)
-      const absolutePath = join(this.#cwdPath, filePath)
+      const absolutePath = join(this.cwdPath, filePath)
       this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
     })
   }

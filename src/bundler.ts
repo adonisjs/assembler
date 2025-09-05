@@ -13,8 +13,8 @@ import type tsStatic from 'typescript'
 import { cliui } from '@poppinss/cliui'
 import { fileURLToPath } from 'node:url'
 import type Hooks from '@poppinss/hooks'
-import { join, relative } from 'node:path'
 import string from '@poppinss/utils/string'
+import { join, relative } from 'node:path/posix'
 import { detectPackageManager } from '@antfu/install-pkg'
 
 import type { BundlerOptions } from './types/common.ts'
@@ -63,11 +63,6 @@ export const SUPPORTED_PACKAGE_MANAGERS: {
  */
 export class Bundler {
   /**
-   * The current working project directory path as string
-   */
-  #cwdPath: string
-
-  /**
    * Reference to the TypeScript module
    */
   #ts: typeof tsStatic
@@ -92,12 +87,17 @@ export class Bundler {
   /**
    * The current working directory URL
    */
-  public cwd: URL
+  cwd: URL
+
+  /**
+   * The current working project directory path as string
+   */
+  cwdPath: string
 
   /**
    * Bundler configuration options including hooks and meta files
    */
-  public options: BundlerOptions
+  options: BundlerOptions
 
   /**
    * Create a new bundler instance
@@ -109,7 +109,7 @@ export class Bundler {
   constructor(cwd: URL, ts: typeof tsStatic, options: BundlerOptions) {
     this.cwd = cwd
     this.options = options
-    this.#cwdPath = fileURLToPath(this.cwd)
+    this.cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
     this.#ts = ts
   }
 
@@ -118,7 +118,7 @@ export class Bundler {
    * file path
    */
   #getRelativeName(filePath: string) {
-    return string.toUnixSlash(relative(this.#cwdPath, filePath))
+    return string.toUnixSlash(relative(this.cwdPath, filePath))
   }
 
   /**
@@ -152,14 +152,14 @@ export class Bundler {
       .map((file) => file.pattern)
       .concat(additionalFilesToCopy)
 
-    await copyFiles(metaFiles, this.#cwdPath, outDir)
+    await copyFiles(metaFiles, this.cwdPath, outDir)
   }
 
   /**
    * Detect the package manager used by the project
    */
   async #detectPackageManager(): Promise<SupportedPackageManager | null> {
-    const pkgManager = await detectPackageManager(this.#cwdPath)
+    const pkgManager = await detectPackageManager(this.cwdPath)
     if (pkgManager === 'deno') {
       return 'npm'
     }

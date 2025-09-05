@@ -98,12 +98,12 @@ export class TestRunner {
   /**
    * Index generator for managing auto-generated index files
    */
-  #indexGenerator: IndexGenerator
+  #indexGenerator!: IndexGenerator
 
   /**
    * CLI UI instance for displaying colorful messages and progress information
    */
-  #ui = cliui()
+  ui = cliui()
 
   /**
    * Re-runs the test child process and throttle concurrent calls to
@@ -116,21 +116,6 @@ export class TestRunner {
     }
     await this.#runTests(this.#stickyPort, filters)
   }, 'reRunTests')
-
-  /**
-   * CLI UI instance to log colorful messages and progress information
-   */
-  get ui() {
-    return this.#ui
-  }
-
-  /**
-   * CLI UI instance to log colorful messages and progress information
-   */
-  set ui(ui: ReturnType<typeof cliui>) {
-    this.#ui = ui
-    this.#indexGenerator.setLogger(ui.logger)
-  }
 
   /**
    * The script file to run as a child process
@@ -162,7 +147,6 @@ export class TestRunner {
     this.cwd = cwd
     this.options = options
     this.cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
-    this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
   }
 
   /**
@@ -417,17 +401,12 @@ export class TestRunner {
    */
   async run() {
     this.#stickyPort = String(await getPort(this.cwd))
+    this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
+
     this.#clearScreen()
 
     this.ui.logger.info('loading hooks...')
-    this.#hooks = await loadHooks(this.options.hooks, [
-      'init',
-      'testsStarting',
-      'testsFinished',
-      'fileAdded',
-      'fileChanged',
-      'fileRemoved',
-    ])
+    this.#hooks = await loadHooks(this.options.hooks, ['init', 'testsStarting', 'testsFinished'])
 
     /**
      * Run init hooks and clear them as they won't be executed
@@ -462,6 +441,8 @@ export class TestRunner {
     }
 
     this.#stickyPort = String(await getPort(this.cwd))
+    this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
+
     this.#fileSystem = new FileSystem(this.cwdPath, tsConfig, {
       ...this.options,
       suites: this.options.suites?.filter((suite) => {

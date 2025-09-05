@@ -125,7 +125,7 @@ export class DevServer {
   /**
    * Index generator for managing auto-generated index files
    */
-  #indexGenerator: IndexGenerator
+  #indexGenerator!: IndexGenerator
 
   /**
    * Hooks to execute custom actions during the dev server lifecycle
@@ -145,7 +145,7 @@ export class DevServer {
   /**
    * CLI UI instance for displaying colorful messages and progress information
    */
-  #ui = cliui()
+  ui = cliui()
 
   /**
    * Restarts the HTTP server and throttle concurrent calls to
@@ -189,21 +189,6 @@ export class DevServer {
   }
 
   /**
-   * CLI UI instance to log colorful messages and progress information
-   */
-  get ui() {
-    return this.#ui
-  }
-
-  /**
-   * CLI UI instance to log colorful messages and progress information
-   */
-  set ui(ui: ReturnType<typeof cliui>) {
-    this.#ui = ui
-    this.#indexGenerator.setLogger(ui.logger)
-  }
-
-  /**
    * The mode in which the DevServer is running.
    */
   get mode() {
@@ -240,7 +225,6 @@ export class DevServer {
     this.cwd = cwd
     this.options = options
     this.cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
-    this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
   }
 
   /**
@@ -458,6 +442,7 @@ export class DevServer {
     this.#clearScreen()
     this.ui.logger.info(`starting server in ${this.#mode} mode...`)
 
+    this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
     this.#stickyPort = String(await getPort(this.cwd))
     this.#fileSystem = new FileSystem(this.cwdPath, tsConfig, this.options)
 

@@ -19,8 +19,9 @@ import { detectPackageManager } from '@antfu/install-pkg'
 
 import type { BundlerOptions } from './types/common.ts'
 import { run, parseConfig, copyFiles, loadHooks } from './utils.ts'
-import { type HookParams, type BundlerHooks } from './types/hooks.ts'
+import { type HookParams, type BundlerHooks, type CommonHooks } from './types/hooks.ts'
 import { type SupportedPackageManager } from './types/code_transformer.ts'
+import { IndexGenerator } from './index_generator/main.ts'
 
 /**
  * List of package managers we support in order to
@@ -70,9 +71,18 @@ export class Bundler {
   /**
    * Hooks to execute custom actions during the build process
    */
-  #hooks!: Hooks<{
-    [K in keyof BundlerHooks]: [HookParams<K>, HookParams<K>]
-  }>
+  #hooks!: Hooks<
+    {
+      [K in keyof CommonHooks]: [HookParams<K>, HookParams<K>]
+    } & {
+      [K in keyof BundlerHooks]: [HookParams<K>, HookParams<K>]
+    }
+  >
+
+  /**
+   * Index generator for managing auto-generated index files
+   */
+  #indexGenerator!: IndexGenerator
 
   /**
    * CLI UI instance for displaying colorful messages and progress information
@@ -202,7 +212,6 @@ export class Bundler {
    * const success = await bundler.bundle(true, 'npm')
    */
   async bundle(stopOnError: boolean = true, client?: SupportedPackageManager): Promise<boolean> {
-    this.#hooks = await loadHooks(this.options.hooks, ['buildStarting', 'buildFinished'])
     this.packageManager = client ?? (await this.#detectPackageManager()) ?? 'npm'
 
     /**
@@ -213,20 +222,33 @@ export class Bundler {
       return false
     }
 
+    this.ui.logger.info('loading hooks...')
+    this.#hooks = await loadHooks(this.options.hooks, ['init', 'buildStarting', 'buildFinished'])
+    this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
+
     /**
-     * Step 2: Cleanup existing build directory (if any)
+     * Step 2: Run init hook and the index generator
+     */
+    await this.#hooks.runner('init').run(this, this.#indexGenerator)
+    this.#hooks.clear('init')
+
+    this.ui.logger.info('generating indexes...')
+    await this.#indexGenerator.generate()
+
+    /**
+     * Step 3: Cleanup existing build directory (if any)
      */
     const outDir = config.options.outDir || fileURLToPath(new URL('build/', this.cwd))
     this.ui.logger.info('cleaning up output directory', { suffix: this.#getRelativeName(outDir) })
     await this.#cleanupBuildDirectory(outDir)
 
     /**
-     * Step 3: Execute build starting hook
+     * Step 4: Execute build starting hook
      */
     await this.#hooks.runner('buildStarting').run(this)
 
     /**
-     * Step 4: Build typescript source code
+     * Step 5: Build typescript source code
      */
     this.ui.logger.info('compiling typescript source', { suffix: 'tsc' })
     const buildCompleted = await this.#runTsc(outDir)
@@ -258,7 +280,7 @@ export class Bundler {
     }
 
     /**
-     * Step 5: Copy meta files to the build directory
+     * Step 6: Copy meta files to the build directory
      */
     const pkgFiles = [
       'package.json',
@@ -275,12 +297,12 @@ export class Bundler {
       .heading('Run the following commands to start the server in production')
 
     /**
-     * Step 6: Execute build completed hook
+     * Step 7: Execute build completed hook
      */
     await this.#hooks.runner('buildFinished').run(this, displayMessage)
 
     /**
-     * Next steps
+     * Display next steps
      */
     displayMessage
       .add(this.ui.colors.cyan(`cd ${this.#getRelativeName(outDir)}`))

@@ -123,15 +123,6 @@ export class IndexGeneratorSource {
   }
 
   /**
-   * Set the logger instance used for CLI output
-   *
-   * @param cliLogger - New logger instance to use
-   */
-  setLogger(cliLogger: Logger) {
-    this.#cliLogger = cliLogger
-  }
-
-  /**
    * Converts a recursive file tree to a string representation
    *
    * This method recursively processes a file tree structure and writes

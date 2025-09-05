@@ -10,7 +10,7 @@
 import ts from 'typescript'
 import { test } from '@japa/runner'
 
-import { Bundler } from '../index.ts'
+import { Bundler, hooks } from '../index.ts'
 
 test.group('Bundler', () => {
   test('should copy metafiles to the build directory', async ({ assert, fs }) => {
@@ -337,5 +337,43 @@ test.group('Bundler', () => {
     await bundler.bundle(false, 'npm')
 
     await assert.dirExists('./build')
+  })
+
+  test('generator index file', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+      ),
+      fs.create('adonisrc.ts', 'export default { hooks: { onBuildStarting: [() => {}] } }'),
+      fs.create('package.json', '{}'),
+      fs.create('package-lock.json', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, {
+      hooks: {
+        init: [
+          async () => ({
+            default: hooks.init((_, indexGenerator) => {
+              indexGenerator.add('controllers', {
+                as: 'barrelFile',
+                output: '.adonisjs/server/controllers.ts',
+                exportName: 'controllers',
+                source: 'app/controllers',
+                importAlias: '#controllers',
+              })
+            }),
+          }),
+        ],
+      },
+    })
+
+    bundler.ui.switchMode('raw')
+    await bundler.bundle()
+
+    assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
+      "export const controllers = {
+      }"
+    `)
   })
 })

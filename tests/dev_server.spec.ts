@@ -97,84 +97,6 @@ test.group('DevServer', () => {
     assert.deepEqual(hooksStack, ['init', 'devServerStarting', 'devServerStarted'])
   })
 
-  test('define hooks as inline functions', async ({ fs, assert, cleanup }) => {
-    let hooksStack: string[] = []
-
-    await fs.createJson('tsconfig.json', {
-      extends: '@adonisjs/tsconfig/tsconfig.package.json',
-      compilerOptions: {
-        rootDir: './',
-        outDir: './build',
-      },
-    })
-    await fs.create(
-      'bin/server.ts',
-      `process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })`
-    )
-    await fs.create('.env', 'PORT=3334')
-
-    const devServer = new DevServer(fs.baseUrl, {
-      nodeArgs: [],
-      scriptArgs: [],
-      metaFiles: [],
-      suites: [],
-      hooks: {
-        init: [
-          {
-            run() {
-              hooksStack.push('init')
-            },
-          },
-        ],
-        devServerStarted: [
-          {
-            run() {
-              hooksStack.push('devServerStarted')
-            },
-          },
-        ],
-        devServerStarting: [
-          {
-            run() {
-              hooksStack.push('devServerStarting')
-            },
-          },
-        ],
-      },
-    })
-
-    devServer.ui = cliui()
-    devServer.ui.switchMode('raw')
-
-    await devServer.start(ts)
-    cleanup(async () => devServer.close())
-
-    assert.deepEqual(devServer.ui.logger.getLogs(), [
-      {
-        message: '[ blue(info) ] starting server in static mode...',
-        stream: 'stdout',
-      },
-      {
-        message: '[ blue(info) ] loading hooks...',
-        stream: 'stdout',
-      },
-      {
-        message: '[ blue(info) ] generating indexes...',
-        stream: 'stdout',
-      },
-      {
-        message: '[ blue(info) ] starting HTTP server...',
-        stream: 'stdout',
-      },
-      {
-        message:
-          'Server address: cyan(http://localhost:3334)\nMode: cyan(static)\nPress dim(h) to show help',
-        stream: 'stdout',
-      },
-    ])
-    assert.deepEqual(hooksStack, ['init', 'devServerStarting', 'devServerStarted'])
-  })
-
   test('start in watch mode and execute hook', async ({ fs, assert, cleanup }) => {
     let hooksStack: string[] = []
 
@@ -343,7 +265,7 @@ test.group('DevServer', () => {
     )
     await fs.dump('bin/server.ts')
     await fs.create('start/routes.ts', ``)
-    await fs.create('.env', 'PORT=3334')
+    await fs.create('.env', 'PORT=3337')
 
     const devServer = new DevServer(fs.baseUrl, {
       hmr: true,
@@ -374,7 +296,7 @@ test.group('DevServer', () => {
       `process.send({ type: 'hot-hook:invalidated', path: '${normalizePathForWindows(join(fs.basePath, 'start/routes.ts'))}' });`
     )
     await fs.create('start/routes.ts', ``)
-    await fs.create('.env', 'PORT=3334')
+    await fs.create('.env', 'PORT=3338')
 
     const devServer = new DevServer(fs.baseUrl, {
       hmr: true,
@@ -403,7 +325,7 @@ test.group('DevServer', () => {
       `process.send({ type: 'hot-hook:file-changed', action: 'change', path: '${normalizePathForWindows(join(fs.basePath, 'start/routes.ts'))}' });`
     )
     await fs.create('start/routes.ts', ``)
-    await fs.create('.env', 'PORT=3334')
+    await fs.create('.env', 'PORT=3339')
 
     const devServer = new DevServer(fs.baseUrl, {
       hmr: true,
@@ -487,7 +409,7 @@ test.group('DevServer', () => {
       'bin/server.ts',
       `process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })`
     )
-    await fs.create('.env', 'PORT=3336')
+    await fs.create('.env', 'PORT=3340')
 
     const devServer = new DevServer(fs.baseUrl, {
       hmr: true,
@@ -555,7 +477,7 @@ test.group('DevServer', () => {
       'bin/server.ts',
       `process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })`
     )
-    await fs.create('.env', 'PORT=3336')
+    await fs.create('.env', 'PORT=3341')
 
     const devServer = new DevServer(fs.baseUrl, {
       nodeArgs: [],
@@ -611,4 +533,82 @@ test.group('DevServer', () => {
     )
     assert.lengthOf(indexGenerationLogs, 3)
   }).timeout(10 * 1000)
+
+  test('define hooks as inline functions', async ({ fs, assert, cleanup }) => {
+    let hooksStack: string[] = []
+
+    await fs.createJson('tsconfig.json', {
+      extends: '@adonisjs/tsconfig/tsconfig.package.json',
+      compilerOptions: {
+        rootDir: './',
+        outDir: './build',
+      },
+    })
+    await fs.create(
+      'bin/server.ts',
+      `process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })`
+    )
+    await fs.create('.env', 'PORT=3342')
+
+    const devServer = new DevServer(fs.baseUrl, {
+      nodeArgs: [],
+      scriptArgs: [],
+      metaFiles: [],
+      suites: [],
+      hooks: {
+        init: [
+          {
+            run() {
+              hooksStack.push('init')
+            },
+          },
+        ],
+        devServerStarted: [
+          {
+            run() {
+              hooksStack.push('devServerStarted')
+            },
+          },
+        ],
+        devServerStarting: [
+          {
+            run() {
+              hooksStack.push('devServerStarting')
+            },
+          },
+        ],
+      },
+    })
+
+    devServer.ui = cliui()
+    devServer.ui.switchMode('raw')
+
+    await devServer.start(ts)
+    cleanup(async () => devServer.close())
+
+    assert.deepEqual(devServer.ui.logger.getLogs(), [
+      {
+        message: '[ blue(info) ] starting server in static mode...',
+        stream: 'stdout',
+      },
+      {
+        message: '[ blue(info) ] loading hooks...',
+        stream: 'stdout',
+      },
+      {
+        message: '[ blue(info) ] generating indexes...',
+        stream: 'stdout',
+      },
+      {
+        message: '[ blue(info) ] starting HTTP server...',
+        stream: 'stdout',
+      },
+      {
+        message:
+          'Server address: cyan(http://localhost:3342)\nMode: cyan(static)\nPress dim(h) to show help',
+        stream: 'stdout',
+      },
+    ])
+    assert.deepEqual(hooksStack, ['init', 'devServerStarting', 'devServerStarted'])
+  })
 })

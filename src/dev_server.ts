@@ -430,6 +430,7 @@ export class DevServer {
    * @param action - Whether the file was added or deleted
    */
   #regenerateIndex(filePath: string, action: 'add' | 'delete') {
+    console.log({ filePath })
     if (action === 'add') {
       return this.#indexGenerator.addFile(filePath)
     }
@@ -702,6 +703,7 @@ export class DevServer {
     this.#watcher.on('add', (filePath) => {
       const relativePath = string.toUnixSlash(filePath)
       const absolutePath = join(this.#cwdPath, filePath)
+      console.log({ relativePath, absolutePath })
       this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
     })
     this.#watcher.on('change', (filePath) => {

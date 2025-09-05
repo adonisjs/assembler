@@ -8,7 +8,7 @@
  */
 
 import { type AsyncOrSync } from '@poppinss/utils/types'
-import { CommonHooks, type HookParams } from './types/hooks.ts'
+import { type HookParams } from './types/hooks.ts'
 
 /**
  * Collection of hooks that can be used to listen for various events during

@@ -9,6 +9,7 @@
 
 import { test } from '@japa/runner'
 import { join } from 'node:path/posix'
+import string from '@poppinss/utils/string'
 import { RoutesScanner } from '../../src/code_scanners/routes_scanner/main.ts'
 
 test.group('Routes scanner', () => {
@@ -67,7 +68,7 @@ test.group('Routes scanner', () => {
     `
     )
 
-    const scanner = new RoutesScanner(fs.basePath, [])
+    const scanner = new RoutesScanner(string.toUnixSlash(fs.basePath), [])
     scanner.pathsResolver.use((specifier) => {
       const [namespace, ...rest] = specifier.split('/')
       const fileName = rest.pop()
@@ -348,7 +349,7 @@ test.group('Routes scanner', () => {
     `
     )
 
-    const scanner = new RoutesScanner(fs.basePath, [])
+    const scanner = new RoutesScanner(string.toUnixSlash(fs.basePath), [])
     scanner.defineRequest((route) => {
       if (route.name === 'users.store') {
         return {
@@ -649,7 +650,7 @@ test.group('Routes scanner', () => {
     `
     )
 
-    const scanner = new RoutesScanner(fs.basePath, [])
+    const scanner = new RoutesScanner(string.toUnixSlash(fs.basePath), [])
     scanner.pathsResolver.use((specifier) => {
       const [namespace, ...rest] = specifier.split('/')
       const fileName = rest.pop()
@@ -931,7 +932,7 @@ test.group('Routes scanner', () => {
     `
     )
 
-    const scanner = new RoutesScanner(fs.basePath, [])
+    const scanner = new RoutesScanner(string.toUnixSlash(fs.basePath), [])
     scanner.pathsResolver.use((specifier) => {
       const [namespace, ...rest] = specifier.split('/')
       const fileName = rest.pop()

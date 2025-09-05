@@ -279,6 +279,7 @@ test.group('DevServer', () => {
     await devServer.close()
 
     const logMessages = devServer.ui.logger.getLogs().map(({ message }) => message)
+    console.log(logMessages)
     assert.isAtLeast(
       logMessages.filter((message) => message.includes('green(update) start/routes.ts')).length,
       1
@@ -310,6 +311,7 @@ test.group('DevServer', () => {
     await devServer.close()
 
     const logMessages = devServer.ui.logger.getLogs().map(({ message }) => message)
+    console.log(logMessages)
     assert.isAtLeast(
       logMessages.filter((message) => message.includes('green(invalidated) start/routes.ts'))
         .length,

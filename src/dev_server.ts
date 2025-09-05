@@ -539,7 +539,12 @@ export class DevServer {
         } else if (this.#mode === 'hmr' && this.#isHotHookMessage(message)) {
           debug('received hot-hook message %O', message)
           const absolutePath = message.path ? string.toUnixSlash(message.path) : ''
-          const relativePath = relative(this.#cwdPath, message.path)
+          const relativePath = relative(this.#cwdPath, absolutePath)
+          console.log({
+            relativePath,
+            cwd: this.#cwdPath,
+            absolutePath,
+          })
 
           if (message.type === 'hot-hook:file-changed') {
             const { action } = message

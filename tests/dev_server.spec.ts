@@ -279,7 +279,6 @@ test.group('DevServer', () => {
     await devServer.close()
 
     const logMessages = devServer.ui.logger.getLogs().map(({ message }) => message)
-    console.log(logMessages)
     assert.isAtLeast(
       logMessages.filter((message) => message.includes('green(update) start/routes.ts')).length,
       1
@@ -311,7 +310,6 @@ test.group('DevServer', () => {
     await devServer.close()
 
     const logMessages = devServer.ui.logger.getLogs().map(({ message }) => message)
-    console.log(logMessages)
     assert.isAtLeast(
       logMessages.filter((message) => message.includes('green(invalidated) start/routes.ts'))
         .length,
@@ -528,6 +526,7 @@ test.group('DevServer', () => {
     await sleep(1000)
     const logs = devServer.ui.logger.getLogs()
 
+    console.log(logs)
     const indexGenerationLogs = logs.filter(({ message }) =>
       message.includes('.adonisjs/server/controllers.ts')
     )

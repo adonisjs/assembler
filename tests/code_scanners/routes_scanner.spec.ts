@@ -68,7 +68,8 @@ test.group('Routes scanner', () => {
     `
     )
 
-    const scanner = new RoutesScanner(string.toUnixSlash(fs.basePath), [])
+    const source = string.toUnixSlash(fs.basePath)
+    const scanner = new RoutesScanner(source, [])
     scanner.pathsResolver.use((specifier) => {
       const [namespace, ...rest] = specifier.split('/')
       const fileName = rest.pop()
@@ -130,7 +131,7 @@ test.group('Routes scanner', () => {
     ])
 
     assert.deepEqual(scanner.getControllers(), [
-      join(fs.basePath, 'app/controllers/users_controller.ts'),
+      join(source, 'app/controllers/users_controller.ts'),
     ])
     assert.snapshot(scanner.getScannedRoutes()).matchInline(`
       [
@@ -143,7 +144,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -169,7 +170,7 @@ test.group('Routes scanner', () => {
             },
             "method": "create",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -195,7 +196,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -234,7 +235,7 @@ test.group('Routes scanner', () => {
             },
             "method": "edit",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -260,7 +261,7 @@ test.group('Routes scanner', () => {
             },
             "method": "update",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -349,7 +350,8 @@ test.group('Routes scanner', () => {
     `
     )
 
-    const scanner = new RoutesScanner(string.toUnixSlash(fs.basePath), [])
+    const source = string.toUnixSlash(fs.basePath)
+    const scanner = new RoutesScanner(source, [])
     scanner.defineRequest((route) => {
       if (route.name === 'users.store') {
         return {
@@ -429,7 +431,7 @@ test.group('Routes scanner', () => {
     ])
 
     assert.deepEqual(scanner.getControllers(), [
-      join(fs.basePath, 'app/controllers/users_controller.ts'),
+      join(source, 'app/controllers/users_controller.ts'),
     ])
     assert.snapshot(scanner.getScannedRoutes()).matchInline(`
       [
@@ -442,7 +444,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -468,7 +470,7 @@ test.group('Routes scanner', () => {
             },
             "method": "create",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -494,7 +496,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -535,7 +537,7 @@ test.group('Routes scanner', () => {
             },
             "method": "edit",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -561,7 +563,7 @@ test.group('Routes scanner', () => {
             },
             "method": "update",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -650,7 +652,8 @@ test.group('Routes scanner', () => {
     `
     )
 
-    const scanner = new RoutesScanner(string.toUnixSlash(fs.basePath), [])
+    const source = string.toUnixSlash(fs.basePath)
+    const scanner = new RoutesScanner(source, [])
     scanner.pathsResolver.use((specifier) => {
       const [namespace, ...rest] = specifier.split('/')
       const fileName = rest.pop()
@@ -722,7 +725,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -748,7 +751,7 @@ test.group('Routes scanner', () => {
             },
             "method": "create",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -774,7 +777,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -813,7 +816,7 @@ test.group('Routes scanner', () => {
             },
             "method": "edit",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -839,7 +842,7 @@ test.group('Routes scanner', () => {
             },
             "method": "update",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -932,7 +935,8 @@ test.group('Routes scanner', () => {
     `
     )
 
-    const scanner = new RoutesScanner(string.toUnixSlash(fs.basePath), [])
+    const source = string.toUnixSlash(fs.basePath)
+    const scanner = new RoutesScanner(source, [])
     scanner.pathsResolver.use((specifier) => {
       const [namespace, ...rest] = specifier.split('/')
       const fileName = rest.pop()
@@ -994,7 +998,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1020,7 +1024,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1059,7 +1063,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${join(source, '/app/controllers/posts_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1085,7 +1089,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${join(source, '/app/controllers/posts_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1162,7 +1166,7 @@ test.group('Routes scanner', () => {
     `
     )
 
-    await scanner.invalidate(join(fs.basePath, 'app/controllers/users_controller.ts'))
+    await scanner.invalidate(join(source, 'app/controllers/users_controller.ts'))
     assert.snapshot(scanner.getScannedRoutes()).matchInline(`
       [
         {
@@ -1174,7 +1178,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1200,7 +1204,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1239,7 +1243,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${join(source, '/app/controllers/posts_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1265,7 +1269,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${join(source, '/app/controllers/posts_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1298,7 +1302,7 @@ test.group('Routes scanner', () => {
       ]
     `)
 
-    await scanner.invalidate(join(fs.basePath, 'app/controllers/posts_controller.ts'))
+    await scanner.invalidate(join(source, 'app/controllers/posts_controller.ts'))
     assert.snapshot(scanner.getScannedRoutes()).matchInline(`
       [
         {
@@ -1310,7 +1314,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1336,7 +1340,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "UsersController",
-            "path": "${join(fs.basePath, '/app/controllers/users_controller.ts')}",
+            "path": "${join(source, '/app/controllers/users_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1375,7 +1379,7 @@ test.group('Routes scanner', () => {
             },
             "method": "index",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${join(source, '/app/controllers/posts_controller.ts')}",
           },
           "domain": "root",
           "methods": [
@@ -1401,7 +1405,7 @@ test.group('Routes scanner', () => {
             },
             "method": "store",
             "name": "PostsController",
-            "path": "${join(fs.basePath, '/app/controllers/posts_controller.ts')}",
+            "path": "${join(source, '/app/controllers/posts_controller.ts')}",
           },
           "domain": "root",
           "methods": [

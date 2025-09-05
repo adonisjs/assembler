@@ -8,7 +8,7 @@
  */
 
 import { type Instructions } from '@poppinss/cliui'
-import { type UnWrapLazyImport, type AsyncOrSync, type LazyImport } from '@poppinss/utils/types'
+import { type AsyncOrSync, type LazyImport } from '@poppinss/utils/types'
 
 import { type Bundler } from '../bundler.ts'
 import { type DevServer } from '../dev_server.ts'
@@ -16,6 +16,24 @@ import { type TestRunner } from '../test_runner.ts'
 import { type RoutesListItem } from './code_scanners.ts'
 import { type IndexGenerator } from '../index_generator/main.ts'
 import { type RoutesScanner } from '../code_scanners/routes_scanner/main.ts'
+
+/**
+ * Defines a hook that can be either a lazy import or an object with a run method.
+ * This type provides flexibility in how hooks are defined and imported, supporting
+ * both dynamic imports for code splitting and direct object definitions.
+ *
+ * @template Fn - The function signature that the hook must conform to
+ *
+ * @example
+ * // Using lazy import
+ * const hook: DefineHook<(server: DevServer) => void> = () => import('./my-hook')
+ *
+ * // Using direct object
+ * const hook: DefineHook<(server: DevServer) => void> = {
+ *   run: (server) => console.log('Hook executed')
+ * }
+ */
+type DefineHook<Fn extends (...args: any) => any> = LazyImport<Fn> | { run: Fn }
 
 /**
  * Common hooks executed by the dev-server, test runner and the bundler.
@@ -37,7 +55,7 @@ export type CommonHooks = {
    *
    * @param parent - The parent instance (DevServer, TestRunner, or Bundler)
    */
-  init: LazyImport<
+  init: DefineHook<
     (parent: DevServer | TestRunner | Bundler, indexGenerator: IndexGenerator) => AsyncOrSync<void>
   >[]
 }
@@ -67,7 +85,7 @@ export type RouterHooks = {
    * @param parent - The DevServer instance
    * @param routes - Record of routes grouped by domain or method
    */
-  routesCommitted: LazyImport<
+  routesCommitted: DefineHook<
     (parent: DevServer, routes: Record<string, RoutesListItem[]>) => AsyncOrSync<void>
   >[]
 
@@ -78,7 +96,7 @@ export type RouterHooks = {
    * @param parent - The DevServer instance
    * @param routesScanner - The RoutesScanner instance being used
    */
-  routesScanning: LazyImport<
+  routesScanning: DefineHook<
     (parent: DevServer, routesScanner: RoutesScanner) => AsyncOrSync<void>
   >[]
 
@@ -89,7 +107,7 @@ export type RouterHooks = {
    * @param parent - The DevServer instance
    * @param routesScanner - The RoutesScanner instance that was used
    */
-  routesScanned: LazyImport<
+  routesScanned: DefineHook<
     (parent: DevServer, routesScanner: RoutesScanner) => AsyncOrSync<void>
   >[]
 }
@@ -126,7 +144,7 @@ export type WatcherHooks = {
    * @param info.fullReload - Whether a full server reload is required
    * @param parent - The parent DevServer or TestRunner instance
    */
-  fileChanged: LazyImport<
+  fileChanged: DefineHook<
     (
       relativePath: string,
       absolutePath: string,
@@ -149,7 +167,7 @@ export type WatcherHooks = {
    * @param filePath - The absolute path to the added file
    * @param server - The DevServer or TestRunner instance
    */
-  fileAdded: LazyImport<
+  fileAdded: DefineHook<
     (
       relativePath: string,
       absolutePath: string,
@@ -164,7 +182,7 @@ export type WatcherHooks = {
    * @param filePath - The absolute path to the removed file
    * @param server - The DevServer or TestRunner instance
    */
-  fileRemoved: LazyImport<
+  fileRemoved: DefineHook<
     (
       relativePath: string,
       absolutePath: string,
@@ -193,7 +211,7 @@ export type DevServerHooks = {
    *
    * @param server - The DevServer instance that is about to start
    */
-  devServerStarting: LazyImport<(server: DevServer) => AsyncOrSync<void>>[]
+  devServerStarting: DefineHook<(server: DevServer) => AsyncOrSync<void>>[]
 
   /**
    * The hook is executed after the child process has been started.
@@ -205,7 +223,7 @@ export type DevServerHooks = {
    * @param info.host - The host address the server is bound to
    * @param uiInstructions - UI instructions for displaying server information
    */
-  devServerStarted: LazyImport<
+  devServerStarted: DefineHook<
     (
       server: DevServer,
       info: { port: number; host: string },
@@ -234,7 +252,7 @@ export type BundlerHooks = {
    *
    * @param server - The Bundler instance that will create the build
    */
-  buildStarting: LazyImport<(server: Bundler) => AsyncOrSync<void>>[]
+  buildStarting: DefineHook<(server: Bundler) => AsyncOrSync<void>>[]
 
   /**
    * The hook is executed after the production build has been created.
@@ -243,7 +261,7 @@ export type BundlerHooks = {
    * @param server - The Bundler instance that created the build
    * @param uiInstructions - UI instructions for displaying build information
    */
-  buildFinished: LazyImport<(server: Bundler, uiInstructions: Instructions) => AsyncOrSync<void>>[]
+  buildFinished: DefineHook<(server: Bundler, uiInstructions: Instructions) => AsyncOrSync<void>>[]
 }
 
 /**
@@ -266,7 +284,7 @@ export type TestRunnerHooks = {
    *
    * @param server - The TestRunner instance that will execute the tests
    */
-  testsStarting: LazyImport<(server: TestRunner) => AsyncOrSync<void>>[]
+  testsStarting: DefineHook<(server: TestRunner) => AsyncOrSync<void>>[]
 
   /**
    * The hook is executed after the tests have been executed.
@@ -274,7 +292,7 @@ export type TestRunnerHooks = {
    *
    * @param server - The TestRunner instance that executed the tests
    */
-  testsFinished: LazyImport<(server: TestRunner) => AsyncOrSync<void>>[]
+  testsFinished: DefineHook<(server: TestRunner) => AsyncOrSync<void>>[]
 }
 
 /**
@@ -319,6 +337,5 @@ export type AllHooks = CommonHooks &
  * // Result: [DevServer, {port: number, host: string}, Instructions]
  * ```
  */
-export type HookParams<Hook extends keyof AllHooks> = Parameters<
-  UnWrapLazyImport<AllHooks[Hook][number]>
->
+export type HookParams<Hook extends keyof AllHooks> =
+  AllHooks[Hook][number] extends DefineHook<infer A> ? Parameters<A> : never

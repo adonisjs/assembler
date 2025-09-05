@@ -336,7 +336,11 @@ export async function loadHooks<K extends keyof AllHooks>(
 
   for (const { group, hooks: collection } of groups) {
     for (const item of collection) {
-      hooks.add(group, await importDefault<{}>(item))
+      if ('run' in item) {
+        hooks.add(group, item.run as any)
+      } else {
+        hooks.add(group, await importDefault<{}>(item))
+      }
     }
   }
 

@@ -20,19 +20,11 @@ import { importDefault } from '@poppinss/utils'
 import { copyFile, mkdir } from 'node:fs/promises'
 import { EnvLoader, EnvParser } from '@adonisjs/env'
 import chokidar, { type ChokidarOptions } from 'chokidar'
-import { type UnWrapLazyImport } from '@poppinss/utils/types'
 import { basename, dirname, isAbsolute, join, relative } from 'node:path'
 
 import debug from './debug.ts'
 import type { RunScriptOptions } from './types/common.ts'
-import {
-  type CommonHooks,
-  type RouterHooks,
-  type WatcherHooks,
-  type BundlerHooks,
-  type DevServerHooks,
-  type TestRunnerHooks,
-} from './types/hooks.ts'
+import { type AllHooks, type HookParams } from './types/hooks.ts'
 
 /**
  * Default set of args to pass in order to run TypeScript
@@ -327,12 +319,6 @@ export function isRelative(pathValue: string) {
  * @param names - Array of hook names to load
  * @returns Promise resolving to configured Hooks instance
  */
-type AllHooks = CommonHooks &
-  RouterHooks &
-  WatcherHooks &
-  DevServerHooks &
-  BundlerHooks &
-  TestRunnerHooks
 export async function loadHooks<K extends keyof AllHooks>(
   rcFileHooks: Partial<AllHooks> | undefined,
   names: K[]
@@ -345,10 +331,7 @@ export async function loadHooks<K extends keyof AllHooks>(
   })
 
   const hooks = new Hooks<{
-    [P in K]: [
-      Parameters<UnWrapLazyImport<AllHooks[K][number]>>,
-      Parameters<UnWrapLazyImport<AllHooks[K][number]>>,
-    ]
+    [P in K]: [HookParams<P>, HookParams<P>]
   }>()
 
   for (const { group, hooks: collection } of groups) {

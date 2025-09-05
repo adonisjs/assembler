@@ -16,11 +16,10 @@ import type Hooks from '@poppinss/hooks'
 import { join, relative } from 'node:path'
 import string from '@poppinss/utils/string'
 import { detectPackageManager } from '@antfu/install-pkg'
-import { type UnWrapLazyImport } from '@poppinss/utils/types'
 
-import { type BundlerHooks } from './types/hooks.ts'
 import type { BundlerOptions } from './types/common.ts'
 import { run, parseConfig, copyFiles, loadHooks } from './utils.ts'
+import { type HookParams, type BundlerHooks } from './types/hooks.ts'
 import { type SupportedPackageManager } from './types/code_transformer.ts'
 
 /**
@@ -77,10 +76,7 @@ export class Bundler {
    * Hooks to execute custom actions during the build process
    */
   #hooks!: Hooks<{
-    [K in keyof BundlerHooks]: [
-      Parameters<UnWrapLazyImport<BundlerHooks[K][number]>>,
-      Parameters<UnWrapLazyImport<BundlerHooks[K][number]>>,
-    ]
+    [K in keyof BundlerHooks]: [HookParams<K>, HookParams<K>]
   }>
 
   /**

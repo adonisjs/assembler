@@ -8,14 +8,14 @@
  */
 
 import { type Instructions } from '@poppinss/cliui'
-import { type AsyncOrSync, type LazyImport } from '@poppinss/utils/types'
+import { type UnWrapLazyImport, type AsyncOrSync, type LazyImport } from '@poppinss/utils/types'
 
 import { type Bundler } from '../bundler.ts'
 import { type DevServer } from '../dev_server.ts'
 import { type TestRunner } from '../test_runner.ts'
 import { type RoutesListItem } from './code_scanners.ts'
-import { type RoutesScanner } from '../code_scanners/routes_scanner/main.ts'
 import { type IndexGenerator } from '../index_generator/main.ts'
+import { type RoutesScanner } from '../code_scanners/routes_scanner/main.ts'
 
 /**
  * Common hooks executed by the dev-server, test runner and the bundler.
@@ -276,3 +276,49 @@ export type TestRunnerHooks = {
    */
   testsFinished: LazyImport<(server: TestRunner) => AsyncOrSync<void>>[]
 }
+
+/**
+ * Combined type representing all available hooks across the assembler ecosystem.
+ * This intersection type merges all hook categories into a single type for
+ * comprehensive hook management and type safety.
+ *
+ * @example
+ * ```js
+ * const allHooks: AllHooks = {
+ *   init: [() => import('./hooks/init')],
+ *   fileChanged: [() => import('./hooks/file_changed')],
+ *   devServerStarted: [() => import('./hooks/dev_server_started')],
+ *   buildFinished: [() => import('./hooks/build_finished')],
+ *   testsFinished: [() => import('./hooks/tests_finished')],
+ *   routesCommitted: [() => import('./hooks/routes_committed')]
+ * }
+ * ```
+ */
+export type AllHooks = CommonHooks &
+  WatcherHooks &
+  DevServerHooks &
+  BundlerHooks &
+  TestRunnerHooks &
+  RouterHooks
+
+/**
+ * Utility type that extracts the parameter types for a specific hook.
+ * This type helps maintain type safety when working with hook callbacks
+ * by providing the exact parameter signature for any given hook name.
+ *
+ * @template Hook - The name of the hook to extract parameters for
+ *
+ * @example
+ * ```js
+ * // Get parameters for the fileChanged hook
+ * type FileChangedParams = HookParams<'fileChanged'>
+ * // Result: [string, string, {...}, DevServer | TestRunner]
+ *
+ * // Get parameters for the devServerStarted hook
+ * type DevServerStartedParams = HookParams<'devServerStarted')
+ * // Result: [DevServer, {port: number, host: string}, Instructions]
+ * ```
+ */
+export type HookParams<Hook extends keyof AllHooks> = Parameters<
+  UnWrapLazyImport<AllHooks[Hook][number]>
+>

@@ -17,7 +17,6 @@ import { type ResultPromise } from 'execa'
 import string from '@poppinss/utils/string'
 import { join, relative } from 'node:path/posix'
 import { RuntimeException } from '@poppinss/utils/exception'
-import { type UnWrapLazyImport } from '@poppinss/utils/types'
 
 import debug from './debug.ts'
 import { FileSystem } from './file_system.ts'
@@ -26,6 +25,7 @@ import type { DevServerOptions } from './types/common.ts'
 import { IndexGenerator } from './index_generator/main.ts'
 import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
 import {
+  type HookParams,
   type RouterHooks,
   type CommonHooks,
   type WatcherHooks,
@@ -137,25 +137,13 @@ export class DevServer {
    */
   #hooks!: Hooks<
     {
-      [K in keyof CommonHooks]: [
-        Parameters<UnWrapLazyImport<CommonHooks[K][number]>>,
-        Parameters<UnWrapLazyImport<CommonHooks[K][number]>>,
-      ]
+      [K in keyof CommonHooks]: [HookParams<K>, HookParams<K>]
     } & {
-      [K in keyof RouterHooks]: [
-        Parameters<UnWrapLazyImport<RouterHooks[K][number]>>,
-        Parameters<UnWrapLazyImport<RouterHooks[K][number]>>,
-      ]
+      [K in keyof RouterHooks]: [HookParams<K>, HookParams<K>]
     } & {
-      [K in keyof DevServerHooks]: [
-        Parameters<UnWrapLazyImport<DevServerHooks[K][number]>>,
-        Parameters<UnWrapLazyImport<DevServerHooks[K][number]>>,
-      ]
+      [K in keyof DevServerHooks]: [HookParams<K>, HookParams<K>]
     } & {
-      [K in keyof WatcherHooks]: [
-        Parameters<UnWrapLazyImport<WatcherHooks[K][number]>>,
-        Parameters<UnWrapLazyImport<WatcherHooks[K][number]>>,
-      ]
+      [K in keyof WatcherHooks]: [HookParams<K>, HookParams<K>]
     }
   >
 

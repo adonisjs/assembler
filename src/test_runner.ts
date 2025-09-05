@@ -16,14 +16,18 @@ import { type FSWatcher } from 'chokidar'
 import { type ResultPromise } from 'execa'
 import string from '@poppinss/utils/string'
 import { RuntimeException } from '@poppinss/utils/exception'
-import { type UnWrapLazyImport } from '@poppinss/utils/types'
 
 import debug from './debug.ts'
 import { FileSystem } from './file_system.ts'
 import type { TestRunnerOptions } from './types/common.ts'
 import { IndexGenerator } from './index_generator/main.ts'
 import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
-import { type WatcherHooks, type TestRunnerHooks, type CommonHooks } from './types/hooks.ts'
+import {
+  type HookParams,
+  type CommonHooks,
+  type WatcherHooks,
+  type TestRunnerHooks,
+} from './types/hooks.ts'
 
 /**
  * Exposes the API to run Japa tests and optionally watch for file
@@ -83,20 +87,11 @@ export class TestRunner {
    */
   #hooks!: Hooks<
     {
-      [K in keyof CommonHooks]: [
-        Parameters<UnWrapLazyImport<CommonHooks[K][number]>>,
-        Parameters<UnWrapLazyImport<CommonHooks[K][number]>>,
-      ]
+      [K in keyof CommonHooks]: [HookParams<K>, HookParams<K>]
     } & {
-      [K in keyof TestRunnerHooks]: [
-        Parameters<UnWrapLazyImport<TestRunnerHooks[K][number]>>,
-        Parameters<UnWrapLazyImport<TestRunnerHooks[K][number]>>,
-      ]
+      [K in keyof TestRunnerHooks]: [HookParams<K>, HookParams<K>]
     } & {
-      [K in keyof WatcherHooks]: [
-        Parameters<UnWrapLazyImport<WatcherHooks[K][number]>>,
-        Parameters<UnWrapLazyImport<WatcherHooks[K][number]>>,
-      ]
+      [K in keyof WatcherHooks]: [HookParams<K>, HookParams<K>]
     }
   >
 

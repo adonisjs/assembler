@@ -10,16 +10,9 @@
 import type { Logger } from '@poppinss/cliui'
 import { type Prettify } from '@poppinss/utils/types'
 
+import { type AllHooks } from './hooks.ts'
 import { type FileBuffer } from '../file_buffer.ts'
 import { type VirtualFileSystem } from '../virtual_file_system.ts'
-import {
-  type CommonHooks,
-  type RouterHooks,
-  type BundlerHooks,
-  type WatcherHooks,
-  type DevServerHooks,
-  type TestRunnerHooks,
-} from './hooks.ts'
 
 /**
  * Recursive file tree structure for representing nested directory hierarchies
@@ -152,9 +145,7 @@ export type AssemblerRcFile = {
   /**
    * Hooks to execute at different stages of development and build processes
    */
-  hooks?: Partial<
-    CommonHooks & WatcherHooks & DevServerHooks & BundlerHooks & TestRunnerHooks & RouterHooks
-  >
+  hooks?: Partial<AllHooks>
 
   /**
    * An array of test suites configuration

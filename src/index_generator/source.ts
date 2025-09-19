@@ -160,11 +160,14 @@ export class IndexGeneratorSource {
   #createBarrelFileKeyGenerator(config: IndexGeneratorSourceConfig) {
     return function (key: string) {
       const paths = key.split('/')
-      const baseName = new StringBuilder(paths.pop()!)
-        .removeSuffix(config.removeSuffix ?? '')
-        .pascalCase()
-        .toString()
-      return [...paths.map((p) => string.camelCase(p)), baseName].join('/')
+      let baseName = new StringBuilder(paths.pop()!)
+      if (config.computeBaseName) {
+        baseName = config.computeBaseName(baseName)
+      } else {
+        baseName = baseName.removeSuffix(config.removeSuffix ?? '').pascalCase()
+      }
+
+      return [...paths.map((p) => string.camelCase(p)), baseName.toString()].join('/')
     }
   }
 

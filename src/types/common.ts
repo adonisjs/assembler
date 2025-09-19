@@ -9,6 +9,7 @@
 
 import type { Logger } from '@poppinss/cliui'
 import { type Prettify } from '@poppinss/utils/types'
+import type StringBuilder from '@poppinss/utils/string_builder'
 
 import { type AllHooks } from './hooks.ts'
 import { type FileBuffer } from '../file_buffer.ts'
@@ -47,6 +48,7 @@ export type IndexGeneratorSourceConfig = (
       ) => void
     }
 ) & {
+  computeBaseName?: (baseName: StringBuilder) => StringBuilder
   source: string
   output: string
   glob?: string[]

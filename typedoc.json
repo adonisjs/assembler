@@ -7,8 +7,9 @@
     "./index.ts",
     "./src/types/main.ts",
     "./src/helpers.ts",
-    "./src/code_transformer/main.ts",
-    "./src/code_scanners/routes_scanner/main.ts"
+    "./src/code_scanners/routes_scanner/main.ts",
+    "./src/index_generator/main.ts",
+    "./src/code_transformer/main.ts"
   ],
   "excludePrivate": true,
   "excludeProtected": true,

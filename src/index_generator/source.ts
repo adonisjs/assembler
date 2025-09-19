@@ -141,9 +141,9 @@ export class IndexGeneratorSource {
     Object.keys(input).forEach((key) => {
       const value = input[key]
       if (typeof value === 'string') {
-        buffer.write(`'${key}': ${value},`)
+        buffer.write(`${key}: ${value},`)
       } else {
-        buffer.write(`'${key}': {`).indent()
+        buffer.write(`${key}: {`).indent()
         this.#treeToString(value, buffer)
         buffer.dedent().write(`},`)
       }

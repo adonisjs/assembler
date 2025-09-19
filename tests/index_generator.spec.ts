@@ -39,15 +39,15 @@ test.group('Index generator', () => {
 
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "export const controllers = {
-        'auth': {
-          'SignupController': () => import('#controllers/auth/signup_controller'),
+        auth: {
+          SignupController: () => import('#controllers/auth/signup_controller'),
         },
-        'PostsController': () => import('#controllers/posts_controller'),
-        'public': {
-          'HomePage': () => import('#controllers/public/home_page'),
+        PostsController: () => import('#controllers/posts_controller'),
+        public: {
+          HomePage: () => import('#controllers/public/home_page'),
         },
-        'user': {
-          'PostsController': () => import('#controllers/user/posts_controller'),
+        user: {
+          PostsController: () => import('#controllers/user/posts_controller'),
         },
       }"
     `)
@@ -73,15 +73,15 @@ test.group('Index generator', () => {
 
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "export const controllers = {
-        'auth': {
-          'SignupController': () => import('../../app/controllers/auth/signup_controller.ts'),
+        auth: {
+          SignupController: () => import('../../app/controllers/auth/signup_controller.ts'),
         },
-        'PostsController': () => import('../../app/controllers/posts_controller.ts'),
-        'public': {
-          'HomePage': () => import('../../app/controllers/public/home_page.ts'),
+        PostsController: () => import('../../app/controllers/posts_controller.ts'),
+        public: {
+          HomePage: () => import('../../app/controllers/public/home_page.ts'),
         },
-        'user': {
-          'PostsController': () => import('../../app/controllers/user/posts_controller.ts'),
+        user: {
+          PostsController: () => import('../../app/controllers/user/posts_controller.ts'),
         },
       }"
     `)
@@ -109,15 +109,15 @@ test.group('Index generator', () => {
 
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "export const controllers = {
-        'auth': {
-          'Signup': () => import('#controllers/auth/signup_controller'),
+        auth: {
+          Signup: () => import('#controllers/auth/signup_controller'),
         },
-        'Posts': () => import('#controllers/posts_controller'),
-        'public': {
-          'HomePage': () => import('#controllers/public/home_page'),
+        Posts: () => import('#controllers/posts_controller'),
+        public: {
+          HomePage: () => import('#controllers/public/home_page'),
         },
-        'user': {
-          'Posts': () => import('#controllers/user/posts_controller'),
+        user: {
+          Posts: () => import('#controllers/user/posts_controller'),
         },
       }"
     `)
@@ -201,17 +201,17 @@ test.group('Index generator', () => {
 
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "export const controllers = {
-        'auth': {
-          'SignupController': () => import('#controllers/auth/signup_controller'),
+        auth: {
+          SignupController: () => import('#controllers/auth/signup_controller'),
         },
-        'PostsController': () => import('#controllers/posts_controller'),
-        'public': {
-          'HomePage': () => import('#controllers/public/home_page'),
+        PostsController: () => import('#controllers/posts_controller'),
+        public: {
+          HomePage: () => import('#controllers/public/home_page'),
         },
-        'user': {
-          'PostsController': () => import('#controllers/user/posts_controller'),
+        user: {
+          PostsController: () => import('#controllers/user/posts_controller'),
         },
-        'PostCommentsController': () => import('#controllers/post_comments_controller'),
+        PostCommentsController: () => import('#controllers/post_comments_controller'),
       }"
     `)
   })
@@ -247,12 +247,12 @@ test.group('Index generator', () => {
 
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "export const controllers = {
-        'auth': {
-          'SignupController': () => import('#controllers/auth/signup_controller'),
+        auth: {
+          SignupController: () => import('#controllers/auth/signup_controller'),
         },
-        'PostsController': () => import('#controllers/posts_controller'),
-        'public': {
-          'HomePage': () => import('#controllers/public/home_page'),
+        PostsController: () => import('#controllers/posts_controller'),
+        public: {
+          HomePage: () => import('#controllers/public/home_page'),
         },
       }"
     `)

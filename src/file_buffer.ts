@@ -28,7 +28,7 @@ export class FileBuffer {
   /**
    * Collected lines
    */
-  #buffer: string[] = []
+  #buffer: (string | FileBuffer)[] = []
 
   /**
    * Current indentation size. Each call to indent will increment
@@ -66,8 +66,13 @@ export class FileBuffer {
    * @param text - The text to write as a new line
    * @returns This FileBuffer instance for method chaining
    */
-  writeLine(text: string): this {
-    this.#buffer.push(`${' '.repeat(this.#identationSize)}${text}\n`)
+  writeLine(text: string | FileBuffer): this {
+    if (typeof text === 'string') {
+      this.#buffer.push(`${' '.repeat(this.#identationSize)}${text}\n`)
+    } else {
+      this.#buffer.push(text)
+      this.#buffer.push('')
+    }
     return this
   }
 
@@ -77,8 +82,12 @@ export class FileBuffer {
    * @param text - The text to write without a newline
    * @returns This FileBuffer instance for method chaining
    */
-  write(text: string): this {
-    this.#buffer.push(`${' '.repeat(this.#identationSize)}${text}`)
+  write(text: string | FileBuffer): this {
+    if (typeof text === 'string') {
+      this.#buffer.push(`${' '.repeat(this.#identationSize)}${text}`)
+    } else {
+      this.#buffer.push(text)
+    }
     return this
   }
 
@@ -104,6 +113,10 @@ export class FileBuffer {
     }
 
     return this
+  }
+
+  toString() {
+    return this.flush()
   }
 
   /**

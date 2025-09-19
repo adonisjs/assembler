@@ -33,7 +33,7 @@ export class IndexGenerator {
   /**
    * The application root directory path
    */
-  #appRoot: string
+  appRoot: string
 
   /**
    * Collection of registered index generator sources
@@ -48,7 +48,7 @@ export class IndexGenerator {
    * @param cliLogger - Logger instance for CLI output
    */
   constructor(appRoot: string, cliLogger: Logger) {
-    this.#appRoot = appRoot
+    this.appRoot = appRoot
     this.#cliLogger = cliLogger
   }
 
@@ -60,7 +60,7 @@ export class IndexGenerator {
    * @returns This IndexGenerator instance for method chaining
    */
   add(name: string, config: IndexGeneratorSourceConfig) {
-    this.#sources[name] = new IndexGeneratorSource(name, this.#appRoot, this.#cliLogger, config)
+    this.#sources[name] = new IndexGeneratorSource(name, this.appRoot, this.#cliLogger, config)
     return this
   }
 

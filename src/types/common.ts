@@ -37,7 +37,14 @@ export type IndexGeneratorSourceConfig = (
       as: 'barrelFile'
     }
   | {
-      as: (vfs: VirtualFileSystem, buffer: FileBuffer, config: IndexGeneratorSourceConfig) => void
+      as: (
+        vfs: VirtualFileSystem,
+        buffer: FileBuffer,
+        config: IndexGeneratorSourceConfig,
+        helpers: {
+          toImportPath(filePath: string): string
+        }
+      ) => void
     }
 ) & {
   source: string

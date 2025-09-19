@@ -8,9 +8,9 @@
  */
 
 import { test } from '@japa/runner'
+import { join } from 'node:path/posix'
 import { cliui } from '@poppinss/cliui'
 import string from '@poppinss/utils/string'
-import { join, relative } from 'node:path/posix'
 import { IndexGenerator } from '../src/index_generator/main.ts'
 
 const ui = cliui({
@@ -134,10 +134,10 @@ test.group('Index generator', () => {
 
     const transformer = new IndexGenerator(source, ui.logger)
     transformer.add('inertiaPages', {
-      as(vfs, buffer) {
+      as(vfs, buffer, _, helpers) {
         const list = vfs.asList({
           transformValue(filePath) {
-            return `InferPageProps<typeof import('${relative(join(source, outputPath), filePath)}').default>`
+            return `InferPageProps<typeof import('${helpers.toImportPath(filePath)}').default>`
           },
         })
 
@@ -157,10 +157,10 @@ test.group('Index generator', () => {
     assert.snapshot(await fs.contents(outputPath)).matchInline(`
       "declare module '@adonisjs/inertia' {
         interface Pages {
-          'blog/comments/index': InferPageProps<typeof import('../../../inertia/pages/blog/comments/index.tsx').default>
-          'blog/comments/show': InferPageProps<typeof import('../../../inertia/pages/blog/comments/show.tsx').default>
-          'blog/posts/index': InferPageProps<typeof import('../../../inertia/pages/blog/posts/index.tsx').default>
-          'home': InferPageProps<typeof import('../../../inertia/pages/home.tsx').default>
+          'blog/comments/index': InferPageProps<typeof import('../../inertia/pages/blog/comments/index.tsx').default>
+          'blog/comments/show': InferPageProps<typeof import('../../inertia/pages/blog/comments/show.tsx').default>
+          'blog/posts/index': InferPageProps<typeof import('../../inertia/pages/blog/posts/index.tsx').default>
+          'home': InferPageProps<typeof import('../../inertia/pages/home.tsx').default>
         }
       }"
     `)

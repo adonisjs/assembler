@@ -84,7 +84,13 @@ export class IndexGeneratorSource {
     if (this.#config.as === 'barrelFile') {
       this.#asBarrelFile(this.#vfs, buffer, this.#config.exportName)
     } else {
-      this.#config.as(this.#vfs, buffer, this.#config)
+      this.#config.as(this.#vfs, buffer, this.#config, {
+        toImportPath: this.#createBarrelFileImportGenerator(
+          this.#source,
+          this.#outputDirname,
+          this.#config
+        ),
+      })
     }
 
     await mkdir(dirname(this.#output), { recursive: true })
@@ -180,10 +186,10 @@ export class IndexGeneratorSource {
     return function (filePath: string) {
       if (config.importAlias) {
         debug('converting "%s" to import alias, source "%s"', filePath, source)
-        return `() => import('${removeExtension(filePath.replace(source, config.importAlias))}')`
+        return removeExtension(filePath.replace(source, config.importAlias))
       }
       debug('converting "%s" to relative import, source "%s"', filePath, outputDirname)
-      return `() => import('${relative(outputDirname, filePath)}')`
+      return relative(outputDirname, filePath)
     }
   }
 
@@ -207,7 +213,9 @@ export class IndexGeneratorSource {
 
     const tree = vfs.asTree({
       transformKey: keyGenerator,
-      transformValue: importGenerator,
+      transformValue: (filePath) => {
+        return `() => import('${importGenerator(filePath)}')`
+      },
     })
 
     buffer.write(`export const ${exportName} = {`).indent()

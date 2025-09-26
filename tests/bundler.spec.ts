@@ -10,7 +10,7 @@
 import ts from 'typescript'
 import { test } from '@japa/runner'
 
-import { Bundler, hooks } from '../index.ts'
+import { Bundler } from '../index.ts'
 
 test.group('Bundler', () => {
   test('should copy metafiles to the build directory', async ({ assert, fs }) => {
@@ -354,7 +354,7 @@ test.group('Bundler', () => {
       hooks: {
         init: [
           async () => ({
-            default: hooks.init((_, indexGenerator) => {
+            default: (_, indexGenerator) => {
               indexGenerator.add('controllers', {
                 as: 'barrelFile',
                 output: '.adonisjs/server/controllers.ts',
@@ -362,7 +362,7 @@ test.group('Bundler', () => {
                 source: 'app/controllers',
                 importAlias: '#controllers',
               })
-            }),
+            },
           }),
         ],
       },

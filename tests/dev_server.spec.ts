@@ -15,7 +15,6 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import { RuntimeException } from '@poppinss/utils/exception'
 
 import { DevServer } from '../index.ts'
-import { hooks } from '../src/hooks.ts'
 import { normalizePathForWindows, setupFakeAdonisproject } from './helpers.ts'
 
 test.group('DevServer', () => {
@@ -42,24 +41,26 @@ test.group('DevServer', () => {
       suites: [],
       hooks: {
         init: [
-          async () => ({
-            default: hooks.init(() => {
-              hooksStack.push('init')
-            }),
-          }),
+          async () => {
+            return {
+              default: () => {
+                hooksStack.push('init')
+              },
+            }
+          },
         ],
         devServerStarted: [
           async () => ({
-            default: hooks.devServerStarted(() => {
+            default: () => {
               hooksStack.push('devServerStarted')
-            }),
+            },
           }),
         ],
         devServerStarting: [
           async () => ({
-            default: hooks.devServerStarting(() => {
+            default: () => {
               hooksStack.push('devServerStarting')
-            }),
+            },
           }),
         ],
       },
@@ -121,23 +122,23 @@ test.group('DevServer', () => {
       hooks: {
         init: [
           async () => ({
-            default: hooks.init(() => {
+            default: () => {
               hooksStack.push('init')
-            }),
+            },
           }),
         ],
         devServerStarted: [
           async () => ({
-            default: hooks.devServerStarted(() => {
+            default: () => {
               hooksStack.push('devServerStarted')
-            }),
+            },
           }),
         ],
         devServerStarting: [
           async () => ({
-            default: hooks.devServerStarting(() => {
+            default: () => {
               hooksStack.push('devServerStarting')
-            }),
+            },
           }),
         ],
       },
@@ -196,23 +197,23 @@ test.group('DevServer', () => {
       hooks: {
         fileAdded: [
           async () => ({
-            default: hooks.fileAdded((filePath) => {
+            default: (filePath) => {
               hooksStack.push(`${filePath} added`)
-            }),
+            },
           }),
         ],
         fileChanged: [
           async () => ({
-            default: hooks.fileChanged((filePath) => {
+            default: (filePath) => {
               hooksStack.push(`${filePath} changed`)
-            }),
+            },
           }),
         ],
         fileRemoved: [
           async () => ({
-            default: hooks.fileRemoved((filePath) => {
+            default: (filePath) => {
               hooksStack.push(`${filePath} removed`)
-            }),
+            },
           }),
         ],
       },
@@ -368,16 +369,16 @@ test.group('DevServer', () => {
       hooks: {
         devServerStarted: [
           async () => ({
-            default: hooks.devServerStarted(() => {
+            default: () => {
               hooksStack.push('devServerStarted')
-            }),
+            },
           }),
         ],
         devServerStarting: [
           async () => ({
-            default: hooks.devServerStarting(() => {
+            default: () => {
               hooksStack.push('devServerStarting')
-            }),
+            },
           }),
         ],
       },
@@ -420,7 +421,7 @@ test.group('DevServer', () => {
       hooks: {
         init: [
           async () => ({
-            default: hooks.init((_, indexGenerator) => {
+            default: (_, indexGenerator) => {
               indexGenerator.add('controllers', {
                 as: 'barrelFile',
                 output: '.adonisjs/server/controllers.ts',
@@ -428,7 +429,7 @@ test.group('DevServer', () => {
                 source: 'app/controllers',
                 importAlias: '#controllers',
               })
-            }),
+            },
           }),
         ],
       },
@@ -487,7 +488,7 @@ test.group('DevServer', () => {
       hooks: {
         init: [
           async () => ({
-            default: hooks.init((_, indexGenerator) => {
+            default: (_, indexGenerator) => {
               indexGenerator.add('controllers', {
                 as: 'barrelFile',
                 output: '.adonisjs/server/controllers.ts',
@@ -495,7 +496,7 @@ test.group('DevServer', () => {
                 source: 'app/controllers',
                 importAlias: '#controllers',
               })
-            }),
+            },
           }),
         ],
       },

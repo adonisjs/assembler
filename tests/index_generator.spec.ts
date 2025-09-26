@@ -257,4 +257,45 @@ test.group('Index generator', () => {
       }"
     `)
   })
+
+  test('create index from without lazy imports', async ({ assert, fs }) => {
+    const outputPath = '.adonisjs/backend/controllers.ts'
+    const source = string.toUnixSlash(fs.basePath)
+
+    await fs.create('app/controllers/posts_controller.ts', '')
+    await fs.create('app/controllers/user/posts_controller.ts', '')
+    await fs.create('app/controllers/auth/signup_controller.ts', '')
+    await fs.create('app/controllers/public/home_page.ts', '')
+
+    const transformer = new IndexGenerator(source, ui.logger)
+    transformer.add('controllers', {
+      as: 'barrelFile',
+      disableLazyImports: true,
+      exportName: 'controllers',
+      output: outputPath,
+      source: 'app/controllers',
+      importAlias: '#controllers',
+    })
+    await transformer.generate()
+
+    assert.snapshot(await fs.contents(outputPath)).matchInline(`
+      "import AuthSignupController from '#controllers/auth/signup_controller'
+      import PostsController from '#controllers/posts_controller'
+      import PublicHomePage from '#controllers/public/home_page'
+      import UserPostsController from '#controllers/user/posts_controller'
+
+      export const controllers = {
+        auth: {
+          SignupController: AuthSignupController,
+        },
+        PostsController: PostsController,
+        public: {
+          HomePage: PublicHomePage,
+        },
+        user: {
+          PostsController: UserPostsController,
+        },
+      }"
+    `)
+  })
 })

@@ -176,14 +176,15 @@ export class VirtualFileSystem {
    */
   asTree(options?: {
     transformKey?: (key: string) => string
-    transformValue?: (filePath: string) => string
+    transformValue?: (filePath: string, key: string) => string
   }) {
     const list: RecursiveFileTree = {}
     const transformKey = options?.transformKey ?? BYPASS_FN
     const transformValue = options?.transformValue ?? BYPASS_FN
 
     for (const [filePath, relativePath] of this.#files) {
-      lodash.set(list, transformKey(relativePath).split('/'), transformValue(filePath))
+      const key = transformKey(relativePath)
+      lodash.set(list, key.split('/'), transformValue(filePath, key))
     }
 
     return list

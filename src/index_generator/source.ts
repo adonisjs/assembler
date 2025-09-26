@@ -82,7 +82,12 @@ export class IndexGeneratorSource {
     const buffer = new FileBuffer()
 
     if (this.#config.as === 'barrelFile') {
-      this.#asBarrelFile(this.#vfs, buffer, this.#config.exportName)
+      this.#asBarrelFile(
+        this.#vfs,
+        buffer,
+        this.#config.exportName,
+        this.#config.disableLazyImports
+      )
     } else {
       this.#config.as(this.#vfs, buffer, this.#config, {
         toImportPath: this.#createBarrelFileImportGenerator(
@@ -206,8 +211,15 @@ export class IndexGeneratorSource {
    * @param buffer - File buffer to write the barrel exports to
    * @param exportName - Name for the main export object
    */
-  #asBarrelFile(vfs: VirtualFileSystem, buffer: FileBuffer, exportName: string) {
+  #asBarrelFile(
+    vfs: VirtualFileSystem,
+    buffer: FileBuffer,
+    exportName: string,
+    disableLazyImports?: boolean
+  ) {
+    const useEagerImports = disableLazyImports === true ? true : false
     const keyGenerator = this.#createBarrelFileKeyGenerator(this.#config)
+    const importsBuffer = buffer.create()
     const importGenerator = this.#createBarrelFileImportGenerator(
       this.#source,
       this.#outputDirname,
@@ -216,11 +228,19 @@ export class IndexGeneratorSource {
 
     const tree = vfs.asTree({
       transformKey: keyGenerator,
-      transformValue: (filePath) => {
+      transformValue: (filePath, key) => {
+        if (useEagerImports) {
+          const importKey = new StringBuilder(key).pascalCase().toString()
+          importsBuffer.write(`import ${importKey} from '${importGenerator(filePath)}'`)
+          return importKey
+        }
         return `() => import('${importGenerator(filePath)}')`
       },
     })
 
+    if (useEagerImports) {
+      buffer.writeLine(importsBuffer)
+    }
     buffer.write(`export const ${exportName} = {`).indent()
     this.#treeToString(tree, buffer)
     buffer.dedent().write(`}`)

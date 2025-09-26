@@ -36,6 +36,11 @@ export type IndexGeneratorSourceConfig = (
   | {
       exportName: string
       as: 'barrelFile'
+      /**
+       * Disable the use of lazy imports and instead import the
+       * files using the import expression
+       */
+      disableLazyImports?: boolean
     }
   | {
       as: (

@@ -649,6 +649,11 @@ export class DevServer {
         if (!stats) {
           return false
         }
+
+        if (file.includes('inertia') && !file.includes('node_modules')) {
+          return false
+        }
+
         if (stats.isFile()) {
           return !this.#fileSystem.shouldWatchFile(file)
         }

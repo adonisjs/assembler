@@ -609,7 +609,9 @@ export class DevServer {
       this.options.env = {
         ...this.options.env,
         HOT_HOOK_INCLUDE: this.#fileSystem.includes.join(','),
-        HOT_HOOK_IGNORE: this.#fileSystem.excludes.join(','),
+        HOT_HOOK_IGNORE: this.#fileSystem.excludes
+          .filter((exclude) => !exclude.includes('inertia'))
+          .join(','),
         HOT_HOOK_RESTART: (this.options.metaFiles ?? [])
           .filter(({ reloadServer }) => !!reloadServer)
           .map(({ pattern }) => pattern)

@@ -26,6 +26,11 @@
  */
 export class FileBuffer {
   /**
+   * Whether to add an end-of-line character at the end of the output
+   */
+  #eol: boolean = false
+
+  /**
    * Collected lines
    */
   #buffer: (string | FileBuffer)[] = []
@@ -58,6 +63,21 @@ export class FileBuffer {
    */
   get size() {
     return this.#buffer.length
+  }
+
+  /**
+   * Enable or disable end-of-line character at the end of output
+   *
+   * @param enabled - Whether to add EOL character
+   * @returns This FileBuffer instance for method chaining
+   *
+   * @example
+   * const buffer = new FileBuffer()
+   * buffer.eol(true).writeLine('Hello').flush() // 'Hello\n\n'
+   */
+  eol(enabled: boolean) {
+    this.#eol = enabled
+    return this
   }
 
   /**
@@ -115,6 +135,14 @@ export class FileBuffer {
     return this
   }
 
+  /**
+   * Convert the buffer to a string representation
+   *
+   * @example
+   * const buffer = new FileBuffer()
+   * buffer.writeLine('Hello')
+   * console.log(buffer.toString())
+   */
   toString() {
     return this.flush()
   }
@@ -133,6 +161,6 @@ export class FileBuffer {
     }
 
     this.#compiledOutput = this.#buffer.join('\n')
-    return this.#compiledOutput
+    return this.#eol ? `${this.#compiledOutput}\n` : this.#compiledOutput
   }
 }

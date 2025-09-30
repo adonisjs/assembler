@@ -49,7 +49,8 @@ test.group('Index generator', () => {
         user: {
           PostsController: () => import('#controllers/user/posts_controller'),
         },
-      }"
+      }
+      "
     `)
   })
 
@@ -83,7 +84,8 @@ test.group('Index generator', () => {
         user: {
           PostsController: () => import('../../app/controllers/user/posts_controller.ts'),
         },
-      }"
+      }
+      "
     `)
   })
 
@@ -119,7 +121,8 @@ test.group('Index generator', () => {
         user: {
           Posts: () => import('#controllers/user/posts_controller'),
         },
-      }"
+      }
+      "
     `)
   })
 
@@ -162,7 +165,8 @@ test.group('Index generator', () => {
           'blog/posts/index': InferPageProps<typeof import('../../inertia/pages/blog/posts/index.tsx').default>
           'home': InferPageProps<typeof import('../../inertia/pages/home.tsx').default>
         }
-      }"
+      }
+      "
     `)
   })
 
@@ -212,7 +216,8 @@ test.group('Index generator', () => {
           PostsController: () => import('#controllers/user/posts_controller'),
         },
         PostCommentsController: () => import('#controllers/post_comments_controller'),
-      }"
+      }
+      "
     `)
   })
 
@@ -254,7 +259,8 @@ test.group('Index generator', () => {
         public: {
           HomePage: () => import('#controllers/public/home_page'),
         },
-      }"
+      }
+      "
     `)
   })
 
@@ -295,7 +301,8 @@ test.group('Index generator', () => {
         user: {
           PostsController: UserPostsController,
         },
-      }"
+      }
+      "
     `)
   })
 

@@ -442,8 +442,8 @@ test.group('DevServer', () => {
     cleanup(() => devServer.close())
 
     assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
-      "export const controllers = {
-      }"
+      "export const controllers = {}
+      "
     `)
 
     await sleep(1000)
@@ -509,8 +509,8 @@ test.group('DevServer', () => {
     cleanup(() => devServer.close())
 
     assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
-      "export const controllers = {
-      }"
+      "export const controllers = {}
+      "
     `)
 
     await sleep(1000)

@@ -372,8 +372,8 @@ test.group('Bundler', () => {
     await bundler.bundle()
 
     assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
-      "export const controllers = {
-      }"
+      "export const controllers = {}
+      "
     `)
   })
 })

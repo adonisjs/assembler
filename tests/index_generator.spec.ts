@@ -258,7 +258,7 @@ test.group('Index generator', () => {
     `)
   })
 
-  test('create index from without lazy imports', async ({ assert, fs }) => {
+  test('create index without lazy imports', async ({ assert, fs }) => {
     const outputPath = '.adonisjs/backend/controllers.ts'
     const source = string.toUnixSlash(fs.basePath)
 
@@ -296,6 +296,27 @@ test.group('Index generator', () => {
           PostsController: UserPostsController,
         },
       }"
+    `)
+  })
+
+  test('create index when there is nothing to output', async ({ assert, fs }) => {
+    const outputPath = '.adonisjs/backend/controllers.ts'
+    const source = string.toUnixSlash(fs.basePath)
+
+    const transformer = new IndexGenerator(source, ui.logger)
+    transformer.add('controllers', {
+      as: 'barrelFile',
+      disableLazyImports: true,
+      exportName: 'controllers',
+      output: outputPath,
+      source: 'app/controllers',
+      importAlias: '#controllers',
+    })
+    await transformer.generate()
+
+    assert.snapshot(await fs.contents(outputPath)).matchInline(`
+      "export const controllers = {}
+      "
     `)
   })
 })

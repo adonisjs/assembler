@@ -79,7 +79,7 @@ export class IndexGeneratorSource {
    * content based on configuration, and writes it to disk.
    */
   #generateOutput = throttle(async () => {
-    const buffer = new FileBuffer()
+    const buffer = new FileBuffer().eol(true)
 
     if (this.#config.as === 'barrelFile') {
       this.#asBarrelFile(
@@ -237,6 +237,11 @@ export class IndexGeneratorSource {
         return `() => import('${importGenerator(filePath)}')`
       },
     })
+    const treeLength = Object.keys(tree).length
+    if (!treeLength) {
+      buffer.write(`export const ${exportName} = {}`)
+      return
+    }
 
     if (useEagerImports) {
       buffer.writeLine(importsBuffer)

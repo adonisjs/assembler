@@ -37,4 +37,18 @@ test.group('Helpers | Parse config', () => {
     const result = parseConfig(fs.baseUrl, ts)
     assert.deepEqual(result?.fileNames, [string.toUnixSlash(join(fs.basePath, 'foo.ts'))])
   })
+
+  test('parse tsconfig file using ${configDir} variable to point to the root dir', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.createJson('tsconfig.json', {
+      include: ['${configDir}/**/*', '${configDir}/.adonisjs/server/**/*'],
+    })
+    await fs.create('foo.ts', '')
+
+    const result = parseConfig(fs.baseUrl, ts)
+    assert.deepEqual(result?.fileNames, [string.toUnixSlash(join(fs.basePath, 'foo.ts'))])
+    assert.deepEqual(result?.raw.include, ['**/*', '.adonisjs/server/**/*'])
+  })
 })

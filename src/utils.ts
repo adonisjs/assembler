@@ -75,6 +75,17 @@ export function parseConfig(
     return
   }
 
+  if (parsedConfig!.raw.include) {
+    parsedConfig!.raw.include = parsedConfig!.raw.include.map((includePath: string) => {
+      return includePath.replace('${configDir}/', '')
+    })
+  }
+  if (parsedConfig!.raw.exclude) {
+    parsedConfig!.raw.exclude = parsedConfig!.raw.exclude.map((excludePath: string) => {
+      return excludePath.replace('${configDir}/', '')
+    })
+  }
+
   return parsedConfig
 }
 

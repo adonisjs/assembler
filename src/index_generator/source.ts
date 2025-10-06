@@ -252,15 +252,15 @@ export class IndexGeneratorSource {
   }
 
   /**
-   * Create a log action for tracking file generation progress
+   * Displays the log message after generating the index file
    *
    * @example
-   * const action = this.#createLogAction()
+   * const startTime = process.hrtime()
    * // ... perform operations
-   * action.displayDuration().succeeded()
+   * this.#logCreation(startTime)
    */
-  #createLogAction() {
-    return this.#cliLogger.action(`create ${this.#config.output}`)
+  #logCreation(startTime: [number, number]) {
+    this.#cliLogger.info(`created ${this.#config.output}`, { startTime })
   }
 
   /**
@@ -275,9 +275,9 @@ export class IndexGeneratorSource {
     const added = this.#vfs.add(filePath)
     if (added) {
       debug('file added, re-generating "%s" index', this.name)
-      const action = this.#createLogAction()
+      const startTime = process.hrtime()
       await this.#generateOutput()
-      action.displayDuration().succeeded()
+      this.#logCreation(startTime)
     }
   }
 
@@ -293,9 +293,9 @@ export class IndexGeneratorSource {
     const removed = this.#vfs.remove(filePath)
     if (removed) {
       debug('file removed, re-generating "%s" index', this.name)
-      const action = this.#createLogAction()
+      const startTime = process.hrtime()
       await this.#generateOutput()
-      action.displayDuration().succeeded()
+      this.#logCreation(startTime)
     }
   }
 
@@ -306,9 +306,9 @@ export class IndexGeneratorSource {
    * the configuration, and writes the generated index file to disk.
    */
   async generate() {
-    const action = this.#createLogAction()
+    const startTime = process.hrtime()
     await this.#vfs.scan()
     await this.#generateOutput()
-    action.displayDuration().succeeded()
+    this.#logCreation(startTime)
   }
 }

@@ -26,8 +26,8 @@ test.group('Paths resolver', () => {
     assert.equal(resolver.resolve('#start/kernel'), join(fs.basePath, 'start/kernel.ts'))
   })
 
-  test('resolve package export specifier', ({ assert, fs }) => {
-    const resolver = new PathsResolver(fs.basePath)
+  test('resolve package export specifier', ({ assert }) => {
+    const resolver = new PathsResolver(import.meta.dirname)
     assert.equal(
       resolver.resolve('@adonisjs/assembler/code_transformer'),
       join(import.meta.dirname, '..', 'build', 'src', 'code_transformer/main.ts')

@@ -252,8 +252,13 @@ export class VirtualFileSystem {
    * @param filePath - Optional file path to clear. If omitted, clears entire cache
    */
   invalidate(filePath?: string) {
-    debug('invalidate AST cache "%s"', filePath)
-    filePath ? this.#astCache.delete(filePath) : this.#astCache.clear()
+    if (filePath) {
+      debug('invalidate AST cache "%s"', filePath)
+      this.#astCache.delete(filePath)
+    } else {
+      debug('clear AST cache')
+      this.#astCache.clear()
+    }
   }
 
   /**

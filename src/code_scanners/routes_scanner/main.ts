@@ -471,7 +471,7 @@ export class RoutesScanner {
    */
   async invalidate(controllerPath: string): Promise<boolean> {
     const controllerRoutes = this.#controllerRoutes[controllerPath]
-    if (!controllerRoutes) {
+    if (!controllerRoutes || !controllerRoutes.length) {
       debug(
         '"%s" controllers is not part of scanned controllers %O',
         controllerPath,
@@ -482,14 +482,15 @@ export class RoutesScanner {
 
     for (let scannedRoute of controllerRoutes) {
       if (scannedRoute.controller) {
+        debug('invalidating route %O', scannedRoute)
+
         const vfs = new VirtualFileSystem(this.#appRoot)
         await this.#setResponse(scannedRoute, scannedRoute.controller)
         await this.#setRequest(scannedRoute, scannedRoute.controller, vfs)
-        return true
       }
     }
 
-    return false
+    return true
   }
 
   /**

@@ -20,6 +20,10 @@ export async function setupFakeAdonisproject(fs: FileSystem) {
       hotHook: {
         boundaries: ['./app/controllers/**/*.ts'],
       },
+      type: 'module',
+      imports: {
+        '#start/*': './start/*.js',
+      },
     }),
     fs.create('start/kernel.ts', await readFile('./tests/fixtures/kernel.txt', 'utf-8')),
     fs.create('adonisrc.ts', await readFile('./tests/fixtures/adonisrc.txt', 'utf-8')),

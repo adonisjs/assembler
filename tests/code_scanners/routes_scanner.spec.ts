@@ -83,7 +83,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/users',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'index',
         },
@@ -93,7 +93,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/users/create',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'create',
         },
@@ -103,7 +103,7 @@ test.group('Routes scanner', () => {
         methods: ['POST'],
         pattern: '/users',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'store',
         },
@@ -113,7 +113,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/users/:id/edit',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'edit',
         },
@@ -123,7 +123,7 @@ test.group('Routes scanner', () => {
         methods: ['PUT'],
         pattern: '/users/:id',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'update',
         },
@@ -383,7 +383,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/users',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'index',
         },
@@ -393,7 +393,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/users/create',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'create',
         },
@@ -403,7 +403,7 @@ test.group('Routes scanner', () => {
         methods: ['POST'],
         pattern: '/users',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'store',
         },
@@ -413,7 +413,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/users/:id/edit',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'edit',
         },
@@ -423,7 +423,7 @@ test.group('Routes scanner', () => {
         methods: ['PUT'],
         pattern: '/users/:id',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'update',
         },
@@ -667,7 +667,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/users',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'index',
         },
@@ -677,7 +677,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/users/create',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'create',
         },
@@ -687,7 +687,7 @@ test.group('Routes scanner', () => {
         methods: ['POST'],
         pattern: '/users',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'store',
         },
@@ -697,7 +697,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/users/:id/edit',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'edit',
         },
@@ -707,7 +707,7 @@ test.group('Routes scanner', () => {
         methods: ['PUT'],
         pattern: '/users/:id',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'update',
         },
@@ -950,7 +950,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/users',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'index',
         },
@@ -960,7 +960,7 @@ test.group('Routes scanner', () => {
         methods: ['POST'],
         pattern: '/users',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/users_controller')`,
           method: 'store',
         },
@@ -970,7 +970,7 @@ test.group('Routes scanner', () => {
         methods: ['GET', 'HEAD'],
         pattern: '/posts',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/posts_controller')`,
           method: 'index',
         },
@@ -980,7 +980,7 @@ test.group('Routes scanner', () => {
         methods: ['POST'],
         pattern: '/posts',
         tokens: [],
-        controllerReference: {
+        handler: {
           importExpression: `() => import('#controllers/posts_controller')`,
           method: 'store',
         },

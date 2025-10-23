@@ -16,6 +16,7 @@ import { type FSWatcher } from 'chokidar'
 import { type ResultPromise } from 'execa'
 import string from '@poppinss/utils/string'
 import { join, relative } from 'node:path/posix'
+import { readFile, unlink } from 'node:fs/promises'
 import { RuntimeException } from '@poppinss/utils/exception'
 
 import debug from './debug.ts'
@@ -23,6 +24,7 @@ import { FileSystem } from './file_system.ts'
 import { ShortcutsManager } from './shortcuts_manager.ts'
 import type { DevServerOptions } from './types/common.ts'
 import { IndexGenerator } from './index_generator/main.ts'
+import { RoutesScanner } from './code_scanners/routes_scanner/main.ts'
 import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
 import {
   type HookParams,
@@ -33,14 +35,16 @@ import {
 } from './types/hooks.ts'
 
 /**
- * Exposes the API to start the development server in HMR, watch or static mode.
+ * Exposes the API to start the development server in HMR, watch or static mode
  *
  * In HMR mode, the DevServer will exec the "bin/server.ts" file and let hot-hook
  * manage the changes using hot module reloading.
  *
- * In watch mode, the DevServer will start an internal watcher and restarts the after
- * every file change. The files must be part of the TypeScript project (via tsconfig.json),
+ * In watch mode, the DevServer will start an internal watcher and restarts the server
+ * after every file change. The files must be part of the TypeScript project (via tsconfig.json),
  * or registered as metaFiles.
+ *
+ * In static mode, the server runs without file watching or hot reloading.
  *
  * @example
  * const devServer = new DevServer(cwd, { hmr: true, hooks: [] })
@@ -128,6 +132,12 @@ export class DevServer {
   #indexGenerator!: IndexGenerator
 
   /**
+   * Routes scanner to scan routes and infer route request and
+   * response data
+   */
+  #routesScanner?: RoutesScanner
+
+  /**
    * Hooks to execute custom actions during the dev server lifecycle
    */
   #hooks!: Hooks<
@@ -189,7 +199,12 @@ export class DevServer {
   }
 
   /**
-   * The mode in which the DevServer is running.
+   * The mode in which the DevServer is running
+   *
+   * Returns the current operating mode of the development server:
+   * - 'hmr': Hot Module Reloading enabled
+   * - 'watch': File system watching with full restarts
+   * - 'static': No file watching or hot reloading
    */
   get mode() {
     return this.#mode
@@ -253,6 +268,22 @@ export class DevServer {
   }
 
   /**
+   * Type guard to check if child process message contains routes information
+   *
+   * Validates that a message from the child process contains the expected
+   * structure with routes file location from the AdonisJS server.
+   *
+   * @param message - Unknown message from child process
+   * @returns True if message contains routes file location
+   */
+  #isAdonisJSRoutesMessage(message: unknown): message is {
+    isAdonisJS: true
+    routesFileLocation: string
+  } {
+    return message !== null && typeof message === 'object' && 'routesFileLocation' in message
+  }
+
+  /**
    * Displays server information and executes hooks after server startup
    *
    * Shows server URL, mode, startup duration, and help instructions.
@@ -260,36 +291,39 @@ export class DevServer {
    *
    * @param message - Server ready message containing port, host, and optional duration
    */
-  async #postServerReady(message: { port: number; host: string; duration?: [number, number] }) {
-    const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
-    const info = { host, port: message.port }
-    const serverUrl = `http://${host}:${message.port}`
+  #postServerReady = throttle(
+    async (message: { port: number; host: string; duration?: [number, number] }) => {
+      const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
+      const info = { host, port: message.port }
+      const serverUrl = `http://${host}:${message.port}`
 
-    this.#shortcutsManager?.setServerUrl(serverUrl)
-    const displayMessage = this.ui
-      .sticker()
-      .add(`Server address: ${this.ui.colors.cyan(serverUrl)}`)
-      .add(`Mode: ${this.ui.colors.cyan(this.mode)}`)
+      this.#shortcutsManager?.setServerUrl(serverUrl)
+      const displayMessage = this.ui
+        .sticker()
+        .add(`Server address: ${this.ui.colors.cyan(serverUrl)}`)
+        .add(`Mode: ${this.ui.colors.cyan(this.mode)}`)
 
-    if (message.duration) {
-      displayMessage.add(`Ready in: ${this.ui.colors.cyan(prettyHrtime(message.duration))}`)
-    }
+      if (message.duration) {
+        displayMessage.add(`Ready in: ${this.ui.colors.cyan(prettyHrtime(message.duration))}`)
+      }
 
-    displayMessage.add(`Press ${this.ui.colors.dim('h')} to show help`)
+      displayMessage.add(`Press ${this.ui.colors.dim('h')} to show help`)
 
-    /**
-     * Run hooks before displaying the "displayMessage". It will allow hooks to add
-     * custom lines to the display message.
-     */
-    try {
-      await this.#hooks.runner('devServerStarted').run(this, info, displayMessage)
-    } catch (error) {
-      this.ui.logger.error('One of the "devServerStarted" hooks failed')
-      this.ui.logger.fatal(error)
-    }
+      /**
+       * Run hooks before displaying the "displayMessage". It will allow hooks to add
+       * custom lines to the display message.
+       */
+      try {
+        await this.#hooks.runner('devServerStarted').run(this, info, displayMessage)
+      } catch (error) {
+        this.ui.logger.error('One of the "devServerStarted" hooks failed')
+        this.ui.logger.fatal(error)
+      }
 
-    displayMessage.render()
-  }
+      displayMessage.render()
+    },
+    'postServerReady'
+  )
 
   /**
    * Type guard to check if child process message is from hot-hook
@@ -409,6 +443,86 @@ export class DevServer {
   }
 
   /**
+   * Re-scans routes when a file is modified during hot reloading
+   *
+   * Invalidates the routes cache for the given file and triggers route
+   * scanning hooks if the invalidation was successful.
+   *
+   * @param filePath - Absolute path to the file that was modified
+   *
+   * @example
+   * await devServer.#reScanRoutes('/path/to/routes.ts')
+   */
+  async #reScanRoutes(filePath: string) {
+    if (!this.#routesScanner) {
+      return
+    }
+
+    const invalidated = await this.#routesScanner.invalidate(filePath)
+    if (invalidated) {
+      await this.#hooks.runner('routesScanned').run(this, this.#routesScanner)
+    }
+  }
+
+  /**
+   * Processes routes received from the AdonisJS server
+   *
+   * Executes routesCommitted hooks and optionally scans routes if scanning
+   * hooks are registered. Creates a routes scanner instance if needed and
+   * processes routes for each domain.
+   *
+   * @param routesList - Routes organized by domain
+   *
+   * @example
+   * await devServer.#processRoutes({
+   *   'example.com': [
+   *     { pattern: '/', handler: 'HomeController.index' }
+   *   ]
+   * })
+   */
+  #processRoutes = throttle(async (routesFileLocation: string) => {
+    const scanRoutes = this.#hooks.has('routesScanning') || this.#hooks.has('routesScanned')
+    const shareRoutes = this.#hooks.has('routesCommitted')
+
+    /**
+     * Remove the routes file and return early when there are no
+     * hooks listening for routes related events
+     */
+    if (!scanRoutes && !shareRoutes) {
+      unlink(routesFileLocation).catch(() => {})
+      return
+    }
+
+    /**
+     * Read routes JSON, parse it and remove the file
+     */
+    const routesJSON = await readFile(routesFileLocation, 'utf-8')
+    const routesList = JSON.parse(routesJSON)
+    unlink(routesFileLocation).catch(() => {})
+
+    /**
+     * Notify about the existence of routes
+     */
+    if (shareRoutes) {
+      await this.#hooks.runner('routesCommitted').run(this, routesList)
+    }
+
+    /**
+     * Scan routes and notify scanning and scanned hooks
+     */
+    if (scanRoutes) {
+      this.#routesScanner = new RoutesScanner(this.cwdPath, [])
+      await this.#hooks.runner('routesScanning').run(this, this.#routesScanner)
+
+      for (const domain of Object.keys(routesList)) {
+        await this.#routesScanner.scan(routesList[domain])
+      }
+
+      await this.#hooks.runner('routesScanned').run(this, this.#routesScanner)
+    }
+  }, 'processRoutes')
+
+  /**
    * Registers hooks for file system events and server restart triggers
    *
    * Sets up event handlers that respond to file additions, changes, and removals
@@ -419,9 +533,12 @@ export class DevServer {
       this.#regenerateIndex(absolutePath, 'add')
       this.#handleFileChange(relativePath, absolutePath, 'add')
     })
-    this.#hooks.add('fileChanged', (relativePath, absolutePath, info) =>
+    this.#hooks.add('fileChanged', (relativePath, absolutePath, info) => {
+      if (info.hotReloaded) {
+        this.#reScanRoutes(absolutePath)
+      }
       this.#handleFileChange(relativePath, absolutePath, 'update', info)
-    )
+    })
     this.#hooks.add('fileRemoved', (relativePath, absolutePath) => {
       this.#regenerateIndex(absolutePath, 'delete')
       this.#handleFileChange(relativePath, absolutePath, 'delete')
@@ -429,7 +546,21 @@ export class DevServer {
   }
 
   /**
-   * Initiate the state for DevServer and executes the init hooks
+   * Initializes the development server state and executes init hooks
+   *
+   * Parses TypeScript configuration, sets up file system, loads hooks,
+   * initializes the index generator, and prepares the server for the
+   * specified mode (HMR, watch, or static).
+   *
+   * @param ts - TypeScript module reference
+   * @param mode - Server mode (hmr, watch, or static)
+   * @returns True if initialization succeeds, false if tsconfig parsing fails
+   *
+   * @example
+   * const success = await devServer.#init(ts, 'hmr')
+   * if (!success) {
+   *   console.error('Failed to initialize dev server')
+   * }
    */
   async #init(ts: typeof tsStatic, mode: 'hmr' | 'watch' | 'static'): Promise<boolean> {
     const tsConfig = parseConfig(this.cwd, ts)
@@ -479,9 +610,13 @@ export class DevServer {
    *
    * Creates a new Node.js child process to run the server script with the
    * specified port and configuration. Sets up message handlers for server
-   * ready notifications and hot-hook events.
+   * ready notifications, routes sharing, and hot-hook events. Executes
+   * devServerStarting hooks before spawning the process.
    *
    * @param port - Port number for the server to listen on
+   *
+   * @example
+   * await devServer.#startHTTPServer('3333')
    */
   async #startHTTPServer(port: string) {
     /**
@@ -509,6 +644,9 @@ export class DevServer {
 
           await this.#postServerReady(message)
           resolve()
+        } else if (this.#isAdonisJSRoutesMessage(message)) {
+          debug('received routes location from the server %O', message)
+          await this.#processRoutes(message.routesFileLocation)
         } else if (this.#mode === 'hmr' && this.#isHotHookMessage(message)) {
           debug('received hot-hook message %O', message)
           const absolutePath = message.path ? string.toUnixSlash(message.path) : ''
@@ -560,10 +698,18 @@ export class DevServer {
   }
 
   /**
-   * Add listener to get notified when dev server is closed
+   * Adds listener to get notified when dev server is closed
+   *
+   * Registers a callback function that will be invoked when the development
+   * server's child process exits. The callback receives the exit code.
    *
    * @param callback - Function to call when dev server closes
    * @returns This DevServer instance for method chaining
+   *
+   * @example
+   * devServer.onClose((exitCode) => {
+   *   console.log(`Server closed with exit code: ${exitCode}`)
+   * })
    */
   onClose(callback: (exitCode: number) => any): this {
     this.#onClose = callback
@@ -571,10 +717,18 @@ export class DevServer {
   }
 
   /**
-   * Add listener to get notified when dev server encounters an error
+   * Adds listener to get notified when dev server encounters an error
+   *
+   * Registers a callback function that will be invoked when the development
+   * server's child process encounters an error or fails to start.
    *
    * @param callback - Function to call when dev server encounters an error
    * @returns This DevServer instance for method chaining
+   *
+   * @example
+   * devServer.onError((error) => {
+   *   console.error('Dev server error:', error.message)
+   * })
    */
   onError(callback: (error: any) => any): this {
     this.#onError = callback
@@ -582,7 +736,14 @@ export class DevServer {
   }
 
   /**
-   * Close watchers and the running child process
+   * Closes watchers and terminates the running child process
+   *
+   * Cleans up keyboard shortcuts, stops file system watchers, and kills
+   * the HTTP server child process. This should be called when shutting down
+   * the development server.
+   *
+   * @example
+   * await devServer.close()
    */
   async close() {
     this.#cleanupKeyboardShortcuts()
@@ -594,9 +755,17 @@ export class DevServer {
   }
 
   /**
-   * Start the development server in static or HMR mode
+   * Starts the development server in static or HMR mode
+   *
+   * Initializes the server and starts the HTTP server. The mode is determined
+   * by the `hmr` option in DevServerOptions. In HMR mode, hot-hook is configured
+   * to enable hot module reloading.
    *
    * @param ts - TypeScript module reference
+   *
+   * @example
+   * const devServer = new DevServer(cwd, { hmr: true, hooks: [] })
+   * await devServer.start(ts)
    */
   async start(ts: typeof tsStatic) {
     const initiated = await this.#init(ts, this.options.hmr ? 'hmr' : 'static')
@@ -624,10 +793,19 @@ export class DevServer {
   }
 
   /**
-   * Start the development server in watch mode and restart on file changes
+   * Starts the development server in watch mode and restarts on file changes
+   *
+   * Initializes the server, starts the HTTP server, and sets up a file system
+   * watcher that monitors for changes. When files are added, modified, or deleted,
+   * the server automatically restarts. The watcher respects TypeScript project
+   * configuration and metaFiles settings.
    *
    * @param ts - TypeScript module reference
    * @param options - Watch options including polling mode
+   *
+   * @example
+   * const devServer = new DevServer(cwd, { hooks: [] })
+   * await devServer.startAndWatch(ts, { poll: false })
    */
   async startAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
     const initiated = await this.#init(ts, 'watch')

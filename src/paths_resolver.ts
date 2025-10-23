@@ -7,7 +7,8 @@
  * file that was distributed with this source code.
  */
 
-import { fileURLToPath } from 'node:url'
+import { join } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isRelative } from './utils.ts'
 
 /**
@@ -25,6 +26,12 @@ import { isRelative } from './utils.ts'
  */
 export class PathsResolver {
   /**
+   * The root of the application from where we will resolve
+   * paths.
+   */
+  #appRoot: string
+
+  /**
    * Cache of resolved paths to avoid resolving the same specifier multiple times
    */
   #resolvedPaths: Record<string, string> = {}
@@ -32,7 +39,12 @@ export class PathsResolver {
   /**
    * The resolver function used to resolve import specifiers
    */
-  #resolver: (specifier: string) => string = (specifier) => import.meta.resolve(specifier)
+  #resolver: (specifier: string, parentPath: string) => string = (specifier, parentPath) =>
+    import.meta.resolve(specifier, parentPath)
+
+  constructor(appRoot: string) {
+    this.#appRoot = pathToFileURL(join(appRoot, 'index.js')).href
+  }
 
   /**
    * Define a custom resolver that resolves a path
@@ -71,7 +83,7 @@ export class PathsResolver {
       return cached
     }
 
-    this.#resolvedPaths[cacheKey] = fileURLToPath(this.#resolver(specifier))
+    this.#resolvedPaths[cacheKey] = fileURLToPath(this.#resolver(specifier, this.#appRoot))
     return this.#resolvedPaths[cacheKey]
   }
 }

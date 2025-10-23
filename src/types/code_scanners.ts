@@ -189,13 +189,12 @@ export type RoutesListItem = {
   domain: string
   /** HTTP methods accepted by this route */
   methods: string[]
-  /** Controller reference information (if controller-based route) */
-  controllerReference?: {
-    /** Dynamic import expression for the controller */
-    importExpression: string
-    /** Specific controller method to call */
-    method?: string
-  }
+  handler:
+    | Function
+    | {
+        method: string
+        importExpression: string | null
+      }
   /** Parsed route tokens for URI construction */
   tokens: { val: string; old: string; type: 0 | 1 | 2 | 3; end: string }[]
 }

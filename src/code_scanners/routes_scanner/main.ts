@@ -14,7 +14,6 @@ import { type AsyncOrSync } from '@poppinss/utils/types'
 import StringBuilder from '@poppinss/utils/string_builder'
 
 import debug from '../../debug.ts'
-import { type AsRequired } from '../../types/common.ts'
 import { PathsResolver } from '../../paths_resolver.ts'
 import { extractValidators } from './validator_extractor.ts'
 import { VirtualFileSystem } from '../../virtual_file_system.ts'
@@ -98,7 +97,7 @@ export class RoutesScanner {
    * The paths resolver is used to convert subpath and package
    * imports to absolute paths
    */
-  pathsResolver = new PathsResolver()
+  pathsResolver: PathsResolver
 
   /**
    * The rules to apply when scanning routes
@@ -117,6 +116,7 @@ export class RoutesScanner {
    */
   constructor(appRoot: string, rulesCollection: RoutesScannerRules[]) {
     this.#appRoot = appRoot
+    this.pathsResolver = new PathsResolver(appRoot)
 
     rulesCollection.forEach((rules) => {
       this.rules.skip = this.rules.skip.concat(rules.skip)
@@ -220,6 +220,7 @@ export class RoutesScanner {
       type: `ReturnType<import('${controller.import.specifier}').default['${controller.method}']>`,
       imports: [],
     }
+    debug('computed route "%s" response %O', route.name, route.response)
   }
 
   /**
@@ -229,9 +230,12 @@ export class RoutesScanner {
     route.validators =
       (await this.#extractValidators?.(route, controller, this)) ??
       (await extractValidators(this.#appRoot, vfs, controller))
+    debug('computed route "%s" validators %O', route.name, route.validators)
+
     route.request =
       (await this.#computeRequestTypes?.(route, controller, this)) ??
       this.#prepareRequestTypes(route)
+    debug('computed route "%s" request input %O', route.name, route.request)
   }
 
   /**
@@ -239,7 +243,7 @@ export class RoutesScanner {
    */
   #processRouteWithoutController(route: RoutesListItem) {
     if (!route.name) {
-      debug(`skipping route "%s" scanning. Missing a controller reference`, route.name)
+      debug(`skipping route "%s" as it does not have a name`, route.name)
       return
     }
 
@@ -252,6 +256,8 @@ export class RoutesScanner {
       request: this.rules.request[route.name],
       response: this.rules.response[route.name],
     }
+
+    debug('scanned route without controller %O', scannedRoute)
     this.#scannedRoutes.push(scannedRoute)
   }
 
@@ -259,12 +265,26 @@ export class RoutesScanner {
    * Scans a route that is using a controller reference
    */
   async #processRouteWithController(
-    route: AsRequired<RoutesListItem, 'controllerReference'>,
+    route: RoutesListItem & {
+      handler: Exclude<RoutesListItem['handler'], Function>
+    },
     vfs: VirtualFileSystem
   ) {
+    /**
+     * Process without controller, when importExpression is missing. This is
+     * the case where someone imports the controllers and uses it by
+     * reference
+     */
+    if (!route.handler.importExpression) {
+      return this.#processRouteWithoutController(route)
+    }
+
+    /**
+     * Inspect controller by parsing its import expression
+     */
     const controller = await this.#inspectControllerSpecifier(
-      route.controllerReference.importExpression,
-      route.controllerReference.method
+      route.handler.importExpression,
+      route.handler.method
     )
 
     /**
@@ -275,6 +295,8 @@ export class RoutesScanner {
     if (!controller) {
       return this.#processRouteWithoutController(route)
     }
+
+    debug('processing route "%s" with inspected controller %O', route.name, controller)
 
     /**
      * Converting controller name and its method to snake_case to create a unique
@@ -312,6 +334,7 @@ export class RoutesScanner {
       controller,
     }
 
+    debug('scanned route %O', scannedRoute)
     this.#scannedRoutes.push(scannedRoute)
 
     /**
@@ -319,6 +342,7 @@ export class RoutesScanner {
      * able to invalidate request types everytime the controller is modified.
      */
     if (!scannedRoute.request || !scannedRoute.response) {
+      debug('tracking controller for rescanning %O', scannedRoute)
       this.#controllerRoutes[controller.path] ??= []
       this.#controllerRoutes[controller.path].push(scannedRoute)
 
@@ -342,6 +366,7 @@ export class RoutesScanner {
      * skip array
      */
     if (route.name && this.rules.skip.includes(route.name)) {
+      debug('route skipped route: %O, rules: %O', route, this.rules)
       return
     }
 
@@ -349,13 +374,15 @@ export class RoutesScanner {
      * Routes without a controller reference cannot have types for the request
      * and response (unless provided via rules)
      */
-    if (!route.controllerReference) {
+    if (typeof route.handler === 'function') {
       this.#processRouteWithoutController(route)
       return
     }
 
     await this.#processRouteWithController(
-      route as AsRequired<RoutesListItem, 'controllerReference'>,
+      route as RoutesListItem & {
+        handler: Exclude<RoutesListItem['handler'], Function>
+      },
       vfs
     )
   }
@@ -442,10 +469,15 @@ export class RoutesScanner {
    *
    * @param controllerPath - Path to the controller file to invalidate
    */
-  async invalidate(controllerPath: string) {
+  async invalidate(controllerPath: string): Promise<boolean> {
     const controllerRoutes = this.#controllerRoutes[controllerPath]
     if (!controllerRoutes) {
-      return
+      debug(
+        '"%s" controllers is not part of scanned controllers %O',
+        controllerPath,
+        this.#controllerRoutes
+      )
+      return false
     }
 
     for (let scannedRoute of controllerRoutes) {
@@ -453,8 +485,11 @@ export class RoutesScanner {
         const vfs = new VirtualFileSystem(this.#appRoot)
         await this.#setResponse(scannedRoute, scannedRoute.controller)
         await this.#setRequest(scannedRoute, scannedRoute.controller, vfs)
+        return true
       }
     }
+
+    return false
   }
 
   /**
@@ -468,7 +503,7 @@ export class RoutesScanner {
    */
   async scan(routes: RoutesListItem[]) {
     const vfs = new VirtualFileSystem(this.#appRoot)
-    for (let route of routes) {
+    for (const route of routes) {
       await this.#processRoute(route, vfs)
     }
     vfs.invalidate()

@@ -11,7 +11,7 @@ import { test } from '@japa/runner'
 import { join } from 'node:path/posix'
 import string from '@poppinss/utils/string'
 import StringBuilder from '@poppinss/utils/string_builder'
-import { createControllers, setupFakeAdonisproject } from '#tests/helpers'
+import { createControllers, setupFakeAdonisproject } from './helpers.ts'
 
 import { VirtualFileSystem } from '../src/virtual_file_system.ts'
 

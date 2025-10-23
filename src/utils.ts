@@ -389,8 +389,9 @@ export function throttle<Args extends any[]>(
     }
 
     isBusy = true
-    debug('executing "%s" function', name)
+    debug('executing throttled function "%s"', name)
     await fn(...args)
+    debug('executed throttled function "%s"', name)
 
     isBusy = false
     if (hasQueuedCalls) {

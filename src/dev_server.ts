@@ -291,39 +291,36 @@ export class DevServer {
    *
    * @param message - Server ready message containing port, host, and optional duration
    */
-  #postServerReady = throttle(
-    async (message: { port: number; host: string; duration?: [number, number] }) => {
-      const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
-      const info = { host, port: message.port }
-      const serverUrl = `http://${host}:${message.port}`
+  async #postServerReady(message: { port: number; host: string; duration?: [number, number] }) {
+    const host = message.host === '0.0.0.0' ? '127.0.0.1' : message.host
+    const info = { host, port: message.port }
+    const serverUrl = `http://${host}:${message.port}`
 
-      this.#shortcutsManager?.setServerUrl(serverUrl)
-      const displayMessage = this.ui
-        .sticker()
-        .add(`Server address: ${this.ui.colors.cyan(serverUrl)}`)
-        .add(`Mode: ${this.ui.colors.cyan(this.mode)}`)
+    this.#shortcutsManager?.setServerUrl(serverUrl)
+    const displayMessage = this.ui
+      .sticker()
+      .add(`Server address: ${this.ui.colors.cyan(serverUrl)}`)
+      .add(`Mode: ${this.ui.colors.cyan(this.mode)}`)
 
-      if (message.duration) {
-        displayMessage.add(`Ready in: ${this.ui.colors.cyan(prettyHrtime(message.duration))}`)
-      }
+    if (message.duration) {
+      displayMessage.add(`Ready in: ${this.ui.colors.cyan(prettyHrtime(message.duration))}`)
+    }
 
-      displayMessage.add(`Press ${this.ui.colors.dim('h')} to show help`)
+    displayMessage.add(`Press ${this.ui.colors.dim('h')} to show help`)
 
-      /**
-       * Run hooks before displaying the "displayMessage". It will allow hooks to add
-       * custom lines to the display message.
-       */
-      try {
-        await this.#hooks.runner('devServerStarted').run(this, info, displayMessage)
-      } catch (error) {
-        this.ui.logger.error('One of the "devServerStarted" hooks failed')
-        this.ui.logger.fatal(error)
-      }
+    /**
+     * Run hooks before displaying the "displayMessage". It will allow hooks to add
+     * custom lines to the display message.
+     */
+    try {
+      await this.#hooks.runner('devServerStarted').run(this, info, displayMessage)
+    } catch (error) {
+      this.ui.logger.error('One of the "devServerStarted" hooks failed')
+      this.ui.logger.fatal(error)
+    }
 
-      displayMessage.render()
-    },
-    'postServerReady'
-  )
+    displayMessage.render()
+  }
 
   /**
    * Type guard to check if child process message is from hot-hook

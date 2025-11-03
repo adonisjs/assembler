@@ -408,7 +408,10 @@ test.group('DevServer', () => {
 
     await fs.create(
       'bin/server.ts',
-      `process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })`
+      `
+        process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })
+        const keepAlive = setInterval(() => {}, 5000)
+      `
     )
     await fs.create('.env', 'PORT=3340')
 
@@ -460,6 +463,8 @@ test.group('DevServer', () => {
 
     await sleep(1000)
     const logs = devServer.ui.logger.getLogs()
+
+    console.log(logs)
 
     const indexGenerationLogs = logs.filter(({ message }) =>
       message.includes('.adonisjs/server/controllers.ts')

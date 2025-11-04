@@ -531,7 +531,11 @@ export class DevServer {
       this.#handleFileChange(relativePath, absolutePath, 'add')
     })
     this.#hooks.add('fileChanged', (relativePath, absolutePath, info) => {
-      if (info.hotReloaded) {
+      /**
+       * Rescan routes when the file is hot-reloaded or when the file is
+       * not part of the imports tree, but meant to be hot-reloaded
+       */
+      if (info.hotReloaded || (!info.hotReloaded && !info.fullReload)) {
         this.#reScanRoutes(absolutePath)
       }
       this.#handleFileChange(relativePath, absolutePath, 'update', info)

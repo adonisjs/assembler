@@ -8,6 +8,7 @@
  */
 
 import { join } from 'node:path'
+import { resolve } from 'import-meta-resolve'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isRelative } from './utils.ts'
 
@@ -40,7 +41,7 @@ export class PathsResolver {
    * The resolver function used to resolve import specifiers
    */
   #resolver: (specifier: string, parentPath: string) => string = (specifier, parentPath) =>
-    import.meta.resolve(specifier, parentPath)
+    resolve(specifier, parentPath)
 
   constructor(appRoot: string) {
     this.#appRoot = pathToFileURL(join(appRoot, 'index.js')).href

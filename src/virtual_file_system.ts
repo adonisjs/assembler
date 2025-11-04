@@ -87,6 +87,32 @@ export class VirtualFileSystem {
   }
 
   /**
+   * Currently the PathsResolver relies on a non-standard way of resolving
+   * absolute paths or paths with subpath imports. Because of which, the
+   * on-disk file could be TypeScript, while the resolved filepath is
+   * JavaScript.
+   *
+   * To overcome this limitation, we start by first looking for a `.ts` file
+   * (because of high probability) and then look for `.js` file
+   */
+  async #readTSOrJSFile(filePath: string): Promise<string> {
+    if (filePath.endsWith('.js')) {
+      try {
+        const contents = await readFile(filePath.replace(/\.js$/, '.ts'), 'utf-8')
+        debug('read as TypeScript file "%s"', filePath)
+        return contents
+      } catch (error) {
+        if (error.code === 'ENOENT') {
+          return readFile(filePath, 'utf-8')
+        }
+        throw error
+      }
+    }
+
+    return readFile(filePath, 'utf-8')
+  }
+
+  /**
    * Scans the filesystem to collect the files. Newly files must
    * be added via the ".add" method.
    *
@@ -236,7 +262,7 @@ export class VirtualFileSystem {
       return cached
     }
 
-    const fileContents = await readFile(filePath, 'utf-8')
+    const fileContents = await this.#readTSOrJSFile(filePath)
     debug('parsing "%s" file to AST', filePath)
 
     this.#astCache.set(filePath, parse(Lang.TypeScript, fileContents).root())

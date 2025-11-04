@@ -397,3 +397,21 @@ export interface ShortcutsManagerOptions {
   /** Callback functions for different shortcut actions */
   callbacks: KeyboardShortcutsCallbacks
 }
+
+export type AdonisJSServerReadyMessage = {
+  isAdonisJS: true
+  environment: 'web'
+  port: number
+  host: string
+  duration?: [number, number]
+}
+
+export type AdonisJSRoutesSharedMessage = {
+  isAdonisJS: true
+  routesFileLocation: string
+}
+
+export type HotHookMessage =
+  | { type: 'hot-hook:full-reload'; path: string; shouldBeReloadable?: boolean }
+  | { type: 'hot-hook:invalidated'; paths: string[] }
+  | { type: 'hot-hook:file-changed'; path: string; action: 'change' | 'add' | 'unlink' }

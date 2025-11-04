@@ -21,7 +21,12 @@ import { RuntimeException } from '@poppinss/utils/exception'
 import debug from './debug.ts'
 import { FileSystem } from './file_system.ts'
 import { ShortcutsManager } from './shortcuts_manager.ts'
-import type { DevServerOptions } from './types/common.ts'
+import type {
+  AdonisJSRoutesSharedMessage,
+  AdonisJSServerReadyMessage,
+  DevServerOptions,
+  HotHookMessage,
+} from './types/common.ts'
 import { IndexGenerator } from './index_generator/main.ts'
 import { RoutesScanner } from './code_scanners/routes_scanner/main.ts'
 import { getPort, loadHooks, readTsConfig, runNode, throttle, watch } from './utils.ts'
@@ -250,13 +255,7 @@ export class DevServer {
    * @param message - Unknown message from child process
    * @returns True if message is an AdonisJS ready message
    */
-  #isAdonisJSReadyMessage(message: unknown): message is {
-    isAdonisJS: true
-    environment: 'web'
-    port: number
-    host: string
-    duration?: [number, number]
-  } {
+  #isAdonisJSReadyMessage(message: unknown): message is AdonisJSServerReadyMessage {
     return (
       message !== null &&
       typeof message === 'object' &&
@@ -275,10 +274,7 @@ export class DevServer {
    * @param message - Unknown message from child process
    * @returns True if message contains routes file location
    */
-  #isAdonisJSRoutesMessage(message: unknown): message is {
-    isAdonisJS: true
-    routesFileLocation: string
-  } {
+  #isAdonisJSRoutesMessage(message: unknown): message is AdonisJSRoutesSharedMessage {
     return message !== null && typeof message === 'object' && 'routesFileLocation' in message
   }
 
@@ -330,12 +326,7 @@ export class DevServer {
    * @param message - Unknown message from child process
    * @returns True if message is a hot-hook message
    */
-  #isHotHookMessage(message: unknown): message is {
-    type: 'hot-hook:file-changed' | 'hot-hook:invalidated' | 'hot-hook:full-reload'
-    path: string
-    action?: 'add' | 'change' | 'unlink'
-    paths?: string[]
-  } {
+  #isHotHookMessage(message: unknown): message is HotHookMessage {
     return (
       message !== null &&
       typeof message === 'object' &&
@@ -655,26 +646,31 @@ export class DevServer {
           await this.#processRoutes(message.routesFileLocation)
         } else if (this.#mode === 'hmr' && this.#isHotHookMessage(message)) {
           debug('received hot-hook message %O', message)
-          const absolutePath = message.path ? string.toUnixSlash(message.path) : ''
-          const relativePath = relative(this.cwdPath, absolutePath)
 
           if (message.type === 'hot-hook:file-changed') {
-            const { action } = message
+            const absolutePath = message.path ? string.toUnixSlash(message.path) : ''
+            const relativePath = relative(this.cwdPath, absolutePath)
 
-            if (action === 'add') {
+            if (message.action === 'add') {
               this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
-            } else if (action === 'change') {
+            } else if (message.action === 'change') {
               this.#hooks
                 .runner('fileChanged')
                 .run(relativePath, absolutePath, DevServer.#HOT_HOOK_CHANGE_INFO, this)
-            } else if (action === 'unlink') {
+            } else if (message.action === 'unlink') {
               this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
             }
           } else if (message.type === 'hot-hook:full-reload') {
+            const absolutePath = message.path ? string.toUnixSlash(message.path) : ''
+            const relativePath = relative(this.cwdPath, absolutePath)
+
             this.#hooks
               .runner('fileChanged')
               .run(relativePath, absolutePath, DevServer.#HOT_HOOK_FULL_RELOAD_INFO, this)
           } else if (message.type === 'hot-hook:invalidated') {
+            const absolutePath = message.paths[0] ? string.toUnixSlash(message.paths[0]) : ''
+            const relativePath = relative(this.cwdPath, absolutePath)
+
             this.#hooks
               .runner('fileChanged')
               .run(relativePath, absolutePath, DevServer.#HOT_HOOK_INVALIDATED_INFO, this)

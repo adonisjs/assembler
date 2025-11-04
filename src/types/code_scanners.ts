@@ -189,12 +189,10 @@ export type RoutesListItem = {
   domain: string
   /** HTTP methods accepted by this route */
   methods: string[]
-  handler:
-    | Function
-    | {
-        method: string
-        importExpression: string | null
-      }
+  handler?: {
+    method: string
+    importExpression: string | null
+  }
   /** Parsed route tokens for URI construction */
   tokens: { val: string; old: string; type: 0 | 1 | 2 | 3; end: string }[]
 }

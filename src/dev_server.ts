@@ -454,9 +454,14 @@ export class DevServer {
       return
     }
 
-    const invalidated = await this.#routesScanner.invalidate(filePath)
-    if (invalidated) {
-      await this.#hooks.runner('routesScanned').run(this, this.#routesScanner)
+    try {
+      const invalidated = await this.#routesScanner.invalidate(filePath)
+      if (invalidated) {
+        await this.#hooks.runner('routesScanned').run(this, this.#routesScanner)
+      }
+    } catch (error) {
+      this.ui.logger.error('Unable to rescan routes because of the following error')
+      this.ui.logger.fatal(error)
     }
   }
 
@@ -477,44 +482,49 @@ export class DevServer {
    * })
    */
   #processRoutes = throttle(async (routesFileLocation: string) => {
-    const scanRoutes = this.#hooks.has('routesScanning') || this.#hooks.has('routesScanned')
-    const shareRoutes = this.#hooks.has('routesCommitted')
+    try {
+      const scanRoutes = this.#hooks.has('routesScanning') || this.#hooks.has('routesScanned')
+      const shareRoutes = this.#hooks.has('routesCommitted')
 
-    /**
-     * Remove the routes file and return early when there are no
-     * hooks listening for routes related events
-     */
-    if (!scanRoutes && !shareRoutes) {
-      unlink(routesFileLocation).catch(() => {})
-      return
-    }
-
-    /**
-     * Read routes JSON, parse it and remove the file
-     */
-    const routesJSON = await readFile(routesFileLocation, 'utf-8')
-    const routesList = JSON.parse(routesJSON)
-    unlink(routesFileLocation).catch(() => {})
-
-    /**
-     * Notify about the existence of routes
-     */
-    if (shareRoutes) {
-      await this.#hooks.runner('routesCommitted').run(this, routesList)
-    }
-
-    /**
-     * Scan routes and notify scanning and scanned hooks
-     */
-    if (scanRoutes) {
-      this.#routesScanner = new RoutesScanner(this.cwdPath, [])
-      await this.#hooks.runner('routesScanning').run(this, this.#routesScanner)
-
-      for (const domain of Object.keys(routesList)) {
-        await this.#routesScanner.scan(routesList[domain])
+      /**
+       * Remove the routes file and return early when there are no
+       * hooks listening for routes related events
+       */
+      if (!scanRoutes && !shareRoutes) {
+        unlink(routesFileLocation).catch(() => {})
+        return
       }
 
-      await this.#hooks.runner('routesScanned').run(this, this.#routesScanner)
+      /**
+       * Read routes JSON, parse it and remove the file
+       */
+      const routesJSON = await readFile(routesFileLocation, 'utf-8')
+      const routesList = JSON.parse(routesJSON)
+      unlink(routesFileLocation).catch(() => {})
+
+      /**
+       * Notify about the existence of routes
+       */
+      if (shareRoutes) {
+        await this.#hooks.runner('routesCommitted').run(this, routesList)
+      }
+
+      /**
+       * Scan routes and notify scanning and scanned hooks
+       */
+      if (scanRoutes) {
+        this.#routesScanner = new RoutesScanner(this.cwdPath, [])
+        await this.#hooks.runner('routesScanning').run(this, this.#routesScanner)
+
+        for (const domain of Object.keys(routesList)) {
+          await this.#routesScanner.scan(routesList[domain])
+        }
+
+        await this.#hooks.runner('routesScanned').run(this, this.#routesScanner)
+      }
+    } catch (error) {
+      this.ui.logger.error('Unable to process and scan routes because of the following error')
+      this.ui.logger.fatal(error)
     }
   }, 'processRoutes')
 

@@ -243,7 +243,7 @@ export class RoutesScanner {
    */
   #processRouteWithoutController(route: RoutesListItem) {
     if (!route.name) {
-      debug(`skipping route "%s" as it does not have a name`, route.name)
+      debug(`skipping route "%s" as it does not have a name`, route.pattern)
       return
     }
 
@@ -275,7 +275,7 @@ export class RoutesScanner {
      * the case where someone imports the controllers and uses it by
      * reference
      */
-    if (!route.handler.importExpression) {
+    if (!route.handler || !route.handler.importExpression) {
       return this.#processRouteWithoutController(route)
     }
 

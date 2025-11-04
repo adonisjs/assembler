@@ -1424,4 +1424,81 @@ test.group('Routes scanner', () => {
       ]
     `)
   })
+
+  test('do not fail when route does not have a controller based handler', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.createJson('package.json', {
+      imports: {
+        '#controllers/*': './app/controllers/*.ts',
+      },
+    })
+
+    const source = string.toUnixSlash(fs.basePath)
+    const scanner = new RoutesScanner(source, [])
+    scanner.pathsResolver.use((specifier) => {
+      const [namespace, ...rest] = specifier.split('/')
+      const fileName = rest.pop()
+      const resolvedPath = namespace === '#controllers' ? './app/controllers' : ''
+      return new URL([resolvedPath, ...rest, `${fileName}.ts`].join('/'), fs.baseUrl).href
+    })
+
+    await scanner.scan([
+      {
+        name: 'users.index',
+        domain: 'root',
+        methods: ['GET', 'HEAD'],
+        pattern: '/users',
+        tokens: [],
+      },
+    ])
+
+    assert.deepEqual(scanner.getControllers(), [])
+    assert.snapshot(scanner.getScannedRoutes()).matchInline(`
+      [
+        {
+          "domain": "root",
+          "methods": [
+            "GET",
+            "HEAD",
+          ],
+          "name": "users.index",
+          "pattern": "/users",
+          "request": undefined,
+          "response": undefined,
+          "tokens": [],
+        },
+      ]
+    `)
+  })
+
+  test('skip route if it does not have a name', async ({ assert, fs }) => {
+    await fs.createJson('package.json', {
+      imports: {
+        '#controllers/*': './app/controllers/*.ts',
+      },
+    })
+
+    const source = string.toUnixSlash(fs.basePath)
+    const scanner = new RoutesScanner(source, [])
+    scanner.pathsResolver.use((specifier) => {
+      const [namespace, ...rest] = specifier.split('/')
+      const fileName = rest.pop()
+      const resolvedPath = namespace === '#controllers' ? './app/controllers' : ''
+      return new URL([resolvedPath, ...rest, `${fileName}.ts`].join('/'), fs.baseUrl).href
+    })
+
+    await scanner.scan([
+      {
+        domain: 'root',
+        methods: ['GET', 'HEAD'],
+        pattern: '/users',
+        tokens: [],
+      },
+    ])
+
+    assert.deepEqual(scanner.getControllers(), [])
+    assert.snapshot(scanner.getScannedRoutes()).matchInline('[]')
+  })
 })

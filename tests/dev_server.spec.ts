@@ -293,7 +293,7 @@ test.group('DevServer', () => {
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(
       'bin/server.ts',
-      `process.send({ type: 'hot-hook:invalidated', path: '${normalizePathForWindows(join(fs.basePath, 'start/routes.ts'))}' });`
+      `process.send({ type: 'hot-hook:invalidated', paths: ['${normalizePathForWindows(join(fs.basePath, 'start/routes.ts'))}'] });`
     )
     await fs.create('start/routes.ts', ``)
     await fs.create('.env', 'PORT=3338')

@@ -73,7 +73,7 @@ export class PathsResolver {
    * const path = resolver.resolve('#app/models/user')
    * const path2 = resolver.resolve('@/utils/helper')
    */
-  resolve(specifier: string) {
+  resolve(specifier: string, rewriteAliasImportExtension: boolean = false) {
     if (isRelative(specifier)) {
       throw new Error('Cannot resolve relative paths using PathsResolver')
     }
@@ -84,7 +84,21 @@ export class PathsResolver {
       return cached
     }
 
-    this.#resolvedPaths[cacheKey] = fileURLToPath(this.#resolver(specifier, this.#appRoot))
+    /**
+     * Currently the PathsResolver relies on a non-standard way of resolving
+     * absolute paths or paths with subpath imports. Because of which, the
+     * on-disk file could be TypeScript, while the resolved filepath is
+     * JavaScript.
+     *
+     * To overcome this limitation, we rewrite the file extension to ".ts" when
+     * the import specifier starts with a "#".
+     */
+    let resolvedPath = fileURLToPath(this.#resolver(specifier, this.#appRoot))
+    if (rewriteAliasImportExtension && specifier.startsWith('#') && resolvedPath.endsWith('.js')) {
+      resolvedPath = resolvedPath.replace(/\.js$/, '.ts')
+    }
+
+    this.#resolvedPaths[cacheKey] = resolvedPath
     return this.#resolvedPaths[cacheKey]
   }
 }

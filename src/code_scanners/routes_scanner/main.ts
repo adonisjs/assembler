@@ -202,7 +202,7 @@ export class RoutesScanner {
     return {
       name,
       method: method ?? 'handle',
-      path: string.toUnixSlash(this.pathsResolver.resolve(specifier)),
+      path: string.toUnixSlash(this.pathsResolver.resolve(specifier, true)),
       import: {
         specifier,
         type: 'default',

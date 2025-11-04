@@ -10,10 +10,11 @@
 import { test } from '@japa/runner'
 import string from '@poppinss/utils/string'
 import { readTsConfig } from '../../src/utils.ts'
+import { fileURLToPath } from 'node:url'
 
 test.group('Helpers | Read TSConfig', () => {
   test('return null when file is missing', async ({ fs, assert }) => {
-    assert.isNull(readTsConfig(string.toUnixSlash(fs.basePath)))
+    assert.isNull(readTsConfig(string.toUnixSlash(fileURLToPath(fs.baseUrl))))
   })
 
   test('read tsconfig file', async ({ assert, fs }) => {
@@ -22,7 +23,7 @@ test.group('Helpers | Read TSConfig', () => {
     })
     await fs.create('foo.ts', '')
 
-    const result = readTsConfig(string.toUnixSlash(fs.basePath))!
+    const result = readTsConfig(string.toUnixSlash(fileURLToPath(fs.baseUrl)))!
     assert.deepEqual(result.config.include, ['**/*'])
   })
 
@@ -35,7 +36,7 @@ test.group('Helpers | Read TSConfig', () => {
     })
     await fs.create('foo.ts', '')
 
-    const result = readTsConfig(string.toUnixSlash(fs.basePath))!
+    const result = readTsConfig(string.toUnixSlash(fileURLToPath(fs.baseUrl)))!
     assert.deepEqual(result.config.include, ['**/*', '.adonisjs/server/**/*'])
   })
 })

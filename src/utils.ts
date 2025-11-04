@@ -100,16 +100,17 @@ export function readTsConfig(cwd: string): TsConfigResult | null {
     const tsConfig = parseTsconfig(tsConfigPath)
     if (tsConfig.include) {
       tsConfig.include = tsConfig.include.map((resolvedPath) => {
-        return resolvedPath.replace(`${cwd}/`, '')
+        return resolvedPath.replace(cwd, '')
       })
     }
 
     if (tsConfig.exclude) {
       tsConfig.exclude = tsConfig.exclude.map((resolvedPath) => {
-        return resolvedPath.replace(`${cwd}/`, '')
+        return resolvedPath.replace(cwd, '')
       })
     }
 
+    debug('read tsconfig %O', tsConfig)
     return {
       path: tsConfigPath,
       config: tsConfig,

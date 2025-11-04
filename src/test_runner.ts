@@ -8,7 +8,6 @@
  */
 
 import { join } from 'node:path/posix'
-import type tsStatic from 'typescript'
 import { cliui } from '@poppinss/cliui'
 import type Hooks from '@poppinss/hooks'
 import { fileURLToPath } from 'node:url'
@@ -21,7 +20,7 @@ import debug from './debug.ts'
 import { FileSystem } from './file_system.ts'
 import type { TestRunnerOptions } from './types/common.ts'
 import { IndexGenerator } from './index_generator/main.ts'
-import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
+import { getPort, loadHooks, readTsConfig, runNode, throttle, watch } from './utils.ts'
 import {
   type HookParams,
   type CommonHooks,
@@ -433,8 +432,8 @@ export class TestRunner {
    * @param ts - TypeScript module reference for parsing configuration
    * @param options - Watch options including polling mode for file system monitoring
    */
-  async runAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
-    const tsConfig = parseConfig(this.cwd, ts)
+  async runAndWatch(options?: { poll: boolean }) {
+    const tsConfig = readTsConfig(this.cwdPath)
     if (!tsConfig) {
       this.#onError?.(new RuntimeException('Unable to parse tsconfig file'))
       return

@@ -8,9 +8,9 @@
  */
 
 import picomatch from 'picomatch'
-import type tsStatic from 'typescript'
 import { relative } from 'node:path/posix'
 import string from '@poppinss/utils/string'
+import { type TsConfigResult } from 'get-tsconfig'
 
 import debug from './debug.ts'
 import { memoize } from './utils.ts'
@@ -49,7 +49,7 @@ export class FileSystem {
    * Referenced to the parsed ts config file. We use it to read the includes,
    * excludes and pre-scanned files.
    */
-  #tsConfig: tsStatic.ParsedCommandLine
+  #tsConfig: TsConfigResult
 
   /**
    * Set of pre-scanned typeScript files provided by tsconfig
@@ -239,14 +239,14 @@ export class FileSystem {
    * @param tsConfig - Parsed TypeScript configuration
    * @param rcFile - AdonisJS RC file configuration
    */
-  constructor(cwd: string, tsConfig: tsStatic.ParsedCommandLine, rcFile: AssemblerRcFile) {
+  constructor(cwd: string, tsConfig: TsConfigResult, rcFile: AssemblerRcFile) {
     this.#cwd = cwd
     this.#tsConfig = tsConfig
 
-    const files = tsConfig.fileNames
+    const files = tsConfig.config.files ?? []
     const metaFiles = rcFile.metaFiles ?? []
     const testSuites = rcFile.suites ?? []
-    const outDir = tsConfig.raw.compilerOptions?.outDir
+    const outDir = tsConfig.config.compilerOptions?.outDir
 
     /**
      * Register files we know ahead of time
@@ -258,9 +258,9 @@ export class FileSystem {
     /**
      * Compute includes and excludes
      */
-    this.#includes = tsConfig.raw.include || DEFAULT_INCLUDES
+    this.#includes = tsConfig.config.include || DEFAULT_INCLUDES
     this.#excludes = ALWAYS_EXCLUDE.concat(
-      tsConfig.raw.exclude || (outDir ? DEFAULT_EXCLUDES.concat(outDir) : DEFAULT_EXCLUDES)
+      tsConfig.config.exclude || (outDir ? DEFAULT_EXCLUDES.concat(outDir) : DEFAULT_EXCLUDES)
     )
 
     /**
@@ -317,10 +317,13 @@ export class FileSystem {
     ) {
       return true
     }
-    if (this.#tsConfig.options.allowJs && relativePath.endsWith('.js')) {
+    if (this.#tsConfig.config.compilerOptions?.allowJs && relativePath.endsWith('.js')) {
       return true
     }
-    if (this.#tsConfig.options.resolveJsonModule && relativePath.endsWith('.json')) {
+    if (
+      this.#tsConfig.config.compilerOptions?.resolveJsonModule &&
+      relativePath.endsWith('.json')
+    ) {
       return true
     }
     return false

@@ -7,11 +7,10 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript'
 import { test } from '@japa/runner'
 import { join } from 'node:path/posix'
 
-import { parseConfig } from '../src/utils.ts'
+import { readTsConfig } from '../src/utils.ts'
 import { FileSystem } from '../src/file_system.ts'
 
 const BASE_PATH = join(import.meta.dirname, '..')
@@ -65,9 +64,9 @@ test.group('File system', () => {
       },
     ])
     .run(({ assert }, { input, matchType }) => {
-      const config = parseConfig(BASE_PATH, ts)!
-      config.raw.include = ['**/*']
-      config.raw.exclude = ['node_modules/**', 'public/**', 'schemas/**']
+      const config = readTsConfig(BASE_PATH)!
+      config.config.include = ['**/*']
+      config.config.exclude = ['node_modules/**', 'public/**', 'schemas/**']
 
       const fs = new FileSystem(BASE_PATH, config, {
         metaFiles: [
@@ -145,9 +144,9 @@ test.group('File system', () => {
       },
     ])
     .run(({ assert }, { input, result }) => {
-      const config = parseConfig(BASE_PATH, ts)!
-      config.raw.include = ['**/*']
-      config.raw.exclude = ['node_modules/**', 'public/(js|css)']
+      const config = readTsConfig(BASE_PATH)!
+      config.config.include = ['**/*']
+      config.config.exclude = ['node_modules/**', 'public/(js|css)']
 
       const fs = new FileSystem(BASE_PATH, config, {
         metaFiles: [
@@ -172,20 +171,22 @@ test.group('File system', () => {
     })
 
   test('do not consider .js files until allowJS flag is enabled', ({ assert }) => {
-    const config = parseConfig(BASE_PATH, ts)!
+    const config = readTsConfig(BASE_PATH)!
     const fs = new FileSystem(BASE_PATH, config, {})
     assert.isNull(fs.inspect(join(BASE_PATH, 'src/foo.js'), 'src/foo.js'))
 
-    config.options.allowJs = true
+    config.config.compilerOptions = config.config.compilerOptions ?? {}
+    config.config.compilerOptions.allowJs = true
     assert.equal(fs.inspect(join(BASE_PATH, 'src/foo.js'), 'src/foo.js')!.fileType, 'script')
   })
 
   test('do not consider .json files until resolveJsonModule flag is enabled', ({ assert }) => {
-    const config = parseConfig(BASE_PATH, ts)!
+    const config = readTsConfig(BASE_PATH)!
     const fs = new FileSystem(BASE_PATH, config, {})
     assert.isNull(fs.inspect(join(BASE_PATH, 'src/foo.json'), 'src/foo.json'))
 
-    config.options.resolveJsonModule = true
+    config.config.compilerOptions = config.config.compilerOptions ?? {}
+    config.config.compilerOptions.resolveJsonModule = true
     assert.equal(fs.inspect(join(BASE_PATH, 'src/foo.json'), 'src/foo.json')!.fileType, 'script')
   })
 })

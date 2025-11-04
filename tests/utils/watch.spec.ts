@@ -7,11 +7,10 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript'
 import chokidar from 'chokidar'
 import { test } from '@japa/runner'
 import string from '@poppinss/utils/string'
-import { parseConfig } from '../../src/utils.ts'
+import { readTsConfig } from '../../src/utils.ts'
 import { FileSystem } from '../../src/file_system.ts'
 
 test.group('Watch', () => {
@@ -30,19 +29,15 @@ test.group('Watch', () => {
     await fs.create('node_modules/colors/index.ts', '')
     await fs.create('.git/refs/heads/foo', '')
 
-    const fileSystem = new FileSystem(
-      string.toUnixSlash(fs.basePath),
-      parseConfig(fs.basePath, ts)!,
-      {
-        suites: [],
-        metaFiles: [
-          {
-            pattern: 'public/**/*.edge',
-            reloadServer: false,
-          },
-        ],
-      }
-    )
+    const fileSystem = new FileSystem(string.toUnixSlash(fs.basePath), readTsConfig(fs.basePath)!, {
+      suites: [],
+      metaFiles: [
+        {
+          pattern: 'public/**/*.edge',
+          reloadServer: false,
+        },
+      ],
+    })
 
     const watcher = chokidar.watch(['.'], {
       ignored(file, stats) {

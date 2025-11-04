@@ -7,7 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import type tsStatic from 'typescript'
 import { cliui } from '@poppinss/cliui'
 import type Hooks from '@poppinss/hooks'
 import prettyHrtime from 'pretty-hrtime'
@@ -25,7 +24,7 @@ import { ShortcutsManager } from './shortcuts_manager.ts'
 import type { DevServerOptions } from './types/common.ts'
 import { IndexGenerator } from './index_generator/main.ts'
 import { RoutesScanner } from './code_scanners/routes_scanner/main.ts'
-import { getPort, loadHooks, parseConfig, runNode, throttle, watch } from './utils.ts'
+import { getPort, loadHooks, readTsConfig, runNode, throttle, watch } from './utils.ts'
 import {
   type HookParams,
   type RouterHooks,
@@ -559,8 +558,8 @@ export class DevServer {
    *   console.error('Failed to initialize dev server')
    * }
    */
-  async #init(ts: typeof tsStatic, mode: 'hmr' | 'watch' | 'static'): Promise<boolean> {
-    const tsConfig = parseConfig(this.cwd, ts)
+  async #init(mode: 'hmr' | 'watch' | 'static'): Promise<boolean> {
+    const tsConfig = readTsConfig(this.cwdPath)
     if (!tsConfig) {
       this.#onError?.(new RuntimeException('Unable to parse tsconfig file'))
       return false
@@ -764,8 +763,8 @@ export class DevServer {
    * const devServer = new DevServer(cwd, { hmr: true, hooks: [] })
    * await devServer.start(ts)
    */
-  async start(ts: typeof tsStatic) {
-    const initiated = await this.#init(ts, this.options.hmr ? 'hmr' : 'static')
+  async start() {
+    const initiated = await this.#init(this.options.hmr ? 'hmr' : 'static')
     if (!initiated) {
       return
     }
@@ -804,8 +803,8 @@ export class DevServer {
    * const devServer = new DevServer(cwd, { hooks: [] })
    * await devServer.startAndWatch(ts, { poll: false })
    */
-  async startAndWatch(ts: typeof tsStatic, options?: { poll: boolean }) {
-    const initiated = await this.#init(ts, 'watch')
+  async startAndWatch(options?: { poll: boolean }) {
+    const initiated = await this.#init('watch')
     if (!initiated) {
       return
     }

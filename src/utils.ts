@@ -20,6 +20,7 @@ import { importDefault } from '@poppinss/utils'
 import { copyFile, mkdir } from 'node:fs/promises'
 import { EnvLoader, EnvParser } from '@adonisjs/env'
 import chokidar, { type ChokidarOptions } from 'chokidar'
+import { parseTsconfig, type TsConfigResult } from 'get-tsconfig'
 import { basename, dirname, isAbsolute, join, relative } from 'node:path'
 
 import debug from './debug.ts'
@@ -38,6 +39,8 @@ const DEFAULT_NODE_ARGS = ['--import=@poppinss/ts-exec', '--enable-source-maps']
  * This function reads and parses the tsconfig.json file from the given directory,
  * handling diagnostic errors and returning a parsed configuration that can be
  * used by other TypeScript operations.
+ *
+ * @deprecated While we are experimenting with the readTsConfig method
  *
  * @param cwd - The current working directory URL or string path
  * @param ts - TypeScript module reference
@@ -87,6 +90,33 @@ export function parseConfig(
   }
 
   return parsedConfig
+}
+
+export function readTsConfig(cwd: string): TsConfigResult | null {
+  const tsConfigPath = join(cwd, 'tsconfig.json')
+  debug('reading config file from location "%s"', tsConfigPath)
+
+  try {
+    const tsConfig = parseTsconfig(tsConfigPath)
+    if (tsConfig.include) {
+      tsConfig.include = tsConfig.include.map((resolvedPath) => {
+        return resolvedPath.replace(`${cwd}/`, '')
+      })
+    }
+
+    if (tsConfig.exclude) {
+      tsConfig.exclude = tsConfig.exclude.map((resolvedPath) => {
+        return resolvedPath.replace(`${cwd}/`, '')
+      })
+    }
+
+    return {
+      path: tsConfigPath,
+      config: tsConfig,
+    }
+  } catch {
+    return null
+  }
 }
 
 /**

@@ -7,7 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import ts from 'typescript'
 import { test } from '@japa/runner'
 import { join } from 'node:path/posix'
 import { cliui } from '@poppinss/cliui'
@@ -69,7 +68,7 @@ test.group('DevServer', () => {
     devServer.ui = cliui()
     devServer.ui.switchMode('raw')
 
-    await devServer.start(ts)
+    await devServer.start()
     cleanup(async () => devServer.close())
 
     assert.deepEqual(devServer.ui.logger.getLogs(), [
@@ -147,7 +146,7 @@ test.group('DevServer', () => {
     devServer.ui = cliui()
     devServer.ui.switchMode('raw')
 
-    await devServer.startAndWatch(ts)
+    await devServer.startAndWatch()
     cleanup(() => devServer.close())
 
     assert.deepEqual(devServer.ui.logger.getLogs(), [
@@ -222,7 +221,7 @@ test.group('DevServer', () => {
     devServer.ui = cliui()
     devServer.ui.switchMode('raw')
 
-    await devServer.startAndWatch(ts)
+    await devServer.startAndWatch()
     cleanup(() => devServer.close())
 
     await sleep(1000)
@@ -275,7 +274,7 @@ test.group('DevServer', () => {
     })
 
     devServer.ui.switchMode('raw')
-    devServer.start(ts)
+    devServer.start()
     await sleep(1000)
 
     await devServer.close()
@@ -306,7 +305,7 @@ test.group('DevServer', () => {
     })
 
     devServer.ui.switchMode('raw')
-    devServer.start(ts)
+    devServer.start()
     await sleep(1000)
 
     await devServer.close()
@@ -335,7 +334,7 @@ test.group('DevServer', () => {
     })
 
     devServer.ui.switchMode('raw')
-    devServer.start(ts)
+    devServer.start()
     await sleep(1000)
 
     await devServer.close()
@@ -391,7 +390,7 @@ test.group('DevServer', () => {
       error = startError
     })
 
-    await devServer.startAndWatch(ts)
+    await devServer.startAndWatch()
     cleanup(() => devServer.close())
 
     assert.instanceOf(error, RuntimeException)
@@ -441,7 +440,7 @@ test.group('DevServer', () => {
     devServer.ui = cliui()
     devServer.ui.switchMode('raw')
 
-    await devServer.start(ts)
+    await devServer.start()
     cleanup(() => devServer.close())
 
     assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
@@ -510,7 +509,7 @@ test.group('DevServer', () => {
     devServer.ui = cliui()
     devServer.ui.switchMode('raw')
 
-    await devServer.startAndWatch(ts)
+    await devServer.startAndWatch()
     cleanup(() => devServer.close())
 
     assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
@@ -589,7 +588,7 @@ test.group('DevServer', () => {
     devServer.ui = cliui()
     devServer.ui.switchMode('raw')
 
-    await devServer.start(ts)
+    await devServer.start()
     cleanup(async () => devServer.close())
 
     assert.deepEqual(devServer.ui.logger.getLogs(), [

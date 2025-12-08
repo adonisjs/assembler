@@ -65,11 +65,11 @@ export async function extractValidators(
    * Inspect class methods and find the scope down to the method
    * we are currently inspecting
    */
-  const method = inspectClassMethods(controllerClass).find((e) => {
-    return e.find({
-      rule: { kind: 'property_identifier', regex: `\\b${controller.method}\\b` },
-    })
+  const method = inspectClassMethods(controllerClass).find((methodNode) => {
+    const methodName = methodNode.find({ rule: { kind: 'property_identifier' } })
+    return methodName?.text() === controller.method
   })
+
   if (!method) {
     debug(`Unable to find "%s" method in "%s"`, controller.method, controller.import.specifier)
     return

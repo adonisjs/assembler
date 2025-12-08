@@ -407,4 +407,56 @@ test.group('Validator extractor', () => {
       ]
     )
   })
+
+  test('do not match method name when it appear in body of another method', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.create(
+      'app/controllers/auth_controller.ts',
+      `
+      import { loginValidator, signupValidator } from '#validators/user'
+
+      export default class AuthController {
+        async register({ request, auth }: HttpContext) {
+          const payload = await request.validateUsing(signupValidator)
+          const user = await User.create({ ...payload })
+
+          // This method body contains the word "login" which should NOT
+          // cause the extractor to match this method when looking for the "login" method
+          await auth.use('web').login(user)
+
+          return { success: true }
+        }
+
+        async login({ request, auth }: HttpContext) {
+          const payload = await request.validateUsing(loginValidator)
+          const user = await User.verifyCredentials(payload.email, payload.password)
+          await auth.use('web').login(user)
+        }
+      }
+    `
+    )
+
+    // Extract validators for the `login` method
+    // Should return loginValidator, not signupValidator
+    assert.deepEqual(
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
+        path: join(fs.basePath, 'app/controllers/auth_controller.ts'),
+        method: 'login',
+        name: 'AuthController',
+        import: {
+          type: 'default',
+          value: 'AuthController',
+          specifier: '#controllers/auth_controller',
+        },
+      }),
+      [
+        {
+          import: { specifier: '#validators/user', type: 'named', value: 'loginValidator' },
+          name: 'loginValidator',
+        },
+      ]
+    )
+  })
 })

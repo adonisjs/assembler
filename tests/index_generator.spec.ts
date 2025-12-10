@@ -326,4 +326,39 @@ test.group('Index generator', () => {
       "
     `)
   })
+
+  test('skip segments from generated keys', async ({ assert, fs }) => {
+    const outputPath = '.adonisjs/backend/controllers.ts'
+    const source = string.toUnixSlash(fs.basePath)
+
+    await fs.create('app/identity/controllers/auth_controller.ts', '')
+    await fs.create('app/identity/controllers/users_controller.ts', '')
+    await fs.create('app/core/controllers/health_controller.ts', '')
+
+    const transformer = new IndexGenerator(source, ui.logger)
+    transformer.add('controllers', {
+      as: 'barrelFile',
+      exportName: 'controllers',
+      output: outputPath,
+      source: 'app',
+      glob: ['**/controllers/*_controller.ts'],
+      importAlias: '#app',
+      removeSuffix: 'controller',
+      skipSegments: ['controllers'],
+    })
+    await transformer.generate()
+
+    assert.snapshot(await fs.contents(outputPath)).matchInline(`
+      "export const controllers = {
+        core: {
+          Health: () => import('#app/core/controllers/health_controller'),
+        },
+        identity: {
+          Auth: () => import('#app/identity/controllers/auth_controller'),
+          Users: () => import('#app/identity/controllers/users_controller'),
+        },
+      }
+      "
+    `)
+  })
 })

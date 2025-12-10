@@ -164,8 +164,13 @@ export class IndexGeneratorSource {
    */
   #createBarrelFileKeyGenerator(config: IndexGeneratorSourceConfig) {
     return function (key: string) {
-      const paths = key.split('/')
+      let paths = key.split('/')
       let baseName = new StringBuilder(paths.pop()!)
+
+      if (config.skipSegments?.length) {
+        paths = paths.filter((p) => !config.skipSegments!.includes(p))
+      }
+
       if (config.computeBaseName) {
         baseName = config.computeBaseName(baseName)
       } else {

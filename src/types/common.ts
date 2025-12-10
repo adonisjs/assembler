@@ -59,6 +59,7 @@ export type IndexGeneratorSourceConfig = (
   glob?: string[]
   importAlias?: string
   removeSuffix?: string
+  skipSegments?: string[]
 }
 
 /**

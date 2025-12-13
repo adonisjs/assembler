@@ -14,7 +14,7 @@ import { setTimeout as sleep } from 'node:timers/promises'
 import { RuntimeException } from '@poppinss/utils/exception'
 
 import { DevServer } from '../index.ts'
-import { normalizePathForWindows, setupFakeAdonisproject } from './helpers.ts'
+import { normalizePathForWindows, setupFakeAdonisproject, waitForLogsCount } from './helpers.ts'
 
 test.group('DevServer', () => {
   test('start in static mode and execute hooks', async ({ fs, assert, cleanup }) => {
@@ -443,33 +443,31 @@ test.group('DevServer', () => {
     await devServer.start()
     cleanup(() => devServer.close())
 
+    const indexFilter = ({ message }: { message: string }) =>
+      message.includes('.adonisjs/server/controllers.ts')
+
     assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
       "export const controllers = {}
       "
     `)
 
-    await sleep(1000)
+    await waitForLogsCount({ devServer, filter: indexFilter, count: 1 })
+
     await fs.create('app/controllers/users_controller.ts', 'foo')
+    await waitForLogsCount({ devServer, filter: indexFilter, count: 2 })
 
-    await sleep(1000)
     await fs.create('app/controllers/posts_controller.ts', 'bar')
+    await waitForLogsCount({ devServer, filter: indexFilter, count: 3 })
 
-    await sleep(1000)
     await fs.create('app/models/user.ts', 'bar')
-
-    await sleep(1000)
     await fs.create('app/models/post.ts', 'bar')
 
-    await sleep(1000)
+    await sleep(500)
+
     const logs = devServer.ui.logger.getLogs()
-
-    console.log(logs)
-
-    const indexGenerationLogs = logs.filter(({ message }) =>
-      message.includes('.adonisjs/server/controllers.ts')
-    )
+    const indexGenerationLogs = logs.filter(indexFilter)
     assert.lengthOf(indexGenerationLogs, 3)
-  }).timeout(10 * 1000)
+  }).timeout(15 * 1000)
 
   test('regenerate index file on related file changes in watch mode', async ({
     fs,
@@ -512,32 +510,31 @@ test.group('DevServer', () => {
     await devServer.startAndWatch()
     cleanup(() => devServer.close())
 
+    const indexFilter = ({ message }: { message: string }) =>
+      message.includes('.adonisjs/server/controllers.ts')
+
     assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
       "export const controllers = {}
       "
     `)
 
-    await sleep(1000)
+    await waitForLogsCount({ devServer, filter: indexFilter, count: 1 })
+
     await fs.create('app/controllers/users_controller.ts', 'foo')
+    await waitForLogsCount({ devServer, filter: indexFilter, count: 2 })
 
-    await sleep(1000)
     await fs.create('app/controllers/posts_controller.ts', 'bar')
+    await waitForLogsCount({ devServer, filter: indexFilter, count: 3 })
 
-    await sleep(1000)
     await fs.create('app/models/user.ts', 'bar')
-
-    await sleep(1000)
     await fs.create('app/models/post.ts', 'bar')
 
-    await sleep(1000)
-    const logs = devServer.ui.logger.getLogs()
+    await sleep(500)
 
-    console.log(logs)
-    const indexGenerationLogs = logs.filter(({ message }) =>
-      message.includes('.adonisjs/server/controllers.ts')
-    )
+    const logs = devServer.ui.logger.getLogs()
+    const indexGenerationLogs = logs.filter(indexFilter)
     assert.lengthOf(indexGenerationLogs, 3)
-  }).timeout(10 * 1000)
+  }).timeout(15 * 1000)
 
   test('restart server on file change when child process has crashed in hmr mode', async ({
     fs,

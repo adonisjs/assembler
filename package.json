@@ -53,7 +53,7 @@
     "cross-env": "^10.1.0",
     "del-cli": "^7.0.0",
     "eslint": "^9.37.0",
-    "hot-hook": "^0.4.1-next.0",
+    "hot-hook": "^0.4.1-next.2",
     "p-event": "^7.0.0",
     "prettier": "^3.6.2",
     "release-it": "^19.0.5",

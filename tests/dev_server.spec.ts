@@ -445,15 +445,13 @@ test.group('DevServer', () => {
 
     const indexFilter = ({ message }: { message: string }) =>
       message.includes('.adonisjs/server/controllers.ts')
-    const watcherReadyFilter = ({ message }: { message: string }) =>
-      message.includes('watching file system for changes')
 
     assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
       "export const controllers = {}
       "
     `)
 
-    await waitForLogsCount({ devServer, filter: watcherReadyFilter, count: 1 })
+    await waitForLogsCount({ devServer, filter: indexFilter, count: 1 })
 
     await fs.create('app/controllers/users_controller.ts', 'foo')
     await waitForLogsCount({ devServer, filter: indexFilter, count: 2 })
@@ -514,15 +512,13 @@ test.group('DevServer', () => {
 
     const indexFilter = ({ message }: { message: string }) =>
       message.includes('.adonisjs/server/controllers.ts')
-    const watcherReadyFilter = ({ message }: { message: string }) =>
-      message.includes('watching file system for changes')
 
     assert.snapshot(await fs.contents('.adonisjs/server/controllers.ts')).matchInline(`
       "export const controllers = {}
       "
     `)
 
-    await waitForLogsCount({ devServer, filter: watcherReadyFilter, count: 1 })
+    await waitForLogsCount({ devServer, filter: indexFilter, count: 1 })
 
     await fs.create('app/controllers/users_controller.ts', 'foo')
     await waitForLogsCount({ devServer, filter: indexFilter, count: 2 })

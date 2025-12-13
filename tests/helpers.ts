@@ -9,12 +9,9 @@
 
 import { sep } from 'node:path'
 import { platform } from 'node:os'
-import { type DevServer } from '../src/dev_server.ts'
-
 import { test } from '@japa/runner'
 import { readFile } from 'node:fs/promises'
 import { type FileSystem } from '@japa/file-system'
-import { setTimeout as sleep } from 'node:timers/promises'
 
 export async function setupFakeAdonisproject(fs: FileSystem) {
   await Promise.all([
@@ -62,30 +59,4 @@ export function normalizePathForWindows(filePath: string) {
     filePath = filePath.split(sep).join('\\\\')
   }
   return filePath
-}
-
-/**
- * Wait until the logger has the expected number of logs matching the filter.
- */
-export async function waitForLogsCount(options: {
-  devServer: DevServer
-  filter: (log: { message: string }) => boolean
-  count: number
-  timeout?: number
-}): Promise<void> {
-  const { devServer, filter, count, timeout = 5000 } = options
-  const start = Date.now()
-
-  while (Date.now() - start < timeout) {
-    const logs = devServer.ui.logger.getLogs()
-    const matchingLogs = logs.filter(filter)
-    if (matchingLogs.length >= count) return
-    await sleep(50)
-  }
-
-  const logs = devServer.ui.logger.getLogs()
-  const matchingLogs = logs.filter(filter)
-  throw new Error(
-    `Timeout waiting for ${count} logs (got ${matchingLogs.length}). Logs: ${JSON.stringify(logs)}`
-  )
 }

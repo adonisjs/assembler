@@ -539,6 +539,73 @@ test.group('DevServer', () => {
     assert.lengthOf(indexGenerationLogs, 3)
   }).timeout(10 * 1000)
 
+  test('restart server on file change when child process has crashed in hmr mode', async ({
+    fs,
+    assert,
+    cleanup,
+  }) => {
+    /**
+     * Create a server that crashes immediately after sending ready message
+     */
+    await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
+    await fs.create(
+      'bin/server.ts',
+      `
+        process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })
+        setTimeout(() => { throw new Error('crash') }, 100)
+      `
+    )
+    await fs.create('app/controllers/home_controller.ts', 'export default class {}')
+    await fs.create('.env', 'PORT=3350')
+
+    const devServer = new DevServer(fs.baseUrl, {
+      hmr: true,
+      nodeArgs: [],
+      scriptArgs: [],
+      clearScreen: false,
+    })
+
+    devServer.ui = cliui()
+    devServer.ui.switchMode('raw')
+
+    await devServer.start()
+    cleanup(() => devServer.close())
+
+    /**
+     * Wait for the server to crash
+     */
+    await sleep(500)
+
+    /**
+     * Modify a file, should trigger a restart since the child is dead
+     */
+    await fs.create('app/controllers/home_controller.ts', 'export default class { foo() {} }')
+
+    await sleep(1000)
+
+    const logMessages = devServer.ui.logger.getLogs().map(({ message }) => message)
+    console.log(logMessages)
+
+    assert.snapshot(logMessages).matchInline(`
+      [
+        "[ blue(info) ] starting server in hmr mode...",
+        "[ blue(info) ] loading hooks...",
+        "[ blue(info) ] generating indexes...",
+        "[ blue(info) ] starting HTTP server...",
+        "Server address: cyan(http://localhost:3350)
+      Mode: cyan(hmr)
+      Press dim(h) to show help",
+        "[ blue(info) ] watching file system for changes...",
+        "[ blue(info) ] Underlying HTTP server died. Still watching for changes",
+        "green(update) app/controllers/home_controller.ts",
+        "Server address: cyan(http://localhost:3350)
+      Mode: cyan(hmr)
+      Press dim(h) to show help",
+        "[ blue(info) ] Underlying HTTP server died. Still watching for changes",
+      ]
+    `)
+  }).timeout(10 * 1000)
+
   test('define hooks as inline functions', async ({ fs, assert, cleanup }) => {
     let hooksStack: string[] = []
 

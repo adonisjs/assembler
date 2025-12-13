@@ -120,6 +120,11 @@ export class DevServer {
   #httpServer?: ResultPromise
 
   /**
+   * Flag to track if the HTTP server child process is alive
+   */
+  #isHttpServerAlive = false
+
+  /**
    * Keyboard shortcuts manager instance
    */
   #shortcutsManager?: ShortcutsManager
@@ -346,6 +351,64 @@ export class DevServer {
     if (this.options.clearScreen) {
       process.stdout.write('\u001Bc')
     }
+  }
+
+  /**
+   * Creates our file system watcher
+   */
+  #createWatcher(options?: { poll?: boolean }) {
+    const watcher = watch({
+      usePolling: options?.poll ?? false,
+      cwd: this.cwdPath,
+      ignoreInitial: true,
+      ignored: (file, stats) => {
+        if (!stats) return false
+        if (file.includes('inertia') && !file.includes('node_modules')) return false
+        if (stats.isFile()) return !this.#fileSystem.shouldWatchFile(file)
+
+        return !this.#fileSystem.shouldWatchDirectory(file)
+      },
+    })
+
+    watcher.on('error', (error: any) => {
+      this.ui.logger.warning('file system watcher failure')
+      this.ui.logger.fatal(error as any)
+
+      this.#onError?.(error)
+      this.#watcher?.close()
+    })
+
+    watcher.on('ready', () => {
+      this.ui.logger.info('watching file system for changes...')
+    })
+
+    return watcher
+  }
+
+  /**
+   * Handles file change events in HMR mode by forwarding to hot-hook
+   * or restarting the server if dead.
+   */
+  #handleHmrWatcherEvent(options: {
+    filePath: string
+    action: 'add' | 'change' | 'unlink'
+    displayLabel: 'add' | 'update' | 'delete'
+  }) {
+    const relativePath = string.toUnixSlash(options.filePath)
+
+    if (this.#isHttpServerAlive === false) {
+      this.#clearScreen()
+      this.ui.logger.log(`${this.ui.colors.green(options.displayLabel)} ${relativePath}`)
+      this.#restartHTTPServer()
+      return
+    }
+
+    const absolutePath = join(this.cwdPath, relativePath)
+    this.#httpServer?.send({
+      type: 'hot-hook:file-changed',
+      path: absolutePath,
+      action: options.action,
+    })
   }
 
   /**
@@ -627,7 +690,7 @@ export class DevServer {
     await this.#hooks.runner('devServerStarting').run(this)
     debug('starting http server using "%s" file, options %O', this.scriptFile, this.options)
 
-    return new Promise<void>(async (resolve) => {
+    return new Promise<void>((resolve) => {
       /**
        * Creating child process
        */
@@ -638,6 +701,7 @@ export class DevServer {
         reject: true,
         scriptArgs: this.options.scriptArgs,
       })
+      this.#isHttpServerAlive = true
 
       this.#httpServer.on('message', async (message) => {
         if (this.#isAdonisJSReadyMessage(message)) {
@@ -684,6 +748,7 @@ export class DevServer {
 
       this.#httpServer
         .then((result) => {
+          this.#isHttpServerAlive = false
           if (!this.#watcher) {
             this.#onClose?.(result.exitCode!)
           } else {
@@ -691,6 +756,7 @@ export class DevServer {
           }
         })
         .catch((error) => {
+          this.#isHttpServerAlive = false
           if (!this.#watcher) {
             this.#onError?.(error)
           } else {
@@ -783,19 +849,25 @@ export class DevServer {
       this.options.nodeArgs.push('--import=hot-hook/register')
       this.options.env = {
         ...this.options.env,
-        HOT_HOOK_INCLUDE: this.#fileSystem.includes.join(','),
-        HOT_HOOK_IGNORE: this.#fileSystem.excludes
-          .filter((exclude) => !exclude.includes('inertia'))
-          .join(','),
-        HOT_HOOK_RESTART: (this.options.metaFiles ?? [])
-          .filter(({ reloadServer }) => !!reloadServer)
-          .map(({ pattern }) => pattern)
-          .join(','),
+        HOT_HOOK_WATCH: 'false',
       }
     }
 
     this.ui.logger.info('starting HTTP server...')
     await this.#startHTTPServer(this.#stickyPort)
+
+    if (this.#mode !== 'hmr') return
+
+    this.#watcher = this.#createWatcher()
+    this.#watcher.on('add', (filePath) => {
+      this.#handleHmrWatcherEvent({ filePath, action: 'add', displayLabel: 'add' })
+    })
+    this.#watcher.on('change', (filePath) => {
+      this.#handleHmrWatcherEvent({ filePath, action: 'change', displayLabel: 'update' })
+    })
+    this.#watcher.on('unlink', (filePath) => {
+      this.#handleHmrWatcherEvent({ filePath, action: 'unlink', displayLabel: 'delete' })
+    })
   }
 
   /**
@@ -822,47 +894,7 @@ export class DevServer {
     this.ui.logger.info('starting HTTP server...')
     await this.#startHTTPServer(this.#stickyPort)
 
-    /**
-     * Create watcher
-     */
-    this.#watcher = watch({
-      usePolling: options?.poll ?? false,
-      cwd: this.cwdPath,
-      ignoreInitial: true,
-      ignored: (file, stats) => {
-        if (!stats) {
-          return false
-        }
-
-        if (file.includes('inertia') && !file.includes('node_modules')) {
-          return false
-        }
-
-        if (stats.isFile()) {
-          return !this.#fileSystem.shouldWatchFile(file)
-        }
-        return !this.#fileSystem.shouldWatchDirectory(file)
-      },
-    })
-
-    /**
-     * Notify the watcher is ready
-     */
-    this.#watcher.on('ready', () => {
-      this.ui.logger.info('watching file system for changes...')
-    })
-
-    /**
-     * Cleanup when watcher dies
-     */
-    this.#watcher.on('error', (error: any) => {
-      this.ui.logger.warning('file system watcher failure')
-      this.ui.logger.fatal(error as any)
-
-      this.#onError?.(error)
-      this.#watcher?.close()
-    })
-
+    this.#watcher = this.#createWatcher({ poll: options?.poll })
     this.#watcher.on('add', (filePath) => {
       const relativePath = string.toUnixSlash(filePath)
       const absolutePath = join(this.cwdPath, relativePath)

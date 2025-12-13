@@ -56,15 +56,6 @@ import {
  */
 export class DevServer {
   /**
-   * Pre-allocated info object for hot-hook change events to avoid repeated object creation
-   */
-  static readonly #HOT_HOOK_CHANGE_INFO = {
-    source: 'hot-hook' as const,
-    fullReload: false,
-    hotReloaded: false,
-  }
-
-  /**
    * Pre-allocated info object for hot-hook full reload events
    */
   static readonly #HOT_HOOK_FULL_RELOAD_INFO = {
@@ -395,6 +386,7 @@ export class DevServer {
     displayLabel: 'add' | 'update' | 'delete'
   }) {
     const relativePath = string.toUnixSlash(options.filePath)
+    const absolutePath = join(this.cwdPath, relativePath)
 
     if (this.#isHttpServerAlive === false) {
       this.#clearScreen()
@@ -403,7 +395,23 @@ export class DevServer {
       return
     }
 
-    const absolutePath = join(this.cwdPath, relativePath)
+    /**
+     * For add/unlink, we call the hooks directly since hot-hook ignores files
+     * not in its dependency tree. This ensures index files are regenerated
+     * for new/removed files.
+     */
+    if (options.action === 'add') {
+      this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
+    } else if (options.action === 'unlink') {
+      this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
+    }
+
+    /**
+     * Forward all events to hot-hook so it can:
+     * - Update its dependency tree (for unlink)
+     * - Handle HMR for change events on imported files
+     * - Then we wait for hot-hook to notify us back via IPC message
+     */
     this.#httpServer?.send({
       type: 'hot-hook:file-changed',
       path: absolutePath,
@@ -715,20 +723,7 @@ export class DevServer {
         } else if (this.#mode === 'hmr' && this.#isHotHookMessage(message)) {
           debug('received hot-hook message %O', message)
 
-          if (message.type === 'hot-hook:file-changed') {
-            const absolutePath = message.path ? string.toUnixSlash(message.path) : ''
-            const relativePath = relative(this.cwdPath, absolutePath)
-
-            if (message.action === 'add') {
-              this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
-            } else if (message.action === 'change') {
-              this.#hooks
-                .runner('fileChanged')
-                .run(relativePath, absolutePath, DevServer.#HOT_HOOK_CHANGE_INFO, this)
-            } else if (message.action === 'unlink') {
-              this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
-            }
-          } else if (message.type === 'hot-hook:full-reload') {
+          if (message.type === 'hot-hook:full-reload') {
             const absolutePath = message.path ? string.toUnixSlash(message.path) : ''
             const relativePath = relative(this.cwdPath, absolutePath)
 

@@ -353,10 +353,15 @@ export class DevServer {
       cwd: this.cwdPath,
       ignoreInitial: true,
       ignored: (file, stats) => {
-        if (!stats) return false
-        if (file.includes('inertia') && !file.includes('node_modules')) return false
-        if (stats.isFile()) return !this.#fileSystem.shouldWatchFile(file)
-
+        if (!stats) {
+          return false
+        }
+        if (file.includes('inertia') && !file.includes('node_modules')) {
+          return false
+        }
+        if (stats.isFile()) {
+          return !this.#fileSystem.shouldWatchFile(file)
+        }
         return !this.#fileSystem.shouldWatchDirectory(file)
       },
     })
@@ -851,7 +856,9 @@ export class DevServer {
     this.ui.logger.info('starting HTTP server...')
     await this.#startHTTPServer(this.#stickyPort)
 
-    if (this.#mode !== 'hmr') return
+    if (this.#mode !== 'hmr') {
+      return
+    }
 
     this.#watcher = this.#createWatcher()
     this.#watcher.on('add', (filePath) => {

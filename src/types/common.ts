@@ -14,6 +14,7 @@ import type StringBuilder from '@poppinss/utils/string_builder'
 import { type AllHooks } from './hooks.ts'
 import { type FileBuffer } from '../file_buffer.ts'
 import { type VirtualFileSystem } from '../virtual_file_system.ts'
+import { type FilterPredicate } from 'fdir'
 
 /**
  * Recursive file tree structure for representing nested directory hierarchies
@@ -27,6 +28,7 @@ export type RecursiveFileTree = {
  */
 export type VirtualFileSystemOptions = {
   glob?: string[]
+  filter?: FilterPredicate
 }
 
 /**
@@ -56,11 +58,10 @@ export type IndexGeneratorSourceConfig = (
   computeBaseName?: (baseName: StringBuilder) => StringBuilder
   source: string
   output: string
-  glob?: string[]
   importAlias?: string
   removeSuffix?: string
   skipSegments?: string[]
-}
+} & VirtualFileSystemOptions
 
 /**
  * Marks a given optional property as required

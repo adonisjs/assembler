@@ -130,6 +130,7 @@ export class IndexGeneratorSource {
     this.#outputDirname = dirname(this.#output)
     this.#vfs = new VirtualFileSystem(this.#source, {
       glob: this.#config.glob,
+      filter: this.#config.filter,
     })
   }
 

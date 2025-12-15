@@ -123,6 +123,42 @@ test.group('Virtual file system', () => {
     })
   })
 
+  test('filter files using the filter fn', async ({ fs, assert }) => {
+    await setupFakeAdonisproject(fs)
+    await createControllers()
+
+    const source = string.toUnixSlash(join(fs.basePath, 'app/controllers'))
+    const vfs = new VirtualFileSystem(source, {
+      filter: (path, isDirectory) => {
+        if (isDirectory) {
+          return true
+        }
+        if (path.endsWith('posts_controller.ts')) {
+          return false
+        }
+        return true
+      },
+    })
+    await vfs.scan()
+
+    assert.deepEqual(vfs.asList(), {
+      'api/auth/tokens_controller': join(source, 'api/auth/tokens_controller.ts'),
+      'api/profile_controller': join(source, 'api/profile_controller.ts'),
+      'public/home_controller': join(source, 'public/home_controller.ts'),
+    })
+
+    assert.deepEqual(
+      vfs.asList({
+        transformKey: (key) => new StringBuilder(key).removeSuffix('controller').toString(),
+      }),
+      {
+        'api/auth/tokens': join(source, 'api/auth/tokens_controller.ts'),
+        'api/profile': join(source, 'api/profile_controller.ts'),
+        'public/home': join(source, 'public/home_controller.ts'),
+      }
+    )
+  })
+
   test('get file contents as ast and cache it', async ({ fs, assert }) => {
     await setupFakeAdonisproject(fs)
     await createControllers()

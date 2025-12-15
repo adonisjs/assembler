@@ -95,12 +95,15 @@ export class VirtualFileSystem {
    */
   async scan() {
     debug('fetching entities from source "%s"', this.#source)
-    const filesList = await new fdir()
+    const crawler = new fdir()
       .globWithOptions(this.#options.glob ?? DEFAULT_GLOB, this.#picoMatchOptions)
       .withFullPaths()
-      .crawl(this.#source)
-      .withPromise()
 
+    if (this.#options.filter) {
+      crawler.filter(this.#options.filter)
+    }
+
+    const filesList = await crawler.crawl(this.#source).withPromise()
     debug('scanned files %O', filesList)
     const sortedFiles = filesList.sort(naturalSort)
     this.#files.clear()

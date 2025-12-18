@@ -229,7 +229,7 @@ export class Bundler {
     /**
      * Step 2: Run init hook and the index generator
      */
-    await this.#hooks.runner('init').run(this, this.#indexGenerator)
+    await this.#hooks.runner('init').run(this, this.#hooks, this.#indexGenerator)
     this.#hooks.clear('init')
 
     this.ui.logger.info('generating indexes...')

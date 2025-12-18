@@ -364,7 +364,11 @@ export function isRelative(pathValue: string) {
 export async function loadHooks<K extends keyof AllHooks>(
   rcFileHooks: Partial<AllHooks> | undefined,
   names: K[]
-) {
+): Promise<
+  Hooks<{
+    [P in K]: [HookParams<P>, HookParams<P>]
+  }>
+> {
   const groups = names.map((name) => {
     return {
       group: name,

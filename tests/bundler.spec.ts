@@ -354,7 +354,7 @@ test.group('Bundler', () => {
       hooks: {
         init: [
           async () => ({
-            default: (_, indexGenerator) => {
+            default: (_, __, indexGenerator) => {
               indexGenerator.add('controllers', {
                 as: 'barrelFile',
                 output: '.adonisjs/server/controllers.ts',

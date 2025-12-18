@@ -674,7 +674,7 @@ export class DevServer {
      * Run init hooks and clear them as they won't be executed
      * ever again
      */
-    await this.#hooks.runner('init').run(this, this.#indexGenerator)
+    await this.#hooks.runner('init').run(this, this.#hooks, this.#indexGenerator)
     this.#hooks.clear('init')
 
     this.ui.logger.info('generating indexes...')

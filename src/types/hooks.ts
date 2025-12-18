@@ -16,6 +16,7 @@ import { type TestRunner } from '../test_runner.ts'
 import { type RoutesListItem } from './code_scanners.ts'
 import { type IndexGenerator } from '../index_generator/main.ts'
 import { type RoutesScanner } from '../code_scanners/routes_scanner/main.ts'
+import type Hooks from '@poppinss/hooks'
 
 /**
  * Defines a hook that can be either a lazy import or an object with a run method.
@@ -56,7 +57,13 @@ export type CommonHooks = {
    * @param parent - The parent instance (DevServer, TestRunner, or Bundler)
    */
   init: DefineHook<
-    (parent: DevServer | TestRunner | Bundler, indexGenerator: IndexGenerator) => AsyncOrSync<void>
+    (
+      parent: DevServer | TestRunner | Bundler,
+      hooks: Hooks<{
+        [P in keyof AllHooks]: [HookParams<P>, HookParams<P>]
+      }>,
+      indexGenerator: IndexGenerator
+    ) => AsyncOrSync<void>
   >[]
 }
 

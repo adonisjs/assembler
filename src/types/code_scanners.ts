@@ -189,8 +189,11 @@ export type RoutesListItem = {
   domain: string
   /** HTTP methods accepted by this route */
   methods: string[]
+  /** Handler information for controller-based routes */
   handler?: {
+    /** The method name to be called on the controller */
     method: string
+    /** Dynamic import expression that loads the controller module */
     importExpression: string | null
   }
   /** Parsed route tokens for URI construction */
@@ -198,8 +201,24 @@ export type RoutesListItem = {
 }
 
 /**
- * The filter fn to exclude routes from being processed. Return true
- * to filter out (aka exclude) the route
+ * A filter function to exclude routes from being processed by the routes scanner.
+ * Return false to filter out (exclude) the route, or true to include it.
+ *
+ * @example
+ * const filterFn: RoutesScannerFilterFn = (route) => {
+ *   // Exclude all admin routes
+ *   if (route.pattern.startsWith('/admin')) {
+ *     return false
+ *   }
+ *
+ *   // Exclude health check routes
+ *   if (route.name === 'health.check') {
+ *     return false
+ *   }
+ *
+ *   // Include all other routes
+ *   return true
+ * }
  */
 export type RoutesScannerFilterFn = (route: RoutesListItem) => boolean
 

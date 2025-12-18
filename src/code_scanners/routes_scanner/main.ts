@@ -42,7 +42,11 @@ import {
  * const scannedRoutes = scanner.getScannedRoutes()
  */
 export class RoutesScanner {
-  #filter: RoutesScannerFilterFn = () => false
+  /**
+   * Optional filter function to selectively include routes during scanning.
+   * When defined, only routes for which this function returns true will be processed.
+   */
+  #filter?: RoutesScannerFilterFn
 
   /**
    * The root of the application from where we will resolve
@@ -127,6 +131,18 @@ export class RoutesScanner {
   }
 
   /**
+   * Determines if a route should be skipped based on the filter function.
+   *
+   * @param route - The route to check
+   */
+  #shouldSkipRoute(route: RoutesListItem) {
+    if (this.#filter) {
+      return !this.#filter(route)
+    }
+    return false
+  }
+
+  /**
    * Assumes the validators are from VineJS and computes the request types from them
    *
    * This method generates TypeScript type definitions for request validation
@@ -167,6 +183,9 @@ export class RoutesScanner {
   /**
    * Inspects the controller reference and fetches its import specifier
    * and the controller name from it.
+   *
+   * @param importExpression - The import expression to parse (e.g., "import('#controllers/users_controller')")
+   * @param method - The controller method name (defaults to 'handle' if not provided)
    */
   async #inspectControllerSpecifier(
     importExpression: string,
@@ -208,7 +227,11 @@ export class RoutesScanner {
   }
 
   /**
-   * Defines the response type for the route
+   * Defines the response type for the route by calling the custom compute function
+   * or falling back to inferring the return type from the controller method.
+   *
+   * @param route - The scanned route to set response type for
+   * @param controller - The controller containing the route handler
    */
   async #setResponse(route: ScannedRoute, controller: ScannedController) {
     const responseType = await this.#computeResponseTypes?.(route, controller, this)
@@ -220,7 +243,12 @@ export class RoutesScanner {
   }
 
   /**
-   * Defines the request type for the route
+   * Defines the request type for the route by extracting validators and computing
+   * the request type from them or using a custom compute function.
+   *
+   * @param route - The scanned route to set request type for
+   * @param controller - The controller containing the route handler
+   * @param vfs - Virtual file system for analyzing controller code
    */
   async #setRequest(route: ScannedRoute, controller: ScannedController, vfs: VirtualFileSystem) {
     route.validators =
@@ -235,7 +263,10 @@ export class RoutesScanner {
   }
 
   /**
-   * Scans a route that is not using a controller
+   * Scans a route that is not using a controller (inline route handler).
+   * For routes without controllers, only rules-based request/response types are available.
+   *
+   * @param route - The route to process
    */
   #processRouteWithoutController(route: RoutesListItem) {
     if (!route.name) {
@@ -258,7 +289,11 @@ export class RoutesScanner {
   }
 
   /**
-   * Scans a route that is using a controller reference
+   * Scans a route that is using a controller reference.
+   * Extracts controller information, validators, and type information.
+   *
+   * @param route - The route with a controller handler
+   * @param vfs - Virtual file system for analyzing controller code
    */
   async #processRouteWithController(
     route: RoutesListItem & {
@@ -311,7 +346,7 @@ export class RoutesScanner {
      * Skip route when its name is within the array of
      * skip routes
      */
-    if (this.#filter(route)) {
+    if (this.#shouldSkipRoute(route)) {
       return
     }
 
@@ -353,15 +388,18 @@ export class RoutesScanner {
   }
 
   /**
-   * Processing a given route list item and further scan it to
-   * fetch the controller, request and response types.
+   * Processes a given route list item and scans it to extract
+   * the controller, request and response types.
+   *
+   * @param route - The route to process
+   * @param vfs - Virtual file system for analyzing controller code
    */
   async #processRoute(route: RoutesListItem, vfs: VirtualFileSystem) {
     /**
      * Skip route when it has a name and also part of
      * skip array
      */
-    if (route.name && this.#filter(route)) {
+    if (route.name && this.#shouldSkipRoute(route)) {
       debug('route skipped route: %O, rules: %O', route, this.rules)
       return
     }
@@ -487,6 +525,22 @@ export class RoutesScanner {
     }
 
     return true
+  }
+
+  /**
+   * Sets a filter function to selectively include routes during scanning.
+   *
+   * @param filterFn - Function that returns true for routes to include
+   * @returns This RoutesScanner instance for method chaining
+   *
+   * @example
+   * scanner.filter((route) => {
+   *   return route.pattern.startsWith('/api')
+   * })
+   */
+  filter(filterFn: RoutesScannerFilterFn): this {
+    this.#filter = filterFn
+    return this
   }
 
   /**

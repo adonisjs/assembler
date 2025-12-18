@@ -1501,4 +1501,60 @@ test.group('Routes scanner', () => {
     assert.deepEqual(scanner.getControllers(), [])
     assert.snapshot(scanner.getScannedRoutes()).matchInline('[]')
   })
+
+  test('skip routes using filter fn', async ({ assert, fs }) => {
+    await fs.createJson('package.json', {
+      imports: {
+        '#controllers/*': './app/controllers/*.ts',
+      },
+    })
+
+    const source = string.toUnixSlash(fs.basePath)
+    const scanner = new RoutesScanner(source, [])
+    scanner.pathsResolver.use((specifier) => {
+      const [namespace, ...rest] = specifier.split('/')
+      const fileName = rest.pop()
+      const resolvedPath = namespace === '#controllers' ? './app/controllers' : ''
+      return new URL([resolvedPath, ...rest, `${fileName}.ts`].join('/'), fs.baseUrl).href
+    })
+
+    scanner.filter((route) => {
+      return route.name !== 'users.index'
+    })
+
+    await scanner.scan([
+      {
+        domain: 'root',
+        name: 'users.index',
+        methods: ['GET', 'HEAD'],
+        pattern: '/users',
+        tokens: [],
+      },
+      {
+        domain: 'root',
+        name: 'users.show',
+        methods: ['GET', 'HEAD'],
+        pattern: '/users/:id',
+        tokens: [],
+      },
+    ])
+
+    assert.deepEqual(scanner.getControllers(), [])
+    assert.snapshot(scanner.getScannedRoutes()).matchInline(`
+      [
+        {
+          "domain": "root",
+          "methods": [
+            "GET",
+            "HEAD",
+          ],
+          "name": "users.show",
+          "pattern": "/users/:id",
+          "request": undefined,
+          "response": undefined,
+          "tokens": [],
+        },
+      ]
+    `)
+  })
 })

@@ -22,6 +22,7 @@ import {
   type RoutesListItem,
   type ScannedController,
   type RoutesScannerRules,
+  type RoutesScannerFilterFn,
 } from '../../types/code_scanners.ts'
 
 /**
@@ -41,6 +42,8 @@ import {
  * const scannedRoutes = scanner.getScannedRoutes()
  */
 export class RoutesScanner {
+  #filter: RoutesScannerFilterFn = () => false
+
   /**
    * The root of the application from where we will resolve
    * paths.
@@ -103,7 +106,6 @@ export class RoutesScanner {
    * The rules to apply when scanning routes
    */
   rules: RoutesScannerRules = {
-    skip: [],
     request: {},
     response: {},
   }
@@ -119,15 +121,9 @@ export class RoutesScanner {
     this.pathsResolver = new PathsResolver(appRoot)
 
     rulesCollection.forEach((rules) => {
-      this.rules.skip = this.rules.skip.concat(rules.skip)
       Object.assign(this.rules.request, rules.request)
       Object.assign(this.rules.response, rules.response)
     })
-
-    /**
-     * Removing duplicates
-     */
-    this.rules.skip = Array.from(new Set([...this.rules.skip]))
   }
 
   /**
@@ -303,7 +299,7 @@ export class RoutesScanner {
      * name for the route. There could be chances where one controller+method
      * combination is bound to multiple routes.
      */
-    const routeName =
+    route.name =
       route.name ??
       new StringBuilder(controller.name)
         .removeSuffix('Controller')
@@ -315,7 +311,7 @@ export class RoutesScanner {
      * Skip route when its name is within the array of
      * skip routes
      */
-    if (this.rules.skip.includes(routeName)) {
+    if (this.#filter(route)) {
       return
     }
 
@@ -324,13 +320,13 @@ export class RoutesScanner {
      * and request if these values are not provided via rules.
      */
     const scannedRoute: ScannedRoute = {
-      name: routeName,
+      name: route.name,
       domain: route.domain,
       methods: route.methods,
       pattern: route.pattern,
       tokens: route.tokens,
-      request: this.rules.request[routeName],
-      response: this.rules.response[routeName],
+      request: this.rules.request[route.name],
+      response: this.rules.response[route.name],
       controller,
     }
 
@@ -365,7 +361,7 @@ export class RoutesScanner {
      * Skip route when it has a name and also part of
      * skip array
      */
-    if (route.name && this.rules.skip.includes(route.name)) {
+    if (route.name && this.#filter(route)) {
       debug('route skipped route: %O, rules: %O', route, this.rules)
       return
     }

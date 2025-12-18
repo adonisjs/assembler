@@ -198,6 +198,12 @@ export type RoutesListItem = {
 }
 
 /**
+ * The filter fn to exclude routes from being processed. Return true
+ * to filter out (aka exclude) the route
+ */
+export type RoutesScannerFilterFn = (route: RoutesListItem) => boolean
+
+/**
  * Configuration rules accepted by the routes scanner to customize
  * the scanning behavior and override type inference.
  *
@@ -219,12 +225,6 @@ export type RoutesListItem = {
  * }
  */
 export type RoutesScannerRules = {
-  /**
-   * An array of route names or controller+method paths to skip from processing.
-   * Useful for excluding routes that don't need type generation.
-   */
-  skip: string[]
-
   /**
    * Define custom response types for specific routes by their name
    * or controller+method path. Overrides automatic type inference.

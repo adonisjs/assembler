@@ -168,7 +168,7 @@ export class RoutesScanner {
       const namespace = segments.map((segment) => `['${segment}']`).join('')
 
       result.push(
-        `Infer<(typeof import('${validator.import.specifier}')${validatorExport})${namespace}>`
+        `InferInput<(typeof import('${validator.import.specifier}')${validatorExport})${namespace}>`
       )
 
       return result
@@ -176,7 +176,7 @@ export class RoutesScanner {
 
     return {
       type: schemas.join('|'),
-      imports: [`import { Infer } from '@vinejs/vine/types'`],
+      imports: [`import { InferInput } from '@vinejs/vine/types'`],
     }
   }
 

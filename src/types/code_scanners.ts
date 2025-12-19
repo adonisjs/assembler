@@ -81,8 +81,8 @@ export type ScannedValidator = {
  *   pattern: '/users',
  *   tokens: [{ val: '/users', old: '/users', type: 0, end: '' }],
  *   request: {
- *     type: 'Infer<typeof createUserValidator>',
- *     imports: ['import { Infer } from "@vinejs/vine/types"']
+ *     type: 'InferInput<typeof createUserValidator>',
+ *     imports: ['import { InferInput } from "@vinejs/vine/types"']
  *   },
  *   response: {
  *     type: 'ReturnType<UsersController["store"]>',

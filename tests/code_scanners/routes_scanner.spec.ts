@@ -206,9 +206,9 @@ test.group('Routes scanner', () => {
           "pattern": "/users",
           "request": {
             "imports": [
-              "import { Infer } from '@vinejs/vine/types'",
+              "import { InferInput } from '@vinejs/vine/types'",
             ],
-            "type": "Infer<(typeof import('#validators/user').createUserValidator)>",
+            "type": "InferInput<(typeof import('#validators/user').createUserValidator)>",
           },
           "response": {
             "imports": [],
@@ -271,9 +271,9 @@ test.group('Routes scanner', () => {
           "pattern": "/users/:id",
           "request": {
             "imports": [
-              "import { Infer } from '@vinejs/vine/types'",
+              "import { InferInput } from '@vinejs/vine/types'",
             ],
-            "type": "Infer<(typeof import('#validators/user').updateUserValidator)>",
+            "type": "InferInput<(typeof import('#validators/user').updateUserValidator)>",
           },
           "response": {
             "imports": [],
@@ -573,9 +573,9 @@ test.group('Routes scanner', () => {
           "pattern": "/users/:id",
           "request": {
             "imports": [
-              "import { Infer } from '@vinejs/vine/types'",
+              "import { InferInput } from '@vinejs/vine/types'",
             ],
-            "type": "Infer<(typeof import('#validators/user').updateUserValidator)>",
+            "type": "InferInput<(typeof import('#validators/user').updateUserValidator)>",
           },
           "response": {
             "imports": [],
@@ -787,9 +787,9 @@ test.group('Routes scanner', () => {
           "pattern": "/users",
           "request": {
             "imports": [
-              "import { Infer } from '@vinejs/vine/types'",
+              "import { InferInput } from '@vinejs/vine/types'",
             ],
-            "type": "Infer<(typeof import('#validators/user'))['create']>",
+            "type": "InferInput<(typeof import('#validators/user'))['create']>",
           },
           "response": {
             "imports": [],
@@ -852,9 +852,9 @@ test.group('Routes scanner', () => {
           "pattern": "/users/:id",
           "request": {
             "imports": [
-              "import { Infer } from '@vinejs/vine/types'",
+              "import { InferInput } from '@vinejs/vine/types'",
             ],
-            "type": "Infer<(typeof import('#validators/user'))['update']>",
+            "type": "InferInput<(typeof import('#validators/user'))['update']>",
           },
           "response": {
             "imports": [],
@@ -1034,9 +1034,9 @@ test.group('Routes scanner', () => {
           "pattern": "/users",
           "request": {
             "imports": [
-              "import { Infer } from '@vinejs/vine/types'",
+              "import { InferInput } from '@vinejs/vine/types'",
             ],
-            "type": "Infer<(typeof import('#validators/user').createUserValidator)>",
+            "type": "InferInput<(typeof import('#validators/user').createUserValidator)>",
           },
           "response": {
             "imports": [],
@@ -1099,9 +1099,9 @@ test.group('Routes scanner', () => {
           "pattern": "/posts",
           "request": {
             "imports": [
-              "import { Infer } from '@vinejs/vine/types'",
+              "import { InferInput } from '@vinejs/vine/types'",
             ],
-            "type": "Infer<(typeof import('#validators/post').createPostValidator)>",
+            "type": "InferInput<(typeof import('#validators/post').createPostValidator)>",
           },
           "response": {
             "imports": [],
@@ -1214,9 +1214,9 @@ test.group('Routes scanner', () => {
           "pattern": "/users",
           "request": {
             "imports": [
-              "import { Infer } from '@vinejs/vine/types'",
+              "import { InferInput } from '@vinejs/vine/types'",
             ],
-            "type": "Infer<(typeof import('#validators/user').createUser)>",
+            "type": "InferInput<(typeof import('#validators/user').createUser)>",
           },
           "response": {
             "imports": [],
@@ -1279,9 +1279,9 @@ test.group('Routes scanner', () => {
           "pattern": "/posts",
           "request": {
             "imports": [
-              "import { Infer } from '@vinejs/vine/types'",
+              "import { InferInput } from '@vinejs/vine/types'",
             ],
-            "type": "Infer<(typeof import('#validators/post').createPostValidator)>",
+            "type": "InferInput<(typeof import('#validators/post').createPostValidator)>",
           },
           "response": {
             "imports": [],
@@ -1350,9 +1350,9 @@ test.group('Routes scanner', () => {
           "pattern": "/users",
           "request": {
             "imports": [
-              "import { Infer } from '@vinejs/vine/types'",
+              "import { InferInput } from '@vinejs/vine/types'",
             ],
-            "type": "Infer<(typeof import('#validators/user').createUser)>",
+            "type": "InferInput<(typeof import('#validators/user').createUser)>",
           },
           "response": {
             "imports": [],

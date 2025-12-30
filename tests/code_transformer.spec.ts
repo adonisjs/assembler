@@ -23,6 +23,50 @@ async function setupFakeAdonisproject(fs: FileSystem) {
   ])
 }
 
+test.group('Code transformer | getDirectories', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('return default directories when none configured', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    const directories = transformer.getDirectories()
+
+    assert.equal(directories.start, 'start')
+    assert.equal(directories.tests, 'tests')
+    assert.equal(directories.policies, 'app/policies')
+  })
+
+  test('return custom directories when configured in adonisrc.ts', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          start: 'boot',
+          tests: 'spec',
+        }
+      })`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+    const directories = transformer.getDirectories()
+
+    assert.equal(directories.start, 'boot')
+    assert.equal(directories.tests, 'spec')
+    assert.equal(directories.policies, 'app/policies')
+  })
+
+  test('return defaults when adonisrc.ts is missing', async ({ assert, fs }) => {
+    await fs.remove('adonisrc.ts')
+    const transformer = new CodeTransformer(fs.baseUrl)
+    const directories = transformer.getDirectories()
+
+    assert.equal(directories.start, 'start')
+    assert.equal(directories.tests, 'tests')
+  })
+})
+
 test.group('Code transformer | addMiddlewareToStack', (group) => {
   group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
 
@@ -193,6 +237,30 @@ test.group('Code transformer | addMiddlewareToStack', (group) => {
       assert.include(error.instructions, `() => import('@adonisjs/static/static_middleware')`)
     }
   })
+
+  test('use custom start directory from adonisrc.ts', async ({ assert, fs }) => {
+    await fs.remove('start/kernel.ts')
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          start: 'boot',
+        }
+      })`
+    )
+    await fs.create('boot/kernel.ts', await readFile('./tests/fixtures/kernel.txt', 'utf-8'))
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addMiddlewareToStack('server', [
+      { path: '@adonisjs/static/static_middleware' },
+    ])
+
+    assert.fileContains('boot/kernel.ts', `() => import('@adonisjs/static/static_middleware')`)
+  })
 })
 
 test.group('Code transformer | defineEnvValidations', (group) => {
@@ -340,6 +408,32 @@ test.group('Code transformer | defineEnvValidations', (group) => {
       assert.isDefined(error.instructions)
       assert.include(error.instructions, 'MY_VAR: Env.schema.string()')
     }
+  })
+
+  test('use custom start directory from adonisrc.ts', async ({ assert, fs }) => {
+    await fs.remove('start/env.ts')
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          start: 'boot',
+        }
+      })`
+    )
+    await fs.create('boot/env.ts', await readFile('./tests/fixtures/env.txt', 'utf-8'))
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.defineEnvValidations({
+      variables: {
+        MY_VAR: 'Env.schema.string()',
+      },
+    })
+
+    assert.fileContains('boot/env.ts', 'MY_VAR: Env.schema.string()')
   })
 })
 
@@ -868,6 +962,37 @@ test.group('Code transformer | addJapaPlugin', (group) => {
       assert.include(error.instructions, 'fooPlugin()')
     }
   })
+
+  test('use custom tests directory from adonisrc.ts', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          tests: 'spec',
+        }
+      })`
+    )
+    await fs.create(
+      'spec/bootstrap.ts',
+      dedent`
+      import { assert } from '@japa/assert'
+
+      export const plugins: Config['plugins'] = [
+        assert(),
+      ]`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addJapaPlugin('fooPlugin()', [
+      { identifier: 'fooPlugin', module: '@adonisjs/foo/plugin/japa', isNamed: true },
+    ])
+
+    assert.fileContains('spec/bootstrap.ts', 'fooPlugin()')
+  })
 })
 
 test.group('Code transformer | addPolicies', (group) => {
@@ -952,6 +1077,30 @@ test.group('Code transformer | addPolicies', (group) => {
       assert.isDefined(error.instructions)
       assert.include(error.instructions, `PostPolicy: () => import('#policies/post_policy')`)
     }
+  })
+
+  test('use custom policies directory from adonisrc.ts', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          policies: 'domain/policies',
+        }
+      })`
+    )
+    await fs.create('domain/policies/main.ts', `export const policies = {}`)
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addPolicies([{ name: 'PostPolicy', path: '#policies/post_policy' }])
+
+    assert.fileContains(
+      'domain/policies/main.ts',
+      `PostPolicy: () => import('#policies/post_policy')`
+    )
   })
 })
 

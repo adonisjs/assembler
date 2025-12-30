@@ -467,6 +467,45 @@ export default defineConfig({
   }
 
   /**
+   * Get a directory value from the directories configuration.
+   *
+   * @param key - The directory key to retrieve
+   * @param defaultValue - The default value if not configured
+   * @returns The configured directory path or the default value
+   */
+  getDirectory(key: string, defaultValue: string): string {
+    try {
+      const file = this.#getRcFileOrThrow()
+      const defineConfigCall = this.#locateDefineConfigCallOrThrow(file)
+      const configObject = this.#getDefineConfigObjectOrThrow(defineConfigCall)
+
+      const directoriesProperty = configObject.getProperty('directories')
+      if (!directoriesProperty || !Node.isPropertyAssignment(directoriesProperty)) {
+        return defaultValue
+      }
+
+      const directoriesObject = directoriesProperty.getInitializer()
+      if (!directoriesObject || !Node.isObjectLiteralExpression(directoriesObject)) {
+        return defaultValue
+      }
+
+      const property = directoriesObject.getProperty(key)
+      if (!property || !Node.isPropertyAssignment(property)) {
+        return defaultValue
+      }
+
+      const initializer = property.getInitializer()
+      if (!initializer || !Node.isStringLiteral(initializer)) {
+        return defaultValue
+      }
+
+      return initializer.getLiteralValue()
+    } catch {
+      return defaultValue
+    }
+  }
+
+  /**
    * Save the adonisrc.ts file with all applied transformations
    *
    * Formats the file according to editor settings and saves it to disk.

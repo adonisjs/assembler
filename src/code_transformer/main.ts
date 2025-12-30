@@ -99,6 +99,24 @@ export class CodeTransformer {
   }
 
   /**
+   * Get directories configured in adonisrc.ts, with defaults fallback.
+   *
+   * This method reads the adonisrc.ts file and extracts the directories
+   * configuration. If a directory is not configured, the default value is used.
+   *
+   * @returns Object containing directory paths
+   */
+  getDirectories(): Record<string, string> {
+    const rcFileTransformer = new RcFileTransformer(this.#cwd, this.project)
+
+    return {
+      start: rcFileTransformer.getDirectory('start', 'start'),
+      tests: rcFileTransformer.getDirectory('tests', 'tests'),
+      policies: rcFileTransformer.getDirectory('policies', 'app/policies'),
+    }
+  }
+
+  /**
    * Add a new middleware to the middleware array of the given file
    *
    * This method locates middleware stack calls (like server.use or router.use)
@@ -280,10 +298,11 @@ export class CodeTransformer {
    * @param definition - Environment validation definition containing variables and comment
    */
   async defineEnvValidations(definition: EnvValidationNode) {
-    const filePath = 'start/env.ts'
+    const directories = this.getDirectories()
+    const filePath = `${directories.start}/env.ts`
 
     /**
-     * Get the `start/env.ts` source file
+     * Get the env.ts source file
      */
     const envUrl = join(this.#cwdPath, `./${filePath}`)
     const file = this.project.getSourceFile(envUrl)
@@ -361,10 +380,11 @@ export class CodeTransformer {
    * @param middleware - Array of middleware entries to add
    */
   async addMiddlewareToStack(stack: 'server' | 'router' | 'named', middleware: MiddlewareNode[]) {
-    const filePath = 'start/kernel.ts'
+    const directories = this.getDirectories()
+    const filePath = `${directories.start}/kernel.ts`
 
     /**
-     * Get the `start/kernel.ts` source file
+     * Get the kernel.ts source file
      */
     const kernelUrl = join(this.#cwdPath, `./${filePath}`)
     const file = this.project.getSourceFile(kernelUrl)
@@ -416,10 +436,11 @@ export class CodeTransformer {
     pluginCall: string,
     importDeclarations: { isNamed: boolean; module: string; identifier: string }[]
   ) {
-    const filePath = 'tests/bootstrap.ts'
+    const directories = this.getDirectories()
+    const filePath = `${directories.tests}/bootstrap.ts`
 
     /**
-     * Get the `tests/bootstrap.ts` source file
+     * Get the bootstrap.ts source file
      */
     const testBootstrapUrl = join(this.#cwdPath, `./${filePath}`)
     const file = this.project.getSourceFile(testBootstrapUrl)
@@ -535,10 +556,11 @@ export class CodeTransformer {
    * @param policies - Array of bouncer policy entries to add
    */
   async addPolicies(policies: BouncerPolicyNode[]) {
-    const filePath = 'app/policies/main.ts'
+    const directories = this.getDirectories()
+    const filePath = `${directories.policies}/main.ts`
 
     /**
-     * Get the `app/policies/main.ts` source file
+     * Get the policies/main.ts source file
      */
     const policiesUrl = join(this.#cwdPath, `./${filePath}`)
     const file = this.project.getSourceFile(policiesUrl)

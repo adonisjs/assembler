@@ -21,6 +21,7 @@ import {
 } from 'ts-morph'
 
 import { RcFileTransformer } from './rc_file_transformer.ts'
+import { CodemodException } from '../exceptions/codemod_exception.ts'
 import type {
   MiddlewareNode,
   EnvValidationNode,
@@ -95,6 +96,24 @@ export class CodeTransformer {
       tsConfigFilePath: join(fileURLToPath(this.#cwd), 'tsconfig.json'),
       manipulationSettings: { quoteKind: QuoteKind.Single },
     })
+  }
+
+  /**
+   * Get directories configured in adonisrc.ts, with defaults fallback.
+   *
+   * This method reads the adonisrc.ts file and extracts the directories
+   * configuration. If a directory is not configured, the default value is used.
+   *
+   * @returns Object containing directory paths
+   */
+  getDirectories(): Record<string, string> {
+    const rcFileTransformer = new RcFileTransformer(this.#cwd, this.project)
+
+    return {
+      start: rcFileTransformer.getDirectory('start', 'start'),
+      tests: rcFileTransformer.getDirectory('tests', 'tests'),
+      policies: rcFileTransformer.getDirectory('policies', 'app/policies'),
+    }
   }
 
   /**
@@ -279,11 +298,18 @@ export class CodeTransformer {
    * @param definition - Environment validation definition containing variables and comment
    */
   async defineEnvValidations(definition: EnvValidationNode) {
+    const directories = this.getDirectories()
+    const filePath = `${directories.start}/env.ts`
+
     /**
-     * Get the `start/env.ts` source file
+     * Get the env.ts source file
      */
-    const kernelUrl = join(this.#cwdPath, './start/env.ts')
-    const file = this.project.getSourceFileOrThrow(kernelUrl)
+    const envUrl = join(this.#cwdPath, `./${filePath}`)
+    const file = this.project.getSourceFile(envUrl)
+
+    if (!file) {
+      throw CodemodException.missingEnvFile(filePath, definition)
+    }
 
     /**
      * Get the `Env.create` call expression
@@ -293,12 +319,12 @@ export class CodeTransformer {
       .filter((statement) => statement.getExpression().getText() === 'Env.create')
 
     if (!callExpressions.length) {
-      throw new Error(`Cannot find Env.create statement in the file.`)
+      throw CodemodException.missingEnvCreate(filePath, definition)
     }
 
     const objectLiteralExpression = callExpressions[0].getArguments()[1]
     if (!Node.isObjectLiteralExpression(objectLiteralExpression)) {
-      throw new Error(`The second argument of Env.create is not an object literal.`)
+      throw CodemodException.invalidEnvCreate(filePath, definition)
     }
 
     let shouldAddComment = true
@@ -354,21 +380,35 @@ export class CodeTransformer {
    * @param middleware - Array of middleware entries to add
    */
   async addMiddlewareToStack(stack: 'server' | 'router' | 'named', middleware: MiddlewareNode[]) {
+    const directories = this.getDirectories()
+    const filePath = `${directories.start}/kernel.ts`
+
     /**
-     * Get the `start/kernel.ts` source file
+     * Get the kernel.ts source file
      */
-    const kernelUrl = join(this.#cwdPath, './start/kernel.ts')
-    const file = this.project.getSourceFileOrThrow(kernelUrl)
+    const kernelUrl = join(this.#cwdPath, `./${filePath}`)
+    const file = this.project.getSourceFile(kernelUrl)
+
+    if (!file) {
+      throw CodemodException.missingKernelFile(filePath, stack, middleware)
+    }
 
     /**
      * Process each middleware entry
      */
-    for (const middlewareEntry of middleware) {
-      if (stack === 'named') {
-        this.#addToNamedMiddleware(file, middlewareEntry)
-      } else {
-        this.#addToMiddlewareArray(file!, `${stack}.use`, middlewareEntry)
+    try {
+      for (const middlewareEntry of middleware) {
+        if (stack === 'named') {
+          this.#addToNamedMiddleware(file, middlewareEntry)
+        } else {
+          this.#addToMiddlewareArray(file, `${stack}.use`, middlewareEntry)
+        }
       }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw CodemodException.invalidMiddlewareStack(filePath, stack, middleware, error.message)
+      }
+      throw error
     }
 
     file.formatText(this.#editorSettings)
@@ -396,11 +436,18 @@ export class CodeTransformer {
     pluginCall: string,
     importDeclarations: { isNamed: boolean; module: string; identifier: string }[]
   ) {
+    const directories = this.getDirectories()
+    const filePath = `${directories.tests}/bootstrap.ts`
+
     /**
-     * Get the `tests/bootstrap.ts` source file
+     * Get the bootstrap.ts source file
      */
-    const testBootstrapUrl = join(this.#cwdPath, './tests/bootstrap.ts')
-    const file = this.project.getSourceFileOrThrow(testBootstrapUrl)
+    const testBootstrapUrl = join(this.#cwdPath, `./${filePath}`)
+    const file = this.project.getSourceFile(testBootstrapUrl)
+
+    if (!file) {
+      throw CodemodException.missingJapaBootstrap(filePath, pluginCall, importDeclarations)
+    }
 
     /**
      * Add the import declarations
@@ -437,50 +484,65 @@ export class CodeTransformer {
     pluginCall: string,
     importDeclarations: { isNamed: boolean; module: string; identifier: string }[]
   ) {
+    const filePath = 'vite.config.ts'
+
     /**
      * Get the `vite.config.ts` source file
      */
-    const viteConfigTsUrl = join(this.#cwdPath, './vite.config.ts')
+    const viteConfigTsUrl = join(this.#cwdPath, `./${filePath}`)
 
     const file = this.project.getSourceFile(viteConfigTsUrl)
     if (!file) {
-      throw new Error(
-        'Cannot find vite.config.ts file. Make sure to rename vite.config.js to vite.config.ts'
-      )
+      throw CodemodException.missingViteConfig(filePath, pluginCall, importDeclarations)
     }
 
-    /**
-     * Add the import declarations
-     */
-    this.#addImportDeclarations(file, importDeclarations)
+    try {
+      /**
+       * Add the import declarations
+       */
+      this.#addImportDeclarations(file, importDeclarations)
 
-    /**
-     * Get the default export options
-     */
-    const defaultExport = file.getDefaultExportSymbol()
-    if (!defaultExport) {
-      throw new Error('Cannot find the default export in vite.config.ts')
-    }
+      /**
+       * Get the default export options
+       */
+      const defaultExport = file.getDefaultExportSymbol()
+      if (!defaultExport) {
+        throw new Error('Cannot find the default export in vite.config.ts')
+      }
 
-    /**
-     * Get the options object
-     * - Either the first argument of `defineConfig` call : `export default defineConfig({})`
-     * - Or child literal expression of the default export : `export default {}`
-     */
-    const declaration = defaultExport.getDeclarations()[0]
-    const options =
-      declaration.getChildrenOfKind(SyntaxKind.ObjectLiteralExpression)[0] ||
-      declaration.getChildrenOfKind(SyntaxKind.CallExpression)[0].getArguments()[0]
+      /**
+       * Get the options object
+       * - Either the first argument of `defineConfig` call : `export default defineConfig({})`
+       * - Or child literal expression of the default export : `export default {}`
+       */
+      const declaration = defaultExport.getDeclarations()[0]
+      const options =
+        declaration.getChildrenOfKind(SyntaxKind.ObjectLiteralExpression)[0] ||
+        declaration.getChildrenOfKind(SyntaxKind.CallExpression)[0].getArguments()[0]
 
-    const pluginsArray = options
-      .getPropertyOrThrow('plugins')
-      .getFirstChildByKindOrThrow(SyntaxKind.ArrayLiteralExpression)
+      const pluginsArray = options
+        .getPropertyOrThrow('plugins')
+        .getFirstChildByKindOrThrow(SyntaxKind.ArrayLiteralExpression)
 
-    /**
-     * Add plugin call to the plugins array
-     */
-    if (!pluginsArray.getElements().find((element) => element.getText() === pluginCall)) {
-      pluginsArray.addElement(pluginCall)
+      /**
+       * Add plugin call to the plugins array
+       */
+      if (!pluginsArray.getElements().find((element) => element.getText() === pluginCall)) {
+        pluginsArray.addElement(pluginCall)
+      }
+    } catch (error) {
+      if (error instanceof CodemodException) {
+        throw error
+      }
+      if (error instanceof Error) {
+        throw CodemodException.invalidViteConfig(
+          filePath,
+          pluginCall,
+          importDeclarations,
+          error.message
+        )
+      }
+      throw error
     }
 
     file.formatText(this.#editorSettings)
@@ -494,17 +556,31 @@ export class CodeTransformer {
    * @param policies - Array of bouncer policy entries to add
    */
   async addPolicies(policies: BouncerPolicyNode[]) {
-    /**
-     * Get the `app/policies/main.ts` source file
-     */
-    const kernelUrl = join(this.#cwdPath, './app/policies/main.ts')
-    const file = this.project.getSourceFileOrThrow(kernelUrl)
+    const directories = this.getDirectories()
+    const filePath = `${directories.policies}/main.ts`
 
     /**
-     * Process each middleware entry
+     * Get the policies/main.ts source file
      */
-    for (const policy of policies) {
-      this.#addToPoliciesList(file, policy)
+    const policiesUrl = join(this.#cwdPath, `./${filePath}`)
+    const file = this.project.getSourceFile(policiesUrl)
+
+    if (!file) {
+      throw CodemodException.missingPoliciesFile(filePath, policies)
+    }
+
+    /**
+     * Process each policy entry
+     */
+    try {
+      for (const policy of policies) {
+        this.#addToPoliciesList(file, policy)
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        throw CodemodException.invalidPoliciesFile(filePath, policies, error.message)
+      }
+      throw error
     }
 
     file.formatText(this.#editorSettings)

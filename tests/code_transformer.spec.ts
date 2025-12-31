@@ -12,6 +12,7 @@ import { test } from '@japa/runner'
 import { readFile } from 'node:fs/promises'
 import type { FileSystem } from '@japa/file-system'
 import { CodeTransformer } from '../src/code_transformer/main.ts'
+import { CodemodException } from '../src/exceptions/codemod_exception.ts'
 
 async function setupFakeAdonisproject(fs: FileSystem) {
   await Promise.all([
@@ -21,6 +22,50 @@ async function setupFakeAdonisproject(fs: FileSystem) {
     fs.create('start/env.ts', await readFile('./tests/fixtures/env.txt', 'utf-8')),
   ])
 }
+
+test.group('Code transformer | getDirectories', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('return default directories when none configured', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    const directories = transformer.getDirectories()
+
+    assert.equal(directories.start, 'start')
+    assert.equal(directories.tests, 'tests')
+    assert.equal(directories.policies, 'app/policies')
+  })
+
+  test('return custom directories when configured in adonisrc.ts', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          start: 'boot',
+          tests: 'spec',
+        }
+      })`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+    const directories = transformer.getDirectories()
+
+    assert.equal(directories.start, 'boot')
+    assert.equal(directories.tests, 'spec')
+    assert.equal(directories.policies, 'app/policies')
+  })
+
+  test('return defaults when adonisrc.ts is missing', async ({ assert, fs }) => {
+    await fs.remove('adonisrc.ts')
+    const transformer = new CodeTransformer(fs.baseUrl)
+    const directories = transformer.getDirectories()
+
+    assert.equal(directories.start, 'start')
+    assert.equal(directories.tests, 'tests')
+  })
+})
 
 test.group('Code transformer | addMiddlewareToStack', (group) => {
   group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
@@ -133,6 +178,89 @@ test.group('Code transformer | addMiddlewareToStack', (group) => {
     const file = await fs.contents('start/kernel.ts')
     assert.snapshot(file).match()
   })
+
+  test('throw CodemodException with instructions when kernel.ts file is missing', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.remove('start/kernel.ts')
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    try {
+      await transformer.addMiddlewareToStack('server', [
+        { path: '@adonisjs/static/static_middleware' },
+      ])
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.include(error.message, 'start/kernel.ts')
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, `() => import('@adonisjs/static/static_middleware')`)
+    }
+  })
+
+  test('throw CodemodException with instructions for named middleware when kernel.ts is missing', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.remove('start/kernel.ts')
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    try {
+      await transformer.addMiddlewareToStack('named', [
+        { name: 'auth', path: '#middleware/auth_middleware' },
+      ])
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, `auth: () => import('#middleware/auth_middleware')`)
+    }
+  })
+
+  test('throw CodemodException with instructions when server.use is missing', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.create('start/kernel.ts', `export const foo = {}`)
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    try {
+      await transformer.addMiddlewareToStack('server', [
+        { path: '@adonisjs/static/static_middleware' },
+      ])
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.include(error.message, 'server.use')
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, `() => import('@adonisjs/static/static_middleware')`)
+    }
+  })
+
+  test('use custom start directory from adonisrc.ts', async ({ assert, fs }) => {
+    await fs.remove('start/kernel.ts')
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          start: 'boot',
+        }
+      })`
+    )
+    await fs.create('boot/kernel.ts', await readFile('./tests/fixtures/kernel.txt', 'utf-8'))
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addMiddlewareToStack('server', [
+      { path: '@adonisjs/static/static_middleware' },
+    ])
+
+    assert.fileContains('boot/kernel.ts', `() => import('@adonisjs/static/static_middleware')`)
+  })
 })
 
 test.group('Code transformer | defineEnvValidations', (group) => {
@@ -233,6 +361,119 @@ test.group('Code transformer | defineEnvValidations', (group) => {
       })
       "
     `)
+  })
+
+  test('throw CodemodException with instructions when env.ts file is missing', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.remove('start/env.ts')
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    try {
+      await transformer.defineEnvValidations({
+        leadingComment: 'Redis configuration',
+        variables: {
+          REDIS_HOST: 'Env.schema.string.optional()',
+          REDIS_PORT: 'Env.schema.number()',
+        },
+      })
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.include(error.message, 'start/env.ts')
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, 'REDIS_HOST: Env.schema.string.optional()')
+      assert.include(error.instructions, 'REDIS_PORT: Env.schema.number()')
+    }
+  })
+
+  test('throw CodemodException with instructions when Env.create is missing', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.create('start/env.ts', `export const env = {}`)
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    try {
+      await transformer.defineEnvValidations({
+        variables: {
+          MY_VAR: 'Env.schema.string()',
+        },
+      })
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.include(error.message, 'Env.create')
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, 'MY_VAR: Env.schema.string()')
+    }
+  })
+
+  test('use custom start directory from adonisrc.ts', async ({ assert, fs }) => {
+    await fs.remove('start/env.ts')
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          start: 'boot',
+        }
+      })`
+    )
+    await fs.create('boot/env.ts', await readFile('./tests/fixtures/env.txt', 'utf-8'))
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.defineEnvValidations({
+      variables: {
+        MY_VAR: 'Env.schema.string()',
+      },
+    })
+
+    assert.fileContains('boot/env.ts', 'MY_VAR: Env.schema.string()')
+  })
+})
+
+test.group('Code transformer | updateRcFile errors', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('throw CodemodException with instructions when adonisrc.ts is missing', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.remove('adonisrc.ts')
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    try {
+      await transformer.updateRcFile((rcFile) => {
+        rcFile.addCommand('#foo/bar.js')
+      })
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.include(error.message, 'adonisrc.ts')
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, 'defineConfig')
+    }
+  })
+
+  test('throw CodemodException when defineConfig is missing', async ({ assert, fs }) => {
+    await fs.create('adonisrc.ts', `export default {}`)
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    try {
+      await transformer.updateRcFile((rcFile) => {
+        rcFile.addCommand('#foo/bar.js')
+      })
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.include(error.message, 'defineConfig')
+      assert.isDefined(error.instructions)
+    }
   })
 })
 
@@ -701,6 +942,57 @@ test.group('Code transformer | addJapaPlugin', (group) => {
       "
     `)
   })
+
+  test('throw CodemodException with instructions when bootstrap.ts is missing', async ({
+    assert,
+    fs,
+  }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    try {
+      await transformer.addJapaPlugin('fooPlugin()', [
+        { identifier: 'fooPlugin', module: '@adonisjs/foo/plugin/japa', isNamed: true },
+      ])
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.include(error.message, 'tests/bootstrap.ts')
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, `import { fooPlugin } from '@adonisjs/foo/plugin/japa'`)
+      assert.include(error.instructions, 'fooPlugin()')
+    }
+  })
+
+  test('use custom tests directory from adonisrc.ts', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          tests: 'spec',
+        }
+      })`
+    )
+    await fs.create(
+      'spec/bootstrap.ts',
+      dedent`
+      import { assert } from '@japa/assert'
+
+      export const plugins: Config['plugins'] = [
+        assert(),
+      ]`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addJapaPlugin('fooPlugin()', [
+      { identifier: 'fooPlugin', module: '@adonisjs/foo/plugin/japa', isNamed: true },
+    ])
+
+    assert.fileContains('spec/bootstrap.ts', 'fooPlugin()')
+  })
 })
 
 test.group('Code transformer | addPolicies', (group) => {
@@ -732,52 +1024,84 @@ test.group('Code transformer | addPolicies', (group) => {
     `)
   })
 
-  test('throw error when policies/main.ts file is missing', async ({ fs }) => {
+  test('throw CodemodException with instructions when policies/main.ts file is missing', async ({
+    assert,
+    fs,
+  }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
 
-    await transformer.addPolicies([
-      {
-        name: 'PostPolicy',
-        path: '#policies/post_policy',
-      },
-      {
-        name: 'UserPolicy',
-        path: '#policies/user_policy',
-      },
-    ])
-  }).throws(/Could not find source file in project at the provided path:/)
+    try {
+      await transformer.addPolicies([
+        { name: 'PostPolicy', path: '#policies/post_policy' },
+        { name: 'UserPolicy', path: '#policies/user_policy' },
+      ])
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.include(error.message, 'app/policies/main.ts')
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, `PostPolicy: () => import('#policies/post_policy')`)
+      assert.include(error.instructions, `UserPolicy: () => import('#policies/user_policy')`)
+    }
+  })
 
-  test('throw error when policies object is not defined', async ({ fs }) => {
+  test('throw CodemodException with instructions when policies object is not defined', async ({
+    assert,
+    fs,
+  }) => {
     await fs.create('app/policies/main.ts', `export const foo = {}`)
     const transformer = new CodeTransformer(fs.baseUrl)
 
-    await transformer.addPolicies([
-      {
-        name: 'PostPolicy',
-        path: '#policies/post_policy',
-      },
-      {
-        name: 'UserPolicy',
-        path: '#policies/user_policy',
-      },
-    ])
-  }).throws(`Expected to find variable declaration named 'policies'.`)
+    try {
+      await transformer.addPolicies([{ name: 'PostPolicy', path: '#policies/post_policy' }])
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, `PostPolicy: () => import('#policies/post_policy')`)
+    }
+  })
 
-  test('throw error when policies declaration is not an object', async ({ fs }) => {
+  test('throw CodemodException with instructions when policies declaration is not an object', async ({
+    assert,
+    fs,
+  }) => {
     await fs.create('app/policies/main.ts', `export const policies = []`)
     const transformer = new CodeTransformer(fs.baseUrl)
 
-    await transformer.addPolicies([
-      {
-        name: 'PostPolicy',
-        path: '#policies/post_policy',
-      },
-      {
-        name: 'UserPolicy',
-        path: '#policies/user_policy',
-      },
-    ])
-  }).throws(/Expected to find an initializer of kind \'ObjectLiteralExpression\'./)
+    try {
+      await transformer.addPolicies([{ name: 'PostPolicy', path: '#policies/post_policy' }])
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, `PostPolicy: () => import('#policies/post_policy')`)
+    }
+  })
+
+  test('use custom policies directory from adonisrc.ts', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          policies: 'domain/policies',
+        }
+      })`
+    )
+    await fs.create('domain/policies/main.ts', `export const policies = {}`)
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addPolicies([{ name: 'PostPolicy', path: '#policies/post_policy' }])
+
+    assert.fileContains(
+      'domain/policies/main.ts',
+      `PostPolicy: () => import('#policies/post_policy')`
+    )
+  })
 })
 
 test.group('Code transformer | addVitePlugin', (group) => {
@@ -874,25 +1198,63 @@ test.group('Code transformer | addVitePlugin', (group) => {
     `)
   })
 
-  test('throw error when vite.config.ts file is missing', async ({ fs }) => {
+  test('throw CodemodException with instructions when vite.config.ts is missing', async ({
+    assert,
+    fs,
+  }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
 
-    await transformer.addVitePlugin('vue()', [{ identifier: 'vue', module: 'vue', isNamed: false }])
-  }).throws(/Cannot find vite\.config\.ts file/)
+    try {
+      await transformer.addVitePlugin('vue()', [
+        { identifier: 'vue', module: 'vue', isNamed: false },
+      ])
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.include(error.message, 'vite.config.ts')
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, `import vue from 'vue'`)
+      assert.include(error.instructions, 'vue()')
+    }
+  })
 
-  test('throw if no default export found', async ({ fs }) => {
+  test('throw CodemodException with instructions when no default export found', async ({
+    assert,
+    fs,
+  }) => {
     await fs.create('vite.config.ts', `export const plugins = []`)
     const transformer = new CodeTransformer(fs.baseUrl)
 
-    await transformer.addVitePlugin('vue()', [{ identifier: 'vue', module: 'vue', isNamed: false }])
-  }).throws(/Cannot find the default export/)
+    try {
+      await transformer.addVitePlugin('vue()', [
+        { identifier: 'vue', module: 'vue', isNamed: false },
+      ])
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, 'vue()')
+    }
+  })
 
-  test('throw if plugins property is not found', async ({ fs }) => {
+  test('throw CodemodException with instructions when plugins property is not found', async ({
+    assert,
+    fs,
+  }) => {
     await fs.create('vite.config.ts', `export default {}`)
     const transformer = new CodeTransformer(fs.baseUrl)
 
-    await transformer.addVitePlugin('vue()', [{ identifier: 'vue', module: 'vue', isNamed: false }])
-  }).throws(/Expected to find property named 'plugins'/)
+    try {
+      await transformer.addVitePlugin('vue()', [
+        { identifier: 'vue', module: 'vue', isNamed: false },
+      ])
+      assert.fail('Should have thrown an error')
+    } catch (error) {
+      assert.instanceOf(error, CodemodException)
+      assert.isDefined(error.instructions)
+      assert.include(error.instructions, 'vue()')
+    }
+  })
 })
 
 test.group('Code Transformer | addAssemblerHook', (group) => {

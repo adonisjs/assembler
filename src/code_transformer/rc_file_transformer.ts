@@ -19,6 +19,7 @@ import {
   type ArrayLiteralExpression,
 } from 'ts-morph'
 import { type AssemblerRcFile } from '../types/common.ts'
+import { CodemodException } from '../exceptions/codemod_exception.ts'
 
 const ALLOWED_ENVIRONMENTS = ['web', 'console', 'test', 'repl'] as const
 
@@ -75,11 +76,25 @@ export class RcFileTransformer {
    * Get the `adonisrc.ts` source file
    *
    * @returns The adonisrc.ts source file
-   * @throws Error if the file cannot be found
+   * @throws CodemodException if the file cannot be found
    */
   #getRcFileOrThrow() {
-    const kernelUrl = fileURLToPath(new URL('./adonisrc.ts', this.#cwd))
-    return this.#project.getSourceFileOrThrow(kernelUrl)
+    const filePath = 'adonisrc.ts'
+    const rcFileUrl = fileURLToPath(new URL(`./${filePath}`, this.#cwd))
+    const file = this.#project.getSourceFile(rcFileUrl)
+
+    if (!file) {
+      throw CodemodException.missingRcFile(
+        filePath,
+        `import { defineConfig } from '@adonisjs/core/app'
+
+export default defineConfig({
+  // Add your configuration here
+})`
+      )
+    }
+
+    return file
   }
 
   /**
@@ -101,7 +116,7 @@ export class RcFileTransformer {
    *
    * @param file - The source file to search in
    * @returns The defineConfig call expression
-   * @throws Error if defineConfig call cannot be found
+   * @throws CodemodException if defineConfig call cannot be found
    */
   #locateDefineConfigCallOrThrow(file: SourceFile) {
     const call = file
@@ -109,7 +124,15 @@ export class RcFileTransformer {
       .find((statement) => statement.getExpression().getText() === 'defineConfig')
 
     if (!call) {
-      throw new Error('Could not locate the defineConfig call.')
+      throw CodemodException.invalidRcFile(
+        'adonisrc.ts',
+        `import { defineConfig } from '@adonisjs/core/app'
+
+export default defineConfig({
+  // Add your configuration here
+})`,
+        'Could not locate the defineConfig call.'
+      )
     }
 
     return call
@@ -441,6 +464,45 @@ export class RcFileTransformer {
     hooksArray.addElement(`() => import('${path}')`)
 
     return this
+  }
+
+  /**
+   * Get a directory value from the directories configuration.
+   *
+   * @param key - The directory key to retrieve
+   * @param defaultValue - The default value if not configured
+   * @returns The configured directory path or the default value
+   */
+  getDirectory(key: string, defaultValue: string): string {
+    try {
+      const file = this.#getRcFileOrThrow()
+      const defineConfigCall = this.#locateDefineConfigCallOrThrow(file)
+      const configObject = this.#getDefineConfigObjectOrThrow(defineConfigCall)
+
+      const directoriesProperty = configObject.getProperty('directories')
+      if (!directoriesProperty || !Node.isPropertyAssignment(directoriesProperty)) {
+        return defaultValue
+      }
+
+      const directoriesObject = directoriesProperty.getInitializer()
+      if (!directoriesObject || !Node.isObjectLiteralExpression(directoriesObject)) {
+        return defaultValue
+      }
+
+      const property = directoriesObject.getProperty(key)
+      if (!property || !Node.isPropertyAssignment(property)) {
+        return defaultValue
+      }
+
+      const initializer = property.getInitializer()
+      if (!initializer || !Node.isStringLiteral(initializer)) {
+        return defaultValue
+      }
+
+      return initializer.getLiteralValue()
+    } catch {
+      return defaultValue
+    }
   }
 
   /**

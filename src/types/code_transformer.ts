@@ -106,6 +106,17 @@ export type EnvValidationNode = {
   variables: Record<string, string>
 }
 
+export type HookNode =
+  | {
+      type: 'thunk'
+      path: string
+    }
+  | {
+      type: 'import'
+      path: string
+      name?: string
+    }
+
 /**
  * The supported package managers for installing packages and managing lockfiles.
  * Each package manager has specific lockfiles and install commands.

@@ -1284,4 +1284,45 @@ test.group('Code Transformer | addAssemblerHook', (group) => {
 
     assert.equal(occurrences, 1)
   })
+
+  test('add raw assembler hook to the assembler file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) =>
+      rcFile.addAssemblerHook('init', 'indexPages()', true)
+    )
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
+  })
+})
+
+test.group('Code Transformer | addDefaultImport', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add default import to the assembler file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) =>
+      rcFile.addDefaultImport('@adonisjs/inertia', 'indexPages')
+    )
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
+  })
+})
+
+test.group('Code Transformer | addNamedImport', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add named import to the assembler file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.updateRcFile((rcFile) =>
+      rcFile.addNamedImport('@adonisjs/inertia', ['indexPages'])
+    )
+
+    const file = await fs.contents('adonisrc.ts')
+    assert.snapshot(file).match()
+  })
 })

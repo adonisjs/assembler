@@ -440,12 +440,18 @@ export default defineConfig({
 
   /**
    * Add a new assembler hook
+   * The format `thunk` write `() => import(path)`.
    *
    * @param type - The type of hook to add
-   * @param path - The path to the hook file
+   * @param value - The path to the hook file or value to write
+   * @param raw - Wether to write a thunk import or as raw value
    * @returns This RcFileTransformer instance for method chaining
    */
-  addAssemblerHook(type: keyof Exclude<AssemblerRcFile['hooks'], undefined>, path: string) {
+  addAssemblerHook(
+    type: keyof Exclude<AssemblerRcFile['hooks'], undefined>,
+    value: string,
+    raw: boolean = false
+  ) {
     const hooksProperty = this.#getPropertyAssignmentInDefineConfigCall('hooks', '{}')
 
     const hooks = hooksProperty.getInitializerIfKindOrThrow(SyntaxKind.ObjectLiteralExpression)
@@ -456,12 +462,53 @@ export default defineConfig({
     }
 
     const hooksArray = hookArray.getInitializerIfKindOrThrow(SyntaxKind.ArrayLiteralExpression)
-    const existingHooks = this.#extractModulesFromArray(hooksArray)
-    if (existingHooks.includes(path)) {
-      return this
+
+    if (raw) {
+      hooksArray.addElement(value)
+    } else {
+      const existingHooks = this.#extractModulesFromArray(hooksArray)
+      if (existingHooks.includes(value)) {
+        return this
+      }
+
+      hooksArray.addElement(`() => import('${value}')`)
     }
 
-    hooksArray.addElement(`() => import('${path}')`)
+    return this
+  }
+
+  /**
+   * Add a named import
+   *
+   * @param specifier - The module specifier to import
+   * @param names - Names to import from the module
+   * @returns This RcFileTransformer instance for method chaining
+   */
+  addNamedImport(specifier: string, names: string[]) {
+    const file = this.#getRcFileOrThrow()
+
+    file.addImportDeclaration({
+      moduleSpecifier: specifier,
+      namedImports: names,
+    })
+
+    return this
+  }
+
+  /**
+   * Add a default import
+   *
+   * @param specifier - The module specifier to import
+   * @param name - Name of the default import
+   * @returns This RcFileTransformer instance for method chaining
+   */
+  addDefaultImport(specifier: string, name: string) {
+    const file = this.#getRcFileOrThrow()
+
+    file.addImportDeclaration({
+      moduleSpecifier: specifier,
+      defaultImport: name,
+    })
 
     return this
   }

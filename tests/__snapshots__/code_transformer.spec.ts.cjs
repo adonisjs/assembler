@@ -431,3 +431,98 @@ export default defineConfig({
 })
 "`
 
+exports[`Code Transformer | addAssemblerHook > add raw assembler hook to the assembler file 1`] = `"import { defineConfig } from '@adonisjs/core/app'
+
+export default defineConfig({
+  typescript: true,
+  preloads: [
+    () => import('./start/routes.ts'),
+    {
+      file: () => import('./start/ace.ts'),
+      environment: ['console'],
+    },
+  ],
+  providers: [
+    () => import('@adonisjs/core/providers/app_provider'),
+    {
+      file: () => import('@adonisjs/core/providers/repl_provider'),
+      environment: ['repl'],
+    }
+  ],
+  metaFiles: [
+    {
+      pattern: 'public/**',
+      reloadServer: true
+    },
+  ],
+  commands: [
+    () => import('@adonisjs/core/commands')
+  ],
+  hooks: {
+    init: [indexPages()]
+  }
+})
+"`
+
+exports[`Code Transformer | addDefaultImport > add default import to the assembler file 1`] = `"import { defineConfig } from '@adonisjs/core/app'
+import indexPages from '@adonisjs/inertia'
+
+export default defineConfig({
+  typescript: true,
+  preloads: [
+    () => import('./start/routes.ts'),
+    {
+      file: () => import('./start/ace.ts'),
+      environment: ['console'],
+    },
+  ],
+  providers: [
+    () => import('@adonisjs/core/providers/app_provider'),
+    {
+      file: () => import('@adonisjs/core/providers/repl_provider'),
+      environment: ['repl'],
+    }
+  ],
+  metaFiles: [
+    {
+      pattern: 'public/**',
+      reloadServer: true
+    },
+  ],
+  commands: [
+    () => import('@adonisjs/core/commands')
+  ]
+})
+"`
+
+exports[`Code Transformer | addNamedImport > add named import to the assembler file 1`] = `"import { defineConfig } from '@adonisjs/core/app'
+import { indexPages } from '@adonisjs/inertia'
+
+export default defineConfig({
+  typescript: true,
+  preloads: [
+    () => import('./start/routes.ts'),
+    {
+      file: () => import('./start/ace.ts'),
+      environment: ['console'],
+    },
+  ],
+  providers: [
+    () => import('@adonisjs/core/providers/app_provider'),
+    {
+      file: () => import('@adonisjs/core/providers/repl_provider'),
+      environment: ['repl'],
+    }
+  ],
+  metaFiles: [
+    {
+      pattern: 'public/**',
+      reloadServer: true
+    },
+  ],
+  commands: [
+    () => import('@adonisjs/core/commands')
+  ]
+})
+"`
+

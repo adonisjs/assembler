@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import getRandomPort from 'get-port'
 import { join } from 'node:path/posix'
 import { cliui } from '@poppinss/cliui'
 import type Hooks from '@poppinss/hooks'
@@ -66,6 +67,12 @@ export class TestRunner {
   #stickyPort!: string
 
   /**
+   * The stickyHmrPort is set by the start and the startAndWatch methods
+   * and we will continue to use that port during restart
+   */
+  #stickyHmrPort!: string
+
+  /**
    * Reference to chokidar watcher
    */
   #watcher?: FSWatcher
@@ -113,7 +120,7 @@ export class TestRunner {
       this.#testsProcess.removeAllListeners()
       this.#testsProcess.kill('SIGKILL')
     }
-    await this.#runTests(this.#stickyPort, filters)
+    await this.#runTests(this.#stickyPort, this.#stickyHmrPort, filters)
   }, 'reRunTests')
 
   /**
@@ -242,7 +249,7 @@ export class TestRunner {
    * @param port - The port number to set in the environment
    * @param filters - Optional test filters to apply for this run
    */
-  async #runTests(port: string, filters?: TestRunnerOptions['filters']) {
+  async #runTests(port: string, hmrPort: string, filters?: TestRunnerOptions['filters']) {
     /**
      * Execute the registered before creating the child process. This will allow
      * hooks to modify the options before they are used.
@@ -265,7 +272,7 @@ export class TestRunner {
       this.#testsProcess = runNode(this.cwd, {
         script: this.scriptFile,
         reject: true,
-        env: { PORT: port, ...this.options.env },
+        env: { PORT: port, VITE_HMR_PORT: hmrPort, ...this.options.env },
         nodeArgs: this.options.nodeArgs,
         scriptArgs,
       })
@@ -400,6 +407,7 @@ export class TestRunner {
    */
   async run() {
     this.#stickyPort = String(await getPort(this.cwd))
+    this.#stickyHmrPort = String(getRandomPort({ port: 24678 }))
     this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
 
     this.#clearScreen()
@@ -418,7 +426,7 @@ export class TestRunner {
     await this.#indexGenerator.generate()
 
     this.ui.logger.info('booting application to run tests...')
-    await this.#runTests(this.#stickyPort)
+    await this.#runTests(this.#stickyPort, this.#stickyHmrPort)
   }
 
   /**
@@ -440,6 +448,7 @@ export class TestRunner {
     }
 
     this.#stickyPort = String(await getPort(this.cwd))
+    this.#stickyHmrPort = String(getRandomPort({ port: 24678 }))
     this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
 
     this.#fileSystem = new FileSystem(this.cwdPath, tsConfig, {
@@ -476,7 +485,7 @@ export class TestRunner {
     await this.#indexGenerator.generate()
 
     this.ui.logger.info('booting application to run tests...')
-    await this.#runTests(this.#stickyPort)
+    await this.#runTests(this.#stickyPort, this.#stickyHmrPort)
 
     /**
      * Create watcher

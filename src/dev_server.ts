@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import getRandomPort from 'get-port'
 import { cliui } from '@poppinss/cliui'
 import type Hooks from '@poppinss/hooks'
 import prettyHrtime from 'pretty-hrtime'
@@ -96,6 +97,12 @@ export class DevServer {
   #stickyPort!: string
 
   /**
+   * The stickyHmrPort is set by the start and the startAndWatch methods
+   * and we will continue to use that port during restart
+   */
+  #stickyHmrPort!: string
+
+  /**
    * The mode is set by the start and the startAndWatch methods
    */
   #mode: 'hmr' | 'watch' | 'static' = 'static'
@@ -166,7 +173,7 @@ export class DevServer {
       this.#httpServer.removeAllListeners()
       this.#httpServer.kill('SIGKILL')
     }
-    await this.#startHTTPServer(this.#stickyPort)
+    await this.#startHTTPServer(this.#stickyPort, this.#stickyHmrPort)
   }, 'restartHTTPServer')
 
   /**
@@ -652,6 +659,7 @@ export class DevServer {
 
     this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
     this.#stickyPort = String(await getPort(this.cwd))
+    this.#stickyHmrPort = String(getRandomPort({ port: 24678 }))
     this.#fileSystem = new FileSystem(this.cwdPath, tsConfig, this.options)
 
     this.ui.logger.info('loading hooks...')
@@ -695,7 +703,7 @@ export class DevServer {
    * @example
    * await devServer.#startHTTPServer('3333')
    */
-  async #startHTTPServer(port: string) {
+  async #startHTTPServer(port: string, hmrPort: string) {
     /**
      * Execute the registered before creating the child process. This will allow
      * hooks to modify the options before they are used.
@@ -709,7 +717,7 @@ export class DevServer {
        */
       this.#httpServer = runNode(this.cwd, {
         script: this.scriptFile,
-        env: { PORT: port, ...this.options.env },
+        env: { PORT: port, VITE_HMR_PORT: hmrPort, DEV_MODE: 'true', ...this.options.env },
         nodeArgs: this.options.nodeArgs,
         reject: true,
         scriptArgs: this.options.scriptArgs,
@@ -854,7 +862,7 @@ export class DevServer {
     }
 
     this.ui.logger.info('starting HTTP server...')
-    await this.#startHTTPServer(this.#stickyPort)
+    await this.#startHTTPServer(this.#stickyPort, this.#stickyHmrPort)
 
     if (this.#mode !== 'hmr') {
       return
@@ -894,7 +902,7 @@ export class DevServer {
     }
 
     this.ui.logger.info('starting HTTP server...')
-    await this.#startHTTPServer(this.#stickyPort)
+    await this.#startHTTPServer(this.#stickyPort, this.#stickyHmrPort)
 
     this.#watcher = this.#createWatcher({ poll: options?.poll })
     this.#watcher.on('add', (filePath) => {

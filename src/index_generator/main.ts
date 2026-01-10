@@ -107,5 +107,8 @@ export class IndexGenerator {
     for (let source of sources) {
       await source.generate()
     }
+    if (sources.length) {
+      this.#cliLogger.info(`codegen: created ${sources.length} file(s)`)
+    }
   }
 }

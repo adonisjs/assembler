@@ -312,9 +312,8 @@ export class IndexGeneratorSource {
    * the configuration, and writes the generated index file to disk.
    */
   async generate() {
-    const startTime = process.hrtime()
+    debug('generating "%s" index', this.name)
     await this.#vfs.scan()
     await this.#generateOutput()
-    this.#logCreation(startTime)
   }
 }

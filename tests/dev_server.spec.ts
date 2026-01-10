@@ -463,12 +463,10 @@ test.group('DevServer', () => {
     await sleep(1000)
     const logs = devServer.ui.logger.getLogs()
 
-    console.log(logs)
-
     const indexGenerationLogs = logs.filter(({ message }) =>
       message.includes('.adonisjs/server/controllers.ts')
     )
-    assert.lengthOf(indexGenerationLogs, 3)
+    assert.lengthOf(indexGenerationLogs, 2)
   }).timeout(10 * 1000)
 
   test('regenerate index file on related file changes in watch mode', async ({
@@ -532,11 +530,10 @@ test.group('DevServer', () => {
     await sleep(1000)
     const logs = devServer.ui.logger.getLogs()
 
-    console.log(logs)
     const indexGenerationLogs = logs.filter(({ message }) =>
       message.includes('.adonisjs/server/controllers.ts')
     )
-    assert.lengthOf(indexGenerationLogs, 3)
+    assert.lengthOf(indexGenerationLogs, 2)
   }).timeout(10 * 1000)
 
   test('restart server on file change when child process has crashed in hmr mode', async ({
@@ -584,7 +581,6 @@ test.group('DevServer', () => {
     await sleep(1000)
 
     const logMessages = devServer.ui.logger.getLogs().map(({ message }) => message)
-    console.log(logMessages)
 
     assert.snapshot(logMessages).matchInline(`
       [

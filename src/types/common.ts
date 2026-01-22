@@ -400,20 +400,96 @@ export interface ShortcutsManagerOptions {
   callbacks: KeyboardShortcutsCallbacks
 }
 
+/**
+ * Message sent from the dev server child process to the parent when the server is ready.
+ * Used for IPC communication to notify when the AdonisJS HTTP server has started.
+ *
+ * @example
+ * const message: AdonisJSServerReadyMessage = {
+ *   isAdonisJS: true,
+ *   environment: 'web',
+ *   port: 3333,
+ *   host: 'localhost',
+ *   duration: [0, 150000000] // [seconds, nanoseconds]
+ * }
+ */
 export type AdonisJSServerReadyMessage = {
+  /** Marker to identify AdonisJS-specific messages */
   isAdonisJS: true
+  /** The environment type (always 'web' for HTTP servers) */
   environment: 'web'
+  /** The port number the server is listening on */
   port: number
+  /** The host address the server is bound to */
   host: string
+  /** Optional server startup duration as [seconds, nanoseconds] tuple */
   duration?: [number, number]
 }
 
+/**
+ * Message sent from the dev server child process when routes are committed.
+ * Contains the file location where routes are defined.
+ *
+ * @example
+ * const message: AdonisJSRoutesSharedMessage = {
+ *   isAdonisJS: true,
+ *   routesFileLocation: '/project/start/routes.ts'
+ * }
+ */
 export type AdonisJSRoutesSharedMessage = {
+  /** Marker to identify AdonisJS-specific messages */
   isAdonisJS: true
+  /** Absolute path to the routes definition file */
   routesFileLocation: string
 }
 
+/**
+ * Messages sent by the hot-hook module for HMR (Hot Module Replacement) communication.
+ * These messages notify the dev server about file system changes and module invalidations.
+ *
+ * @example
+ * // Full reload required
+ * const fullReload: HotHookMessage = {
+ *   type: 'hot-hook:full-reload',
+ *   path: 'app/middleware/auth.ts',
+ *   shouldBeReloadable: false
+ * }
+ *
+ * @example
+ * // Modules invalidated (can be hot-reloaded)
+ * const invalidated: HotHookMessage = {
+ *   type: 'hot-hook:invalidated',
+ *   paths: ['app/controllers/users_controller.ts', 'app/models/user.ts']
+ * }
+ *
+ * @example
+ * // File changed notification
+ * const fileChanged: HotHookMessage = {
+ *   type: 'hot-hook:file-changed',
+ *   path: 'config/database.ts',
+ *   action: 'change'
+ * }
+ */
 export type HotHookMessage =
-  | { type: 'hot-hook:full-reload'; path: string; shouldBeReloadable?: boolean }
-  | { type: 'hot-hook:invalidated'; paths: string[] }
-  | { type: 'hot-hook:file-changed'; path: string; action: 'change' | 'add' | 'unlink' }
+  | {
+      /** Message type indicating a full server reload is required */
+      type: 'hot-hook:full-reload'
+      /** Path to the file that triggered the full reload */
+      path: string
+      /** Whether the file should be hot-reloadable but isn't */
+      shouldBeReloadable?: boolean
+    }
+  | {
+      /** Message type indicating modules have been invalidated */
+      type: 'hot-hook:invalidated'
+      /** Array of module paths that were invalidated */
+      paths: string[]
+    }
+  | {
+      /** Message type indicating a file has changed */
+      type: 'hot-hook:file-changed'
+      /** Path to the file that changed */
+      path: string
+      /** The type of file system change */
+      action: 'change' | 'add' | 'unlink'
+    }

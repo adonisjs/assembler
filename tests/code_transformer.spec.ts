@@ -1326,3 +1326,101 @@ test.group('Code Transformer | addNamedImport', (group) => {
     assert.snapshot(file).match()
   })
 })
+
+test.group('Code Transformer | addValidator', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add validator to a non-existing validator file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addValidator({
+      exportName: 'loginValidator',
+      validatorFileName: 'user.ts',
+      contents: dedent`
+      export const loginValidator = vine.create({
+        email: vine.string(),
+        password: vine.string(),
+      })
+      `,
+    })
+
+    const file = await fs.contents('app/validators/user.ts')
+    assert.snapshot(file).matchInline(`
+      "export const loginValidator = vine.create({
+        email: vine.string(),
+        password: vine.string(),
+      })
+      "
+    `)
+  })
+
+  test('add validator to existing validator file with other exports', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/validators/user.ts',
+      dedent`
+      export const signupValidator = vine.create({
+        email: vine.string(),
+        password: vine.string().confirmed(),
+      })
+    `
+    )
+
+    await transformer.addValidator({
+      exportName: 'loginValidator',
+      validatorFileName: 'user.ts',
+      contents: dedent`
+      export const loginValidator = vine.create({
+        email: vine.string(),
+        password: vine.string(),
+      })
+      `,
+    })
+
+    const file = await fs.contents('app/validators/user.ts')
+    assert.snapshot(file).matchInline(`
+      "export const signupValidator = vine.create({
+        email: vine.string(),
+        password: vine.string().confirmed(),
+      })
+
+      export const loginValidator = vine.create({
+        email: vine.string(),
+        password: vine.string(),
+      })
+      "
+    `)
+  })
+
+  test('skip adding validator when it already exists', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/validators/user.ts',
+      dedent`
+      export const loginValidator = vine.create({
+        username: vine.string(),
+        password: vine.string().confirmed(),
+      })
+    `
+    )
+
+    await transformer.addValidator({
+      exportName: 'loginValidator',
+      validatorFileName: 'user.ts',
+      contents: dedent`
+      export const loginValidator = vine.create({
+        email: vine.string(),
+        password: vine.string(),
+      })
+      `,
+    })
+
+    const file = await fs.contents('app/validators/user.ts')
+    assert.snapshot(file).matchInline(`
+      "export const loginValidator = vine.create({
+        username: vine.string(),
+        password: vine.string().confirmed(),
+      })"
+    `)
+  })
+})

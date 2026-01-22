@@ -26,6 +26,7 @@ import type {
   MiddlewareNode,
   EnvValidationNode,
   BouncerPolicyNode,
+  ValidatorNode,
 } from '../types/code_transformer.ts'
 
 /**
@@ -113,6 +114,7 @@ export class CodeTransformer {
       start: rcFileTransformer.getDirectory('start', 'start'),
       tests: rcFileTransformer.getDirectory('tests', 'tests'),
       policies: rcFileTransformer.getDirectory('policies', 'app/policies'),
+      validators: rcFileTransformer.getDirectory('validators', 'app/validators'),
     }
   }
 
@@ -583,6 +585,53 @@ export class CodeTransformer {
       throw error
     }
 
+    file.formatText(this.#editorSettings)
+    await file.save()
+  }
+
+  async addValidator(definition: ValidatorNode) {
+    const directories = this.getDirectories()
+    const filePath = `${directories.validators}/${definition.validatorFileName}`
+
+    /**
+     * Get the validator file URL
+     */
+    const validatorFileUrl = join(this.#cwdPath, `./${filePath}`)
+    let file = this.project.getSourceFile(validatorFileUrl)
+
+    /**
+     * Try to load the file from disk if not already in the project
+     */
+    if (!file) {
+      try {
+        file = this.project.addSourceFileAtPath(validatorFileUrl)
+      } catch {
+        // File does not exist on disk, we will create it
+      }
+    }
+
+    /**
+     * If the file does not exist, create it
+     */
+    if (!file) {
+      file = this.project.createSourceFile(validatorFileUrl, definition.contents)
+      file.formatText(this.#editorSettings)
+      await file.save()
+      return
+    }
+
+    /**
+     * Check if the export already exists
+     */
+    const existingExport = file.getVariableDeclaration(definition.exportName)
+    if (existingExport) {
+      return
+    }
+
+    /**
+     * Add the validator to the existing file
+     */
+    file.addStatements(`\n${definition.contents}`)
     file.formatText(this.#editorSettings)
     await file.save()
   }

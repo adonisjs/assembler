@@ -106,6 +106,12 @@ export type EnvValidationNode = {
   variables: Record<string, string>
 }
 
+export type ValidatorNode = {
+  validatorFileName: string
+  exportName: string
+  contents: string
+}
+
 export type HookNode =
   | {
       type: 'thunk'

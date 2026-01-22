@@ -420,6 +420,266 @@ export const policies = {
 }
 ```
 
+### addValidator
+Create a new validator file or add a validator to an existing file. If the file does not exist, it will be created with the provided contents. If it exists and the export name is not already defined, the validator will be appended to the file.
+
+> [!IMPORTANT]
+> This codemod respects the `validators` directory configured in `adonisrc.ts` and defaults to `app/validators`.
+
+```ts
+const transformer = new CodeTransformer(appRoot)
+
+try {
+  await transformer.addValidator({
+    validatorFileName: 'user.ts',
+    exportName: 'loginValidator',
+    contents: `export const loginValidator = vine.compile(
+  vine.object({
+    email: vine.string().email(),
+    password: vine.string().minLength(8)
+  })
+)`
+  })
+} catch (error) {
+  console.error('Unable to add validator')
+  console.error(error)
+}
+```
+
+Output (app/validators/user.ts)
+
+```ts
+export const loginValidator = vine.compile(
+  vine.object({
+    email: vine.string().email(),
+    password: vine.string().minLength(8)
+  })
+)
+```
+
+### addLimiter
+Create a new rate limiter file or add a limiter to an existing file. If the file does not exist, it will be created with the provided contents. If it exists and the export name is not already defined, the limiter will be appended to the file.
+
+> [!IMPORTANT]
+> Limiters are created in the `start` directory configured in `adonisrc.ts` and defaults to `start`.
+
+```ts
+const transformer = new CodeTransformer(appRoot)
+
+try {
+  await transformer.addLimiter({
+    limiterFileName: 'limiters.ts',
+    exportName: 'apiThrottle',
+    contents: `export const apiThrottle = limiter.define('api', () => {
+  return limiter.allowRequests(10).every('1 minute')
+})`
+  })
+} catch (error) {
+  console.error('Unable to add limiter')
+  console.error(error)
+}
+```
+
+Output (start/limiters.ts)
+
+```ts
+export const apiThrottle = limiter.define('api', () => {
+  return limiter.allowRequests(10).every('1 minute')
+})
+```
+
+### addModelMixins
+Apply one or more mixins to a model class. This wraps the model's extends clause with the `compose` helper and applies the specified mixins.
+
+> [!IMPORTANT]
+> This codemod expects the model file to exist with a default exported class that extends a base class.
+
+```ts
+const transformer = new CodeTransformer(appRoot)
+
+try {
+  await transformer.addModelMixins('user.ts', [
+    {
+      name: 'SoftDeletes',
+      importPath: '@adonisjs/lucid/orm/mixins/soft_deletes',
+      importType: 'named'
+    },
+    {
+      name: 'Sluggable',
+      importPath: '#mixins/sluggable',
+      importType: 'default',
+      args: ['title', '{ strategy: "dbIncrement" }']
+    }
+  ])
+} catch (error) {
+  console.error('Unable to add mixins to model')
+  console.error(error)
+}
+```
+
+Input (app/models/user.ts)
+
+```ts
+import { BaseModel } from '@adonisjs/lucid/orm'
+
+export default class User extends BaseModel {
+  // ...
+}
+```
+
+Output (app/models/user.ts)
+
+```ts
+import { BaseModel } from '@adonisjs/lucid/orm'
+import { compose } from '@adonisjs/core/helpers'
+import { SoftDeletes } from '@adonisjs/lucid/orm/mixins/soft_deletes'
+import Sluggable from '#mixins/sluggable'
+
+export default class User extends compose(BaseModel, SoftDeletes(), Sluggable(title, { strategy: "dbIncrement" })) {
+  // ...
+}
+```
+
+### addControllerMethod
+Create a new controller file or add a method to an existing controller class. If the controller file does not exist, it will be created with the class and method. If it exists and the method is not already defined, the method will be added to the class.
+
+> [!IMPORTANT]
+> This codemod respects the `controllers` directory configured in `adonisrc.ts` and defaults to `app/controllers`.
+
+```ts
+const transformer = new CodeTransformer(appRoot)
+
+try {
+  await transformer.addControllerMethod({
+    controllerFileName: 'users_controller.ts',
+    className: 'UsersController',
+    name: 'destroy',
+    contents: `async destroy({ params, response }: HttpContext) {
+  const user = await User.findOrFail(params.id)
+  await user.delete()
+  return response.noContent()
+}`,
+    imports: [
+      { isType: false, isNamed: true, name: 'HttpContext', path: '@adonisjs/core/http' },
+      { isType: false, isNamed: false, name: 'User', path: '#models/user' }
+    ]
+  })
+} catch (error) {
+  console.error('Unable to add controller method')
+  console.error(error)
+}
+```
+
+Output (app/controllers/users_controller.ts)
+
+```ts
+import type { HttpContext } from '@adonisjs/core/http'
+import User from '#models/user'
+
+export default class UsersController {
+  async destroy({ params, response }: HttpContext) {
+    const user = await User.findOrFail(params.id)
+    await user.delete()
+    return response.noContent()
+  }
+}
+```
+
+### RcFileTransformer additional methods
+
+The `RcFileTransformer` class (accessible via `updateRcFile` callback) now supports additional methods for managing imports and hooks.
+
+#### addNamedImport
+Add a named import to the `adonisrc.ts` file.
+
+```ts
+const transformer = new CodeTransformer(appRoot)
+
+try {
+  await transformer.updateRcFile((rcFile) => {
+    rcFile.addNamedImport('@adonisjs/core/types', ['Middleware', 'Provider'])
+  })
+} catch (error) {
+  console.error('Unable to add named import')
+  console.error(error)
+}
+```
+
+Output
+
+```ts
+import { defineConfig } from '@adonisjs/core/app'
+import { Middleware, Provider } from '@adonisjs/core/types'
+
+export default defineConfig({
+  // ...
+})
+```
+
+#### addDefaultImport
+Add a default import to the `adonisrc.ts` file.
+
+```ts
+const transformer = new CodeTransformer(appRoot)
+
+try {
+  await transformer.updateRcFile((rcFile) => {
+    rcFile.addDefaultImport('#config/database', 'databaseConfig')
+  })
+} catch (error) {
+  console.error('Unable to add default import')
+  console.error(error)
+}
+```
+
+Output
+
+```ts
+import { defineConfig } from '@adonisjs/core/app'
+import databaseConfig from '#config/database'
+
+export default defineConfig({
+  // ...
+})
+```
+
+#### addAssemblerHook
+Add assembler hooks to the `adonisrc.ts` file. Hooks can be added as thunk imports (lazy loaded) or as raw values for direct import references.
+
+```ts
+const transformer = new CodeTransformer(appRoot)
+
+try {
+  await transformer.updateRcFile((rcFile) => {
+    // Add a thunk-style hook (lazy import)
+    rcFile.addAssemblerHook('onBuildStarting', './commands/build_hook.js')
+
+    // Add a raw hook (direct import reference)
+    rcFile.addAssemblerHook('onBuildCompleted', 'buildCompletedHook', true)
+  })
+} catch (error) {
+  console.error('Unable to add assembler hook')
+  console.error(error)
+}
+```
+
+Output
+
+```ts
+import { defineConfig } from '@adonisjs/core/app'
+
+export default defineConfig({
+  hooks: {
+    onBuildStarting: [
+      () => import('./commands/build_hook.js')
+    ],
+    onBuildCompleted: [
+      buildCompletedHook
+    ]
+  }
+})
+```
+
 ## Index generator
 
 The `IndexGenerator` is a core concept in Assembler that is used to watch the filesystem and create barrel files or types from a source directory.

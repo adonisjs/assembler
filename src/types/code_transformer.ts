@@ -112,6 +112,13 @@ export type ValidatorNode = {
   contents: string
 }
 
+export type MixinDefinition = {
+  name: string
+  args?: string[]
+  importPath: string
+  importType: 'named' | 'default'
+}
+
 export type HookNode =
   | {
       type: 'thunk'

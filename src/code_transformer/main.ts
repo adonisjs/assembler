@@ -9,6 +9,7 @@
 
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ImportsBag } from '@poppinss/utils'
 import { installPackage, detectPackageManager } from '@antfu/install-pkg'
 import {
   Node,
@@ -27,6 +28,7 @@ import type {
   EnvValidationNode,
   BouncerPolicyNode,
   ValidatorNode,
+  MixinDefinition,
 } from '../types/code_transformer.ts'
 
 /**
@@ -115,6 +117,7 @@ export class CodeTransformer {
       tests: rcFileTransformer.getDirectory('tests', 'tests'),
       policies: rcFileTransformer.getDirectory('policies', 'app/policies'),
       validators: rcFileTransformer.getDirectory('validators', 'app/validators'),
+      models: rcFileTransformer.getDirectory('models', 'app/models'),
     }
   }
 
@@ -237,12 +240,10 @@ export class CodeTransformer {
     file: SourceFile,
     importDeclarations: { isNamed: boolean; module: string; identifier: string }[]
   ) {
-    const existingImports = file.getImportDeclarations()
-
     importDeclarations.forEach((importDeclaration) => {
-      const existingImport = existingImports.find(
-        (mod) => mod.getModuleSpecifierValue() === importDeclaration.module
-      )
+      const existingImport = file
+        .getImportDeclarations()
+        .find((mod) => mod.getModuleSpecifierValue() === importDeclaration.module)
 
       /**
        * Add a new named import to existing import for the
@@ -632,6 +633,168 @@ export class CodeTransformer {
      * Add the validator to the existing file
      */
     file.addStatements(`\n${definition.contents}`)
+    file.formatText(this.#editorSettings)
+    await file.save()
+  }
+
+  async addModelMixins(modelFileName: string, mixins: MixinDefinition[]) {
+    const directories = this.getDirectories()
+    const filePath = `${directories.models}/${modelFileName}`
+
+    /**
+     * Get the model file URL
+     */
+    const modelFileUrl = join(this.#cwdPath, `./${filePath}`)
+    let file = this.project.getSourceFile(modelFileUrl)
+
+    /**
+     * Try to load the file from disk if not already in the project
+     */
+    if (!file) {
+      try {
+        file = this.project.addSourceFileAtPath(modelFileUrl)
+      } catch {
+        throw new Error(`Could not find source file at path: "${filePath}"`)
+      }
+    }
+
+    /**
+     * Get the default export class declaration
+     */
+    const defaultExportSymbol = file.getDefaultExportSymbol()
+    if (!defaultExportSymbol) {
+      throw new Error(
+        `Could not find default export in "${filePath}". The model must have a default export class.`
+      )
+    }
+
+    const declarations = defaultExportSymbol.getDeclarations()
+    if (declarations.length === 0) {
+      throw new Error(`Could not find default export declaration in "${filePath}".`)
+    }
+
+    const declaration = declarations[0]
+    if (!Node.isClassDeclaration(declaration)) {
+      throw new Error(
+        `Default export in "${filePath}" is not a class. The model must be exported as a class.`
+      )
+    }
+
+    /**
+     * Use ImportsBag to properly manage and merge imports
+     */
+    const importsBag = new ImportsBag()
+    for (const mixin of mixins) {
+      if (mixin.importType === 'named') {
+        importsBag.add({ source: mixin.importPath, namedImports: [mixin.name] })
+      } else {
+        importsBag.add({ source: mixin.importPath, defaultImport: mixin.name })
+      }
+    }
+
+    /**
+     * Add import declarations for the mixins
+     */
+    const importDeclarations = importsBag.toArray().flatMap((moduleImport) => {
+      return (moduleImport.namedImports ?? [])
+        .map((symbol) => {
+          return {
+            isNamed: true,
+            module: moduleImport.source,
+            identifier: symbol,
+          }
+        })
+        .concat(
+          moduleImport.defaultImport
+            ? [
+                {
+                  isNamed: false,
+                  module: moduleImport.source,
+                  identifier: moduleImport.defaultImport,
+                },
+              ]
+            : []
+        )
+    })
+    this.#addImportDeclarations(file, importDeclarations)
+
+    /**
+     * Get the heritage clause (extends clause)
+     */
+    const heritageClause = declaration.getHeritageClauseByKind(SyntaxKind.ExtendsKeyword)
+    if (!heritageClause) {
+      throw new Error(`Could not find extends clause in "${filePath}".`)
+    }
+
+    const extendsExpression = heritageClause.getTypeNodes()[0]
+    if (!extendsExpression) {
+      throw new Error(`Could not find extends expression in "${filePath}".`)
+    }
+
+    /**
+     * Get the expression that the class extends
+     */
+    const extendsExpressionNode = extendsExpression.getExpression()
+
+    /**
+     * Check if the class already uses compose
+     */
+    let composeCall: Node | undefined
+    if (Node.isCallExpression(extendsExpressionNode)) {
+      const callExpression = extendsExpressionNode.getExpression()
+      if (callExpression.getText() === 'compose') {
+        composeCall = extendsExpressionNode
+      }
+    }
+
+    /**
+     * Build the mixin calls
+     */
+    const mixinCalls = mixins.map((mixin) => {
+      const args = mixin.args && mixin.args.length > 0 ? mixin.args.join(', ') : ''
+      return `${mixin.name}(${args})`
+    })
+
+    /**
+     * If the class is already using compose, add the mixins to the compose call
+     */
+    if (composeCall && Node.isCallExpression(composeCall)) {
+      const existingArgs = composeCall.getArguments()
+      const existingArgsText = existingArgs.map((arg) => arg.getText())
+
+      /**
+       * Filter out mixins that are already applied by checking if a call
+       * to the mixin function already exists in the compose arguments
+       */
+      const newMixinCalls = mixinCalls.filter((mixinCall) => {
+        // Extract the function name from the mixin call (e.g., "withManagedEmail" from "withManagedEmail()")
+        const mixinFunctionName = mixinCall.split('(')[0]
+        // Check if any existing arg contains a call to this function
+        return !existingArgsText.some((existingArg) => {
+          return existingArg.includes(`${mixinFunctionName}(`)
+        })
+      })
+
+      const newArgs = [...existingArgsText, ...newMixinCalls]
+      composeCall.replaceWithText(`compose(${newArgs.join(', ')})`)
+    } else {
+      /**
+       * If the class is not using compose, wrap the extends expression in compose
+       * and add import for compose
+       */
+      this.#addImportDeclarations(file, [
+        {
+          isNamed: true,
+          module: '@adonisjs/core/helpers',
+          identifier: 'compose',
+        },
+      ])
+
+      const currentExtends = extendsExpressionNode.getText()
+      const newExtends = `compose(${currentExtends}, ${mixinCalls.join(', ')})`
+      extendsExpression.replaceWithText(newExtends)
+    }
+
     file.formatText(this.#editorSettings)
     await file.save()
   }

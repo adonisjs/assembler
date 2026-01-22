@@ -1424,3 +1424,370 @@ test.group('Code Transformer | addValidator', (group) => {
     `)
   })
 })
+
+test.group('Code Transformer | addModelMixins', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add mixins to an existing model', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+
+      export default class User extends compose(UserSchema, withAuthFinder(hash)) {
+      }
+    `
+    )
+
+    await transformer.addModelMixins('user.ts', [
+      {
+        importPath: '#kit/auth',
+        importType: 'named',
+        name: 'withManagedEmail',
+      },
+    ])
+
+    const file = await fs.contents('app/models/user.ts')
+    assert.snapshot(file).matchInline(`
+      "import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { withManagedEmail } from '#kit/auth'
+
+      export default class User extends compose(UserSchema, withAuthFinder(hash), withManagedEmail()) {
+      }
+      "
+    `)
+  })
+
+  test('add multiple mixins to an existing model', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+
+      export default class User extends compose(UserSchema, withAuthFinder(hash)) {
+      }
+    `
+    )
+
+    await transformer.addModelMixins('user.ts', [
+      {
+        importPath: '#kit/auth',
+        importType: 'named',
+        name: 'withManagedEmail',
+      },
+      {
+        importPath: '#kit/auth',
+        importType: 'named',
+        name: 'withManagedPassword',
+      },
+    ])
+
+    const file = await fs.contents('app/models/user.ts')
+    assert.snapshot(file).matchInline(`
+      "import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { withManagedEmail, withManagedPassword } from '#kit/auth'
+
+      export default class User extends compose(UserSchema, withAuthFinder(hash), withManagedEmail(), withManagedPassword()) {
+      }
+      "
+    `)
+  })
+
+  test('add multiple mixins to a model which did not have mixins applied in first place', async ({
+    assert,
+    fs,
+  }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+
+      export default class User extends UserSchema {
+      }
+    `
+    )
+
+    await transformer.addModelMixins('user.ts', [
+      {
+        importPath: '#kit/auth',
+        importType: 'named',
+        name: 'withManagedEmail',
+      },
+      {
+        importPath: '#kit/auth',
+        importType: 'named',
+        name: 'withManagedPassword',
+      },
+    ])
+
+    const file = await fs.contents('app/models/user.ts')
+    assert.snapshot(file).matchInline(`
+      "import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { withManagedEmail, withManagedPassword } from '#kit/auth'
+
+      export default class User extends compose(UserSchema, withManagedEmail(), withManagedPassword()) {
+      }
+      "
+    `)
+  })
+
+  test('do not re-import an already imported mixin', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { withManagedPassword } from '#kit/auth'
+
+      export default class User extends compose(UserSchema, withAuthFinder(hash)) {
+      }
+    `
+    )
+
+    await transformer.addModelMixins('user.ts', [
+      {
+        importPath: '#kit/auth',
+        importType: 'named',
+        name: 'withManagedEmail',
+      },
+      {
+        importPath: '#kit/auth',
+        importType: 'named',
+        name: 'withManagedPassword',
+      },
+    ])
+
+    const file = await fs.contents('app/models/user.ts')
+    assert.snapshot(file).matchInline(`
+      "import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { withManagedPassword, withManagedEmail } from '#kit/auth'
+
+      export default class User extends compose(UserSchema, withAuthFinder(hash), withManagedEmail(), withManagedPassword()) {
+      }
+      "
+    `)
+  })
+
+  test('do not apply mixin when already applied', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { withManagedEmail } from '#kit/auth'
+
+      export default class User extends compose(UserSchema, withManagedPassword()) {
+      }
+    `
+    )
+
+    await transformer.addModelMixins('user.ts', [
+      {
+        importPath: '#kit/auth',
+        importType: 'named',
+        name: 'withManagedEmail',
+      },
+      {
+        importPath: '#kit/auth',
+        importType: 'named',
+        name: 'withManagedPassword',
+      },
+    ])
+
+    const file = await fs.contents('app/models/user.ts')
+    assert.snapshot(file).matchInline(`
+      "import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { withManagedEmail, withManagedPassword } from '#kit/auth'
+
+      export default class User extends compose(UserSchema, withManagedPassword(), withManagedEmail()) {
+      }
+      "
+    `)
+  })
+
+  test('throw error when model file does not exists', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await assert.rejects(
+      () =>
+        transformer.addModelMixins('user.ts', [
+          {
+            importPath: '#kit/auth',
+            importType: 'named',
+            name: 'withManagedEmail',
+          },
+          {
+            importPath: '#kit/auth',
+            importType: 'named',
+            name: 'withManagedPassword',
+          },
+        ]),
+      'Could not find source file at path: "app/models/user.ts"'
+    )
+  })
+
+  test('throw error when model has no default export', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { UserSchema } from '#database/schema'
+
+      export class User extends UserSchema {
+      }
+    `
+    )
+
+    await assert.rejects(
+      () =>
+        transformer.addModelMixins('user.ts', [
+          {
+            importPath: '#kit/auth',
+            importType: 'named',
+            name: 'withManagedEmail',
+          },
+        ]),
+      'Could not find default export in "app/models/user.ts". The model must have a default export class.'
+    )
+  })
+
+  test('throw error when default export is not a class', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      export default {
+        name: 'User'
+      }
+    `
+    )
+
+    await assert.rejects(
+      () =>
+        transformer.addModelMixins('user.ts', [
+          {
+            importPath: '#kit/auth',
+            importType: 'named',
+            name: 'withManagedEmail',
+          },
+        ]),
+      'Default export in "app/models/user.ts" is not a class. The model must be exported as a class.'
+    )
+  })
+
+  test('throw error when model class has no extends clause', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      export default class User {
+      }
+    `
+    )
+
+    await assert.rejects(
+      () =>
+        transformer.addModelMixins('user.ts', [
+          {
+            importPath: '#kit/auth',
+            importType: 'named',
+            name: 'withManagedEmail',
+          },
+        ]),
+      'Could not find extends clause in "app/models/user.ts".'
+    )
+  })
+
+  test('add mixin with arguments', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+
+      export default class User extends compose(UserSchema, withAuthFinder(hash)) {
+      }
+    `
+    )
+
+    await transformer.addModelMixins('user.ts', [
+      {
+        importPath: '@adonisjs/lucid/mixins',
+        importType: 'named',
+        name: 'withTimestamps',
+        args: ['{ createdAt: true, updatedAt: true }'],
+      },
+    ])
+
+    const file = await fs.contents('app/models/user.ts')
+    assert.snapshot(file).matchInline(`
+      "import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { withTimestamps } from '@adonisjs/lucid/mixins'
+
+      export default class User extends compose(UserSchema, withAuthFinder(hash), withTimestamps({ createdAt: true, updatedAt: true })) {
+      }
+      "
+    `)
+  })
+
+  test('add multiple mixins with different arguments', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+
+      export default class User extends UserSchema {
+      }
+    `
+    )
+
+    await transformer.addModelMixins('user.ts', [
+      {
+        importPath: '#kit/auth',
+        importType: 'named',
+        name: 'withAuthFinder',
+        args: ['hash'],
+      },
+      {
+        importPath: '@adonisjs/lucid/mixins',
+        importType: 'named',
+        name: 'withTimestamps',
+        args: ['{ createdAt: true, updatedAt: false }'],
+      },
+      {
+        importPath: '#kit/database',
+        importType: 'named',
+        name: 'withSoftDeletes',
+      },
+    ])
+
+    const file = await fs.contents('app/models/user.ts')
+    assert.snapshot(file).matchInline(`
+      "import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { withAuthFinder } from '#kit/auth'
+      import { withTimestamps } from '@adonisjs/lucid/mixins'
+      import { withSoftDeletes } from '#kit/database'
+
+      export default class User extends compose(UserSchema, withAuthFinder(hash), withTimestamps({ createdAt: true, updatedAt: false }), withSoftDeletes()) {
+      }
+      "
+    `)
+  })
+})

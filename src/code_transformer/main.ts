@@ -28,6 +28,7 @@ import type {
   EnvValidationNode,
   BouncerPolicyNode,
   ValidatorNode,
+  LimiterNode,
   MixinDefinition,
   ControllerMethodNode,
 } from '../types/code_transformer.ts'
@@ -666,6 +667,53 @@ export class CodeTransformer {
 
     /**
      * Add the validator to the existing file
+     */
+    file.addStatements(`\n${definition.contents}`)
+    file.formatText(this.#editorSettings)
+    await file.save()
+  }
+
+  async addLimiter(definition: LimiterNode) {
+    const directories = this.getDirectories()
+    const filePath = `${directories.start}/${definition.limiterFileName}`
+
+    /**
+     * Get the limiter file URL
+     */
+    const limiterFileUrl = join(this.#cwdPath, `./${filePath}`)
+    let file = this.project.getSourceFile(limiterFileUrl)
+
+    /**
+     * Try to load the file from disk if not already in the project
+     */
+    if (!file) {
+      try {
+        file = this.project.addSourceFileAtPath(limiterFileUrl)
+      } catch {
+        // File does not exist on disk, we will create it
+      }
+    }
+
+    /**
+     * If the file does not exist, create it
+     */
+    if (!file) {
+      file = this.project.createSourceFile(limiterFileUrl, definition.contents)
+      file.formatText(this.#editorSettings)
+      await file.save()
+      return
+    }
+
+    /**
+     * Check if the export already exists
+     */
+    const existingExport = file.getVariableDeclaration(definition.exportName)
+    if (existingExport) {
+      return
+    }
+
+    /**
+     * Add the limiter to the existing file
      */
     file.addStatements(`\n${definition.contents}`)
     file.formatText(this.#editorSettings)

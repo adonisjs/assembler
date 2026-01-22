@@ -1425,6 +1425,129 @@ test.group('Code Transformer | addValidator', (group) => {
   })
 })
 
+test.group('Code Transformer | addLimiter', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add limiter to a non-existing limiter file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addLimiter({
+      exportName: 'apiLimiter',
+      limiterFileName: 'limiter.ts',
+      contents: dedent`
+      export const apiLimiter = limiter.define('api', () => {
+        return limiter.allowRequests(10).every('1 minute')
+      })
+      `,
+    })
+
+    const file = await fs.contents('start/limiter.ts')
+    assert.snapshot(file).matchInline(`
+      "export const apiLimiter = limiter.define('api', () => {
+        return limiter.allowRequests(10).every('1 minute')
+      })
+      "
+    `)
+  })
+
+  test('add limiter to existing limiter file with other exports', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'start/limiter.ts',
+      dedent`
+      export const globalLimiter = limiter.define('global', () => {
+        return limiter.allowRequests(100).every('1 minute')
+      })
+    `
+    )
+
+    await transformer.addLimiter({
+      exportName: 'apiLimiter',
+      limiterFileName: 'limiter.ts',
+      contents: dedent`
+      export const apiLimiter = limiter.define('api', () => {
+        return limiter.allowRequests(10).every('1 minute')
+      })
+      `,
+    })
+
+    const file = await fs.contents('start/limiter.ts')
+    assert.snapshot(file).matchInline(`
+      "export const globalLimiter = limiter.define('global', () => {
+        return limiter.allowRequests(100).every('1 minute')
+      })
+
+      export const apiLimiter = limiter.define('api', () => {
+        return limiter.allowRequests(10).every('1 minute')
+      })
+      "
+    `)
+  })
+
+  test('skip adding limiter when it already exists', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'start/limiter.ts',
+      dedent`
+      export const apiLimiter = limiter.define('api', () => {
+        return limiter.allowRequests(5).every('1 minute')
+      })
+    `
+    )
+
+    await transformer.addLimiter({
+      exportName: 'apiLimiter',
+      limiterFileName: 'limiter.ts',
+      contents: dedent`
+      export const apiLimiter = limiter.define('api', () => {
+        return limiter.allowRequests(10).every('1 minute')
+      })
+      `,
+    })
+
+    const file = await fs.contents('start/limiter.ts')
+    assert.snapshot(file).matchInline(`
+      "export const apiLimiter = limiter.define('api', () => {
+        return limiter.allowRequests(5).every('1 minute')
+      })"
+    `)
+  })
+
+  test('use custom start directory from adonisrc.ts', async ({ assert, fs }) => {
+    await fs.create(
+      'adonisrc.ts',
+      dedent`
+      import { defineConfig } from '@adonisjs/core/app'
+
+      export default defineConfig({
+        directories: {
+          start: 'boot',
+        }
+      })`
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addLimiter({
+      exportName: 'apiLimiter',
+      limiterFileName: 'limiter.ts',
+      contents: dedent`
+      export const apiLimiter = limiter.define('api', () => {
+        return limiter.allowRequests(10).every('1 minute')
+      })
+      `,
+    })
+
+    const file = await fs.contents('boot/limiter.ts')
+    assert.snapshot(file).matchInline(`
+      "export const apiLimiter = limiter.define('api', () => {
+        return limiter.allowRequests(10).every('1 minute')
+      })
+      "
+    `)
+  })
+})
+
 test.group('Code Transformer | addModelMixins', (group) => {
   group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
 

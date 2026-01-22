@@ -114,6 +114,12 @@ export type ValidatorNode = {
   contents: string
 }
 
+export type LimiterNode = {
+  limiterFileName: string
+  exportName: string
+  contents: string
+}
+
 export type MixinDefinition = {
   name: string
   args?: string[]

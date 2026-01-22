@@ -9,7 +9,7 @@
 
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { ImportsBag } from '@poppinss/utils'
+import { type ImportInfo, ImportsBag } from '@poppinss/utils'
 import { installPackage, detectPackageManager } from '@antfu/install-pkg'
 import {
   Node,
@@ -29,6 +29,7 @@ import type {
   BouncerPolicyNode,
   ValidatorNode,
   MixinDefinition,
+  ControllerMethodNode,
 } from '../types/code_transformer.ts'
 
 /**
@@ -118,6 +119,7 @@ export class CodeTransformer {
       policies: rcFileTransformer.getDirectory('policies', 'app/policies'),
       validators: rcFileTransformer.getDirectory('validators', 'app/validators'),
       models: rcFileTransformer.getDirectory('models', 'app/models'),
+      controllers: rcFileTransformer.getDirectory('controllers', 'app/controllers'),
     }
   }
 
@@ -276,6 +278,39 @@ export class CodeTransformer {
         moduleSpecifier: importDeclaration.module,
       })
     })
+  }
+
+  /**
+   * Convert ImportInfo array to import declarations and add them to the file
+   */
+  #addImportsFromImportInfo(file: SourceFile, imports: ImportInfo[]) {
+    const importsBag = new ImportsBag()
+    for (const importInfo of imports) {
+      importsBag.add(importInfo)
+    }
+
+    const importDeclarations = importsBag.toArray().flatMap((moduleImport) => {
+      return (moduleImport.namedImports ?? [])
+        .map((symbol) => {
+          return {
+            isNamed: true,
+            module: moduleImport.source,
+            identifier: symbol,
+          }
+        })
+        .concat(
+          moduleImport.defaultImport
+            ? [
+                {
+                  isNamed: false,
+                  module: moduleImport.source,
+                  identifier: moduleImport.defaultImport,
+                },
+              ]
+            : []
+        )
+    })
+    this.#addImportDeclarations(file, importDeclarations)
   }
 
   /**
@@ -681,42 +716,16 @@ export class CodeTransformer {
     }
 
     /**
-     * Use ImportsBag to properly manage and merge imports
-     */
-    const importsBag = new ImportsBag()
-    for (const mixin of mixins) {
-      if (mixin.importType === 'named') {
-        importsBag.add({ source: mixin.importPath, namedImports: [mixin.name] })
-      } else {
-        importsBag.add({ source: mixin.importPath, defaultImport: mixin.name })
-      }
-    }
-
-    /**
      * Add import declarations for the mixins
      */
-    const importDeclarations = importsBag.toArray().flatMap((moduleImport) => {
-      return (moduleImport.namedImports ?? [])
-        .map((symbol) => {
-          return {
-            isNamed: true,
-            module: moduleImport.source,
-            identifier: symbol,
-          }
-        })
-        .concat(
-          moduleImport.defaultImport
-            ? [
-                {
-                  isNamed: false,
-                  module: moduleImport.source,
-                  identifier: moduleImport.defaultImport,
-                },
-              ]
-            : []
-        )
+    const mixinImports = mixins.map((mixin) => {
+      if (mixin.importType === 'named') {
+        return { source: mixin.importPath, namedImports: [mixin.name] }
+      } else {
+        return { source: mixin.importPath, defaultImport: mixin.name }
+      }
     })
-    this.#addImportDeclarations(file, importDeclarations)
+    this.#addImportsFromImportInfo(file, mixinImports)
 
     /**
      * Get the heritage clause (extends clause)
@@ -794,6 +803,95 @@ export class CodeTransformer {
       const newExtends = `compose(${currentExtends}, ${mixinCalls.join(', ')})`
       extendsExpression.replaceWithText(newExtends)
     }
+
+    file.formatText(this.#editorSettings)
+    await file.save()
+  }
+
+  async addControllerMethod(definition: ControllerMethodNode) {
+    const directories = this.getDirectories()
+    const filePath = `${directories.controllers}/${definition.controllerFileName}`
+
+    /**
+     * Get the controller file URL
+     */
+    const controllerFileUrl = join(this.#cwdPath, `./${filePath}`)
+    let file = this.project.getSourceFile(controllerFileUrl)
+
+    /**
+     * Try to load the file from disk if not already in the project
+     */
+    if (!file) {
+      try {
+        file = this.project.addSourceFileAtPath(controllerFileUrl)
+      } catch {
+        // File does not exist on disk, we will create it
+      }
+    }
+
+    /**
+     * If the file does not exist, create it with the controller class and method
+     */
+    if (!file) {
+      const contents = `export default class ${definition.className} {
+  ${definition.contents}
+}`
+
+      file = this.project.createSourceFile(controllerFileUrl, contents)
+
+      /**
+       * Add imports if specified
+       */
+      if (definition.imports) {
+        this.#addImportsFromImportInfo(file, definition.imports)
+      }
+
+      file.formatText(this.#editorSettings)
+      await file.save()
+      return
+    }
+
+    /**
+     * Get the default export class declaration
+     */
+    const defaultExportSymbol = file.getDefaultExportSymbol()
+    if (!defaultExportSymbol) {
+      throw new Error(
+        `Could not find default export in "${filePath}". The controller must have a default export class.`
+      )
+    }
+
+    const declarations = defaultExportSymbol.getDeclarations()
+    if (declarations.length === 0) {
+      throw new Error(`Could not find default export declaration in "${filePath}".`)
+    }
+
+    const declaration = declarations[0]
+    if (!Node.isClassDeclaration(declaration)) {
+      throw new Error(
+        `Default export in "${filePath}" is not a class. The controller must be exported as a class.`
+      )
+    }
+
+    /**
+     * Check if the method already exists
+     */
+    const existingMethod = declaration.getMethod(definition.name)
+    if (existingMethod) {
+      return
+    }
+
+    /**
+     * Add imports if specified
+     */
+    if (definition.imports) {
+      this.#addImportsFromImportInfo(file, definition.imports)
+    }
+
+    /**
+     * Add the method to the class by inserting the raw method text
+     */
+    declaration.addMember(definition.contents)
 
     file.formatText(this.#editorSettings)
     await file.save()

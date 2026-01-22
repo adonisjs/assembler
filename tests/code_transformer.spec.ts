@@ -1791,3 +1791,159 @@ test.group('Code Transformer | addModelMixins', (group) => {
     `)
   })
 })
+
+test.group('Code Transformer | addControllerMethod', (group) => {
+  group.each.setup(async ({ context }) => setupFakeAdonisproject(context.fs))
+
+  test('add controller method to an existing controller file', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/controllers/users_controller.ts',
+      dedent`
+      export default class UsersController {
+      }
+    `
+    )
+
+    await transformer.addControllerMethod({
+      imports: [
+        {
+          source: '#validators/user',
+          namedImports: ['changePasswordValidator'],
+        },
+      ],
+      contents: dedent`async update({ response, auth, session, request }: HttpContext) {
+        const payload = await request.validateUsing(changePasswordValidator)
+
+        const user = auth.getUserOrFail()
+        await user.validatePassword(payload.currentPassword)
+
+        user.password = payload.password
+        await user.save()
+
+        session.flash('success', 'Password updated successfully')
+        response.redirect().back()
+      }`,
+      controllerFileName: 'users_controller.ts',
+      className: 'UsersController',
+      name: 'update',
+    })
+
+    const file = await fs.contents('app/controllers/users_controller.ts')
+    assert.snapshot(file).matchInline(`
+      "import { changePasswordValidator } from '#validators/user'
+
+      export default class UsersController {
+        async update({ response, auth, session, request }: HttpContext) {
+          const payload = await request.validateUsing(changePasswordValidator)
+
+          const user = auth.getUserOrFail()
+          await user.validatePassword(payload.currentPassword)
+
+          user.password = payload.password
+          await user.save()
+
+          session.flash('success', 'Password updated successfully')
+          response.redirect().back()
+        }
+      }
+      "
+    `)
+  })
+
+  test('create controller when it does not exist', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    await transformer.addControllerMethod({
+      imports: [
+        {
+          source: '#validators/user',
+          namedImports: ['changePasswordValidator'],
+        },
+      ],
+      contents: dedent`async update({ response, auth, session, request }: HttpContext) {
+        const payload = await request.validateUsing(changePasswordValidator)
+
+        const user = auth.getUserOrFail()
+        await user.validatePassword(payload.currentPassword)
+
+        user.password = payload.password
+        await user.save()
+
+        session.flash('success', 'Password updated successfully')
+        response.redirect().back()
+      }`,
+      controllerFileName: 'users_controller.ts',
+      className: 'UsersController',
+      name: 'update',
+    })
+
+    const file = await fs.contents('app/controllers/users_controller.ts')
+    assert.snapshot(file).matchInline(`
+      "import { changePasswordValidator } from '#validators/user'
+
+      export default class UsersController {
+        async update({ response, auth, session, request }: HttpContext) {
+          const payload = await request.validateUsing(changePasswordValidator)
+
+          const user = auth.getUserOrFail()
+          await user.validatePassword(payload.currentPassword)
+
+          user.password = payload.password
+          await user.save()
+
+          session.flash('success', 'Password updated successfully')
+          response.redirect().back()
+        }
+      }
+      "
+    `)
+  })
+
+  test('skip when method already exists', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/controllers/users_controller.ts',
+      dedent`
+      export default class UsersController {
+        async update({ response, auth, session, request }: HttpContext) {
+          // todo
+        }
+      }
+    `
+    )
+
+    await transformer.addControllerMethod({
+      imports: [
+        {
+          source: '#validators/user',
+          namedImports: ['changePasswordValidator'],
+        },
+      ],
+      contents: dedent`async update({ response, auth, session, request }: HttpContext) {
+        const payload = await request.validateUsing(changePasswordValidator)
+
+        const user = auth.getUserOrFail()
+        await user.validatePassword(payload.currentPassword)
+
+        user.password = payload.password
+        await user.save()
+
+        session.flash('success', 'Password updated successfully')
+        response.redirect().back()
+      }`,
+      controllerFileName: 'users_controller.ts',
+      className: 'UsersController',
+      name: 'update',
+    })
+
+    const file = await fs.contents('app/controllers/users_controller.ts')
+    assert.snapshot(file).matchInline(`
+      "export default class UsersController {
+        async update({ response, auth, session, request }: HttpContext) {
+          // todo
+        }
+      }"
+    `)
+  })
+})

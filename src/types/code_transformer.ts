@@ -7,6 +7,8 @@
  * file that was distributed with this source code.
  */
 
+import { type ImportInfo } from '@poppinss/utils'
+
 /**
  * Entry to add a middleware to a given middleware stack via the CodeTransformer.
  * Represents middleware configuration for server, router, or named middleware stacks.
@@ -117,6 +119,14 @@ export type MixinDefinition = {
   args?: string[]
   importPath: string
   importType: 'named' | 'default'
+}
+
+export type ControllerMethodNode = {
+  controllerFileName: string
+  className: string
+  name: string
+  contents: string
+  imports?: ImportInfo[]
 }
 
 export type HookNode =

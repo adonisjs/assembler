@@ -79,7 +79,11 @@ export async function extractValidators(
    * Inspect validators via "request.validateUsing" and "vine.validate"
    * method calls.
    */
-  const validationCalls = inspectMethodArguments(method, ['request.validateUsing', 'vine.validate'])
+  const validationCalls = inspectMethodArguments(method, [
+    'request.validateUsing',
+    '$CTX.request.validateUsing',
+    'vine.validate',
+  ])
     .map((node) => {
       const firstArg = node.find({
         rule: { any: [{ kind: 'identifier' }, { kind: 'member_expression' }] },

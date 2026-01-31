@@ -407,7 +407,7 @@ export class TestRunner {
    */
   async run() {
     this.#stickyPort = String(await getPort(this.cwd))
-    this.#stickyHmrPort = String(getRandomPort({ port: 24678 }))
+    this.#stickyHmrPort = String(await getRandomPort({ port: 24678 }))
     this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
 
     this.#clearScreen()

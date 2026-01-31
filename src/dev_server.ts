@@ -659,7 +659,7 @@ export class DevServer {
 
     this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
     this.#stickyPort = String(await getPort(this.cwd))
-    this.#stickyHmrPort = String(getRandomPort({ port: 24678 }))
+    this.#stickyHmrPort = String(await getRandomPort({ port: 24678 }))
     this.#fileSystem = new FileSystem(this.cwdPath, tsConfig, this.options)
 
     this.ui.logger.info('loading hooks...')

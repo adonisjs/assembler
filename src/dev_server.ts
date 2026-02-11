@@ -398,37 +398,12 @@ export class DevServer {
     displayLabel: 'add' | 'update' | 'delete'
   }) {
     const relativePath = string.toUnixSlash(options.filePath)
-    const absolutePath = join(this.cwdPath, relativePath)
 
     if (this.#isHttpServerAlive === false) {
       this.#clearScreen()
       this.ui.logger.log(`${this.ui.colors.green(options.displayLabel)} ${relativePath}`)
       this.#restartHTTPServer()
-      return
     }
-
-    /**
-     * For add/unlink, we call the hooks directly since hot-hook ignores files
-     * not in its dependency tree. This ensures index files are regenerated
-     * for new/removed files.
-     */
-    if (options.action === 'add') {
-      this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
-    } else if (options.action === 'unlink') {
-      this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
-    }
-
-    /**
-     * Forward all events to hot-hook so it can:
-     * - Update its dependency tree (for unlink)
-     * - Handle HMR for change events on imported files
-     * - Then we wait for hot-hook to notify us back via IPC message
-     */
-    this.#httpServer?.send({
-      type: 'hot-hook:file-changed',
-      path: absolutePath,
-      action: options.action,
-    })
   }
 
   /**
@@ -857,7 +832,6 @@ export class DevServer {
       this.options.nodeArgs.push('--import=hot-hook/register')
       this.options.env = {
         ...this.options.env,
-        HOT_HOOK_WATCH: 'false',
       }
     }
 

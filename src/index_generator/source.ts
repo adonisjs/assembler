@@ -81,6 +81,10 @@ export class IndexGeneratorSource {
   #generateOutput = throttle(async () => {
     const buffer = new FileBuffer().eol(true)
 
+    if (this.#config.comment) {
+      buffer.writeLine(this.#textToComment(this.#config.comment))
+    }
+
     if (this.#config.as === 'barrelFile') {
       this.#asBarrelFile(
         this.#vfs,
@@ -154,6 +158,13 @@ export class IndexGeneratorSource {
         buffer.dedent().write(`},`)
       }
     })
+  }
+
+  /**
+   * Converts a text into a JS comment block. Respecting line-breaks.
+   */
+  #textToComment(text: string) {
+    return `/**\n * ${text.split('\n').join('\n * ')}\n */`
   }
 
   /**

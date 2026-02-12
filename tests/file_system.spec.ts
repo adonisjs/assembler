@@ -183,10 +183,10 @@ test.group('File system', () => {
   test('do not consider .json files until resolveJsonModule flag is enabled', ({ assert }) => {
     const config = readTsConfig(BASE_PATH)!
     const fs = new FileSystem(BASE_PATH, config, {})
-    assert.isNull(fs.inspect(join(BASE_PATH, 'src/foo.json'), 'src/foo.json'))
+    assert.equal(fs.inspect(join(BASE_PATH, 'src/foo.json'), 'src/foo.json')!.fileType, 'script')
 
     config.config.compilerOptions = config.config.compilerOptions ?? {}
-    config.config.compilerOptions.resolveJsonModule = true
-    assert.equal(fs.inspect(join(BASE_PATH, 'src/foo.json'), 'src/foo.json')!.fileType, 'script')
+    config.config.compilerOptions.resolveJsonModule = false
+    assert.isNull(fs.inspect(join(BASE_PATH, 'src/foo.json'), 'src/foo.json'))
   })
 })

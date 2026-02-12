@@ -61,7 +61,7 @@ export type IndexGeneratorSourceConfig = (
   importAlias?: string
   removeSuffix?: string
   skipSegments?: string[]
-  comment?: string
+  comment?: string | boolean
 } & VirtualFileSystemOptions
 
 /**

@@ -142,6 +142,30 @@ test.group('File system', () => {
         input: '.git',
         result: false,
       },
+      {
+        input: 'tmp',
+        result: false,
+      },
+      {
+        input: 'tmp/foo',
+        result: false,
+      },
+      {
+        input: 'storage',
+        result: false,
+      },
+      {
+        input: 'storage/logs',
+        result: false,
+      },
+      {
+        input: 'build',
+        result: false,
+      },
+      {
+        input: 'build/app',
+        result: false,
+      },
     ])
     .run(({ assert }, { input, result }) => {
       const config = readTsConfig(BASE_PATH)!

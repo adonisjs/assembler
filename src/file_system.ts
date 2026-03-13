@@ -17,7 +17,15 @@ import { memoize } from './utils.ts'
 import { type InspectedFile, type AssemblerRcFile } from './types/common.ts'
 
 const DEFAULT_INCLUDES = ['**/*']
-const ALWAYS_EXCLUDE = ['.git/**', 'coverage/**', '.github/**', '.adonisjs/**', 'tmp/**', 'storage/**', 'build/**']
+const ALWAYS_EXCLUDE = [
+  '.git/**',
+  'coverage/**',
+  '.github/**',
+  '.adonisjs/**',
+  'tmp/**',
+  'storage/**',
+  'build/**',
+]
 const DEFAULT_EXCLUDES = ['node_modules/**', 'bower_components/**', 'jspm_packages/**']
 
 /**

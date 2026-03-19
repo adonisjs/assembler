@@ -446,6 +446,82 @@ test.group('Validator extractor', () => {
     )
   })
 
+  test('extract validator when using ctx.request.tryValidateUsing', async ({ assert, fs }) => {
+    await fs.create(
+      'app/controllers/users_controller.ts',
+      `
+      import { createUserValidator } from '#validators/user'
+
+      export default class UsersController {
+        async store(ctx: HttpContext) {
+          await ctx.request.tryValidateUsing(createUserValidator)
+        }
+      }
+    `
+    )
+
+    assert.deepEqual(
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
+        path: join(fs.basePath, 'app/controllers/users_controller.ts'),
+        method: 'store',
+        name: 'UsersController',
+        import: {
+          type: 'default',
+          value: 'UsersController',
+          specifier: '#controllers/users_controller',
+        },
+      }),
+      [
+        {
+          import: {
+            specifier: '#validators/user',
+            type: 'named',
+            value: 'createUserValidator',
+          },
+          name: 'createUserValidator',
+        },
+      ]
+    )
+  })
+
+  test('extract validator when using request.tryValidateUsing', async ({ assert, fs }) => {
+    await fs.create(
+      'app/controllers/users_controller.ts',
+      `
+      import { createUserValidator } from '#validators/user'
+
+      export default class UsersController {
+        async store({ request }: HttpContext) {
+          await request.tryValidateUsing(createUserValidator)
+        }
+      }
+    `
+    )
+
+    assert.deepEqual(
+      await extractValidators(fs.basePath, new VirtualFileSystem(fs.basePath), {
+        path: join(fs.basePath, 'app/controllers/users_controller.ts'),
+        method: 'store',
+        name: 'UsersController',
+        import: {
+          type: 'default',
+          value: 'UsersController',
+          specifier: '#controllers/users_controller',
+        },
+      }),
+      [
+        {
+          import: {
+            specifier: '#validators/user',
+            type: 'named',
+            value: 'createUserValidator',
+          },
+          name: 'createUserValidator',
+        },
+      ]
+    )
+  })
+
   test('do not match method name when it appear in body of another method', async ({
     assert,
     fs,

@@ -141,12 +141,14 @@ export class Bundler {
   /**
    * Runs tsc command to build the source.
    */
-  async #runTsc(outDir: string): Promise<boolean> {
+  async #runTsc(args: { outDir: string; project?: string }): Promise<boolean> {
     try {
       await run(this.cwd, {
         stdio: 'inherit',
         script: 'tsc',
-        scriptArgs: ['--outDir', outDir],
+        scriptArgs: Object.entries(args).flatMap(([key, value]) =>
+          value ? [`--${key}`, value] : []
+        ),
       })
       return true
     } catch {
@@ -211,13 +213,17 @@ export class Bundler {
    * @example
    * const success = await bundler.bundle(true, 'npm')
    */
-  async bundle(stopOnError: boolean = true, client?: SupportedPackageManager): Promise<boolean> {
+  async bundle(
+    stopOnError: boolean = true,
+    client?: SupportedPackageManager,
+    options: { tsconfigPath?: string } = {}
+  ): Promise<boolean> {
     this.packageManager = client ?? (await this.#detectPackageManager()) ?? 'npm'
 
     /**
      * Step 1: Parse config file to get the build output directory
      */
-    const config = parseConfig(this.cwd, this.#ts)
+    const config = parseConfig(this.cwd, this.#ts, options.tsconfigPath)
     if (!config) {
       return false
     }
@@ -251,7 +257,10 @@ export class Bundler {
      * Step 5: Build typescript source code
      */
     this.ui.logger.info('compiling typescript source', { suffix: 'tsc' })
-    const buildCompleted = await this.#runTsc(outDir)
+    const buildCompleted = await this.#runTsc({
+      outDir,
+      project: options.tsconfigPath,
+    })
     await this.#createAceFile(outDir)
 
     /**

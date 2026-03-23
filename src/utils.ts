@@ -48,10 +48,11 @@ const DEFAULT_NODE_ARGS = ['--import=@poppinss/ts-exec', '--enable-source-maps']
  */
 export function parseConfig(
   cwd: URL | string,
-  ts: typeof tsStatic
+  ts: typeof tsStatic,
+  path = 'tsconfig.json'
 ): tsStatic.ParsedCommandLine | undefined {
   const cwdPath = typeof cwd === 'string' ? cwd : fileURLToPath(cwd)
-  const configFile = join(cwdPath, 'tsconfig.json')
+  const configFile = join(cwdPath, path)
   debug('parsing config file "%s"', configFile)
 
   let hardException: null | tsStatic.Diagnostic = null

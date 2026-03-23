@@ -376,4 +376,38 @@ test.group('Bundler', () => {
       "
     `)
   })
+
+  test('use custom tsconfig for build', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.build.json',
+        JSON.stringify({
+          compilerOptions: {
+            outDir: 'build',
+            skipLibCheck: true,
+            target: 'ESNext',
+            module: 'NodeNext',
+            lib: ['ESNext'],
+          },
+        })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('index.ts', 'export default function main() {}'),
+      fs.createJson('package.json', { type: 'module' }),
+      fs.create('package-lock.json', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, {})
+    bundler.ui.switchMode('raw')
+    await bundler.bundle(true, 'npm', {
+      tsconfigPath: './tsconfig.build.json',
+    })
+
+    await Promise.all([
+      assert.fileExists('./build/adonisrc.js'),
+      assert.fileExists('./build/index.js'),
+      assert.fileExists('./build/package.json'),
+      assert.fileExists('./build/package-lock.json'),
+    ])
+  })
 })

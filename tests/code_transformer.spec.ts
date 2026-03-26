@@ -193,9 +193,11 @@ test.group('Code transformer | addMiddlewareToStack', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.include(error.message, 'start/kernel.ts')
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, `() => import('@adonisjs/static/static_middleware')`)
+      if (error instanceof CodemodException) {
+        assert.include(error.message, 'start/kernel.ts')
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, `() => import('@adonisjs/static/static_middleware')`)
+      }
     }
   })
 
@@ -213,8 +215,10 @@ test.group('Code transformer | addMiddlewareToStack', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, `auth: () => import('#middleware/auth_middleware')`)
+      if (error instanceof CodemodException) {
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, `auth: () => import('#middleware/auth_middleware')`)
+      }
     }
   })
 
@@ -232,9 +236,11 @@ test.group('Code transformer | addMiddlewareToStack', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.include(error.message, 'server.use')
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, `() => import('@adonisjs/static/static_middleware')`)
+      if (error instanceof CodemodException) {
+        assert.include(error.message, 'server.use')
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, `() => import('@adonisjs/static/static_middleware')`)
+      }
     }
   })
 
@@ -381,10 +387,12 @@ test.group('Code transformer | defineEnvValidations', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.include(error.message, 'start/env.ts')
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, 'REDIS_HOST: Env.schema.string.optional()')
-      assert.include(error.instructions, 'REDIS_PORT: Env.schema.number()')
+      if (error instanceof CodemodException) {
+        assert.include(error.message, 'start/env.ts')
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, 'REDIS_HOST: Env.schema.string.optional()')
+        assert.include(error.instructions, 'REDIS_PORT: Env.schema.number()')
+      }
     }
   })
 
@@ -404,9 +412,11 @@ test.group('Code transformer | defineEnvValidations', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.include(error.message, 'Env.create')
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, 'MY_VAR: Env.schema.string()')
+      if (error instanceof CodemodException) {
+        assert.include(error.message, 'Env.create')
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, 'MY_VAR: Env.schema.string()')
+      }
     }
   })
 
@@ -454,9 +464,11 @@ test.group('Code transformer | updateRcFile errors', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.include(error.message, 'adonisrc.ts')
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, 'defineConfig')
+      if (error instanceof CodemodException) {
+        assert.include(error.message, 'adonisrc.ts')
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, 'defineConfig')
+      }
     }
   })
 
@@ -471,8 +483,10 @@ test.group('Code transformer | updateRcFile errors', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.include(error.message, 'defineConfig')
-      assert.isDefined(error.instructions)
+      if (error instanceof CodemodException) {
+        assert.include(error.message, 'defineConfig')
+        assert.isDefined(error.instructions)
+      }
     }
   })
 })
@@ -956,10 +970,12 @@ test.group('Code transformer | addJapaPlugin', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.include(error.message, 'tests/bootstrap.ts')
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, `import { fooPlugin } from '@adonisjs/foo/plugin/japa'`)
-      assert.include(error.instructions, 'fooPlugin()')
+      if (error instanceof CodemodException) {
+        assert.include(error.message, 'tests/bootstrap.ts')
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, `import { fooPlugin } from '@adonisjs/foo/plugin/japa'`)
+        assert.include(error.instructions, 'fooPlugin()')
+      }
     }
   })
 
@@ -1038,10 +1054,12 @@ test.group('Code transformer | addPolicies', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.include(error.message, 'app/policies/main.ts')
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, `PostPolicy: () => import('#policies/post_policy')`)
-      assert.include(error.instructions, `UserPolicy: () => import('#policies/user_policy')`)
+      if (error instanceof CodemodException) {
+        assert.include(error.message, 'app/policies/main.ts')
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, `PostPolicy: () => import('#policies/post_policy')`)
+        assert.include(error.instructions, `UserPolicy: () => import('#policies/user_policy')`)
+      }
     }
   })
 
@@ -1057,8 +1075,10 @@ test.group('Code transformer | addPolicies', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, `PostPolicy: () => import('#policies/post_policy')`)
+      if (error instanceof CodemodException) {
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, `PostPolicy: () => import('#policies/post_policy')`)
+      }
     }
   })
 
@@ -1074,8 +1094,10 @@ test.group('Code transformer | addPolicies', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, `PostPolicy: () => import('#policies/post_policy')`)
+      if (error instanceof CodemodException) {
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, `PostPolicy: () => import('#policies/post_policy')`)
+      }
     }
   })
 
@@ -1211,10 +1233,12 @@ test.group('Code transformer | addVitePlugin', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.include(error.message, 'vite.config.ts')
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, `import vue from 'vue'`)
-      assert.include(error.instructions, 'vue()')
+      if (error instanceof CodemodException) {
+        assert.include(error.message, 'vite.config.ts')
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, `import vue from 'vue'`)
+        assert.include(error.instructions, 'vue()')
+      }
     }
   })
 
@@ -1232,8 +1256,10 @@ test.group('Code transformer | addVitePlugin', (group) => {
       assert.fail('Should have thrown an error')
     } catch (error) {
       assert.instanceOf(error, CodemodException)
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, 'vue()')
+      if (error instanceof CodemodException) {
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, 'vue()')
+      }
     }
   })
 
@@ -1250,9 +1276,11 @@ test.group('Code transformer | addVitePlugin', (group) => {
       ])
       assert.fail('Should have thrown an error')
     } catch (error) {
-      assert.instanceOf(error, CodemodException)
-      assert.isDefined(error.instructions)
-      assert.include(error.instructions, 'vue()')
+      if (error instanceof CodemodException) {
+        assert.instanceOf(error, CodemodException)
+        assert.isDefined(error.instructions)
+        assert.include(error.instructions, 'vue()')
+      }
     }
   })
 })

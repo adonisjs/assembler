@@ -85,7 +85,7 @@
     "ts-morph": "^27.0.2"
   },
   "peerDependencies": {
-    "typescript": "^4.0.0 || ^5.0.0"
+    "typescript": "^5.0.0 || ^6.0.0"
   },
   "author": "virk,adonisjs",
   "license": "MIT",

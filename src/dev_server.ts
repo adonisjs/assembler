@@ -314,7 +314,7 @@ export class DevServer {
       await this.#hooks.runner('devServerStarted').run(this, info, displayMessage)
     } catch (error) {
       this.ui.logger.error('One of the "devServerStarted" hooks failed')
-      this.ui.logger.fatal(error)
+      this.ui.logger.fatal(error as Error)
     }
 
     displayMessage.render()
@@ -535,7 +535,7 @@ export class DevServer {
       }
     } catch (error) {
       this.ui.logger.error('Unable to rescan routes because of the following error')
-      this.ui.logger.fatal(error)
+      this.ui.logger.fatal(error as Error)
     }
   }
 
@@ -598,7 +598,7 @@ export class DevServer {
       }
     } catch (error) {
       this.ui.logger.error('Unable to process and scan routes because of the following error')
-      this.ui.logger.fatal(error)
+      this.ui.logger.fatal(error as Error)
     }
   }, 'processRoutes')
 

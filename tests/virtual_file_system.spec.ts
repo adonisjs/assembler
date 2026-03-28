@@ -195,4 +195,23 @@ test.group('Virtual file system', () => {
     vfs.clear()
     assert.deepEqual(vfs.asList(), {})
   })
+
+  test('scan files when absolute path contains a dot-prefixed directory', async ({
+    fs,
+    assert,
+  }) => {
+    await fs.create('.claude/worktrees/my-app/app/controllers/users_controller.ts', '')
+    await fs.create('.claude/worktrees/my-app/app/controllers/posts_controller.ts', '')
+    await fs.create('.claude/worktrees/my-app/app/controllers/api/auth_controller.ts', '')
+
+    const source = string.toUnixSlash(join(fs.basePath, '.claude/worktrees/my-app/app/controllers'))
+    const vfs = new VirtualFileSystem(source)
+    await vfs.scan()
+
+    assert.deepEqual(vfs.asList(), {
+      'users_controller': join(source, 'users_controller.ts'),
+      'posts_controller': join(source, 'posts_controller.ts'),
+      'api/auth_controller': join(source, 'api/auth_controller.ts'),
+    })
+  })
 })

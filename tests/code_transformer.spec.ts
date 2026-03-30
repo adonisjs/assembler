@@ -1895,6 +1895,140 @@ test.group('Code Transformer | addModelMixins', (group) => {
     `)
   })
 
+  test('add mixins with additional imports', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+
+      export default class User extends compose(UserSchema) {
+      }
+    `
+    )
+
+    await transformer.addModelMixins(
+      'user.ts',
+      [
+        {
+          importPath: '#kit/auth',
+          importType: 'named',
+          name: 'withManagedEmail',
+        },
+      ],
+      [
+        {
+          source: '#services/hash',
+          namedImports: ['hash'],
+        },
+      ]
+    )
+
+    const file = await fs.contents('app/models/user.ts')
+    assert.snapshot(file).matchInline(`
+      "import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { withManagedEmail } from '#kit/auth'
+      import { hash } from '#services/hash'
+
+      export default class User extends compose(UserSchema, withManagedEmail()) {
+      }
+      "
+    `)
+  })
+
+  test('additional imports should merge with existing imports from same module', async ({
+    assert,
+    fs,
+  }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { hash } from '#services/hash'
+
+      export default class User extends compose(UserSchema) {
+      }
+    `
+    )
+
+    await transformer.addModelMixins(
+      'user.ts',
+      [
+        {
+          importPath: '#kit/auth',
+          importType: 'named',
+          name: 'withManagedEmail',
+        },
+      ],
+      [
+        {
+          source: '#services/hash',
+          namedImports: ['scrypt'],
+        },
+      ]
+    )
+
+    const file = await fs.contents('app/models/user.ts')
+    assert.snapshot(file).matchInline(`
+      "import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { hash, scrypt } from '#services/hash'
+      import { withManagedEmail } from '#kit/auth'
+
+      export default class User extends compose(UserSchema, withManagedEmail()) {
+      }
+      "
+    `)
+  })
+
+  test('additional imports should not duplicate existing imports', async ({ assert, fs }) => {
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await fs.create(
+      'app/models/user.ts',
+      dedent`
+      import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { hash } from '#services/hash'
+
+      export default class User extends compose(UserSchema) {
+      }
+    `
+    )
+
+    await transformer.addModelMixins(
+      'user.ts',
+      [
+        {
+          importPath: '#kit/auth',
+          importType: 'named',
+          name: 'withManagedEmail',
+        },
+      ],
+      [
+        {
+          source: '#services/hash',
+          namedImports: ['hash'],
+        },
+      ]
+    )
+
+    const file = await fs.contents('app/models/user.ts')
+    assert.snapshot(file).matchInline(`
+      "import { compose } from '@adonisjs/core/helpers'
+      import { UserSchema } from '#database/schema'
+      import { hash } from '#services/hash'
+      import { withManagedEmail } from '#kit/auth'
+
+      export default class User extends compose(UserSchema, withManagedEmail()) {
+      }
+      "
+    `)
+  })
+
   test('add multiple mixins with different arguments', async ({ assert, fs }) => {
     const transformer = new CodeTransformer(fs.baseUrl)
     await fs.create(

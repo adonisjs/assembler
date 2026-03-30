@@ -720,7 +720,7 @@ export class CodeTransformer {
     await file.save()
   }
 
-  async addModelMixins(modelFileName: string, mixins: MixinDefinition[]) {
+  async addModelMixins(modelFileName: string, mixins: MixinDefinition[], imports?: ImportInfo[]) {
     const directories = this.getDirectories()
     const filePath = `${directories.models}/${modelFileName}`
 
@@ -774,6 +774,13 @@ export class CodeTransformer {
       }
     })
     this.#addImportsFromImportInfo(file, mixinImports)
+
+    /**
+     * Add additional imports if specified
+     */
+    if (imports) {
+      this.#addImportsFromImportInfo(file, imports)
+    }
 
     /**
      * Get the heritage clause (extends clause)

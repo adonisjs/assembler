@@ -57,7 +57,7 @@
     "p-event": "^7.1.0",
     "prettier": "^3.8.1",
     "release-it": "^19.2.4",
-    "tsdown": "^0.21.5",
+    "tsdown": "^0.21.7",
     "typedoc": "^0.28.18",
     "typescript": "^6.0.2"
   },
@@ -65,7 +65,7 @@
     "@adonisjs/env": "^7.0.0",
     "@antfu/install-pkg": "^1.1.0",
     "@ast-grep/napi": "^0.42.0",
-    "@poppinss/cliui": "^6.8.0",
+    "@poppinss/cliui": "^6.8.1",
     "@poppinss/hooks": "^7.3.0",
     "@poppinss/utils": "^7.0.1",
     "chokidar": "^5.0.0",

@@ -11,6 +11,7 @@ import { type Instructions } from '@poppinss/cliui'
 import { type AsyncOrSync, type LazyImport } from '@poppinss/utils/types'
 
 import { type Bundler } from '../bundler.ts'
+import { type CodeGen } from '../codegen.ts'
 import { type DevServer } from '../dev_server.ts'
 import { type TestRunner } from '../test_runner.ts'
 import { type RoutesListItem } from './code_scanners.ts'
@@ -54,11 +55,11 @@ export type CommonHooks = {
    * dev-server, runs tests or creates a build. Use this hook to perform
    * initialization tasks that are common across all operations.
    *
-   * @param parent - The parent instance (DevServer, TestRunner, or Bundler)
+   * @param parent - The parent instance (DevServer, TestRunner, Bundler or CodeGen)
    */
   init: DefineHook<
     (
-      parent: DevServer | TestRunner | Bundler,
+      parent: DevServer | TestRunner | Bundler | CodeGen,
       hooks: Hooks<{
         [P in keyof AllHooks]: [HookParams<P>, HookParams<P>]
       }>,
@@ -89,33 +90,33 @@ export type RouterHooks = {
    * The hook is executed when routes are committed by the dev server child
    * process. Use this hook to react to route changes and perform related tasks.
    *
-   * @param parent - The DevServer instance
+   * @param parent - The DevServer or CodeGen instance
    * @param routes - Record of routes grouped by domain or method
    */
   routesCommitted: DefineHook<
-    (parent: DevServer, routes: Record<string, RoutesListItem[]>) => AsyncOrSync<void>
+    (parent: DevServer | CodeGen, routes: Record<string, RoutesListItem[]>) => AsyncOrSync<void>
   >[]
 
   /**
    * The hook is executed when dev server begins the routes scanning process.
    * Use this hook to prepare for route scanning or modify scanner configuration.
    *
-   * @param parent - The DevServer instance
+   * @param parent - The DevServer or CodeGen instance
    * @param routesScanner - The RoutesScanner instance being used
    */
   routesScanning: DefineHook<
-    (parent: DevServer, routesScanner: RoutesScanner) => AsyncOrSync<void>
+    (parent: DevServer | CodeGen, routesScanner: RoutesScanner) => AsyncOrSync<void>
   >[]
 
   /**
    * The hook is executed when routes scanning process has finished.
    * Use this hook to process the scanned routes or clean up resources.
    *
-   * @param parent - The DevServer instance
+   * @param parent - The DevServer or CodeGen instance
    * @param routesScanner - The RoutesScanner instance that was used
    */
   routesScanned: DefineHook<
-    (parent: DevServer, routesScanner: RoutesScanner) => AsyncOrSync<void>
+    (parent: DevServer | CodeGen, routesScanner: RoutesScanner) => AsyncOrSync<void>
   >[]
 }
 

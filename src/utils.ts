@@ -24,8 +24,12 @@ import { parseTsconfig, type TsConfigResult } from 'get-tsconfig'
 import { basename, dirname, isAbsolute, join, relative } from 'node:path'
 
 import debug from './debug.ts'
+import { type CodeGen } from './codegen.ts'
+import { type DevServer } from './dev_server.ts'
+import { type RoutesListItem } from './types/code_scanners.ts'
 import type { RunScriptOptions } from './types/common.ts'
-import { type AllHooks, type HookParams } from './types/hooks.ts'
+import { RoutesScanner } from './code_scanners/routes_scanner/main.ts'
+import { type AllHooks, type HookParams, type RouterHooks } from './types/hooks.ts'
 
 /**
  * Default set of args to pass in order to run TypeScript
@@ -392,6 +396,87 @@ export async function loadHooks<K extends keyof AllHooks>(
   }
 
   return hooks
+}
+
+/**
+ * Returns a boolean telling if any hook is listening for routes related
+ * events.
+ *
+ * Use it to skip the work of collecting the routes in the first place, since
+ * nothing consumes them when no hook has been registered.
+ *
+ * @param hooks - The hooks instance to inspect
+ * @returns True when atleast one routes hook has been registered
+ */
+export function hasRoutesHooks<
+  RouteHooks extends {
+    [P in keyof RouterHooks]: [HookParams<P>, HookParams<P>]
+  },
+>(hooks: Hooks<RouteHooks>): boolean {
+  return hooks.has('routesCommitted') || hooks.has('routesScanning') || hooks.has('routesScanned')
+}
+
+/**
+ * Shares the routes with the hooks that are listening for them and scans them
+ * when some hook has shown an interest in the scanned output.
+ *
+ * The routes codegen is performed by the dev-server as well as the codegen, so
+ * the sequence lives here to keep both of them in sync. The callers own their
+ * own edges. For example, where the routes come from and what happens when the
+ * processing fails.
+ *
+ * @param hooks - The hooks instance to run the hooks from
+ * @param parent - The instance shared with the hooks as their parent
+ * @param cwdPath - The project root, used by the routes scanner to resolve paths
+ * @param routes - Routes grouped by their domain
+ * @returns The routes scanner, when the routes were scanned
+ *
+ * @example
+ * const scanner = await processRoutes(hooks, devServer, cwdPath, routesList)
+ */
+export async function processRoutes<
+  RouteHooks extends {
+    [P in keyof RouterHooks]: [HookParams<P>, HookParams<P>]
+  },
+>(
+  hooks: Hooks<RouteHooks>,
+  parent: DevServer | CodeGen,
+  cwdPath: string,
+  routes: Record<string, RoutesListItem[]>
+): Promise<RoutesScanner | undefined> {
+  const scanRoutes = hooks.has('routesScanning') || hooks.has('routesScanned')
+  const shareRoutes = hooks.has('routesCommitted')
+
+  /**
+   * Return early when there are no hooks listening for routes
+   * related events
+   */
+  if (!scanRoutes && !shareRoutes) {
+    debug('no hooks are listening for routes. skipping routes codegen')
+    return
+  }
+
+  /**
+   * Notify about the existence of routes
+   */
+  if (shareRoutes) {
+    await hooks.runner('routesCommitted').run(parent, routes)
+  }
+
+  /**
+   * Scan routes and notify scanning and scanned hooks
+   */
+  if (scanRoutes) {
+    const routesScanner = new RoutesScanner(cwdPath, [])
+    await hooks.runner('routesScanning').run(parent, routesScanner)
+
+    for (const domain of Object.keys(routes)) {
+      await routesScanner.scan(routes[domain])
+    }
+
+    await hooks.runner('routesScanned').run(parent, routesScanner)
+    return routesScanner
+  }
 }
 
 /**

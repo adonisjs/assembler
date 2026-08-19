@@ -7,14 +7,15 @@
  * file that was distributed with this source code.
  */
 
+import { type FilterPredicate } from 'fdir'
 import type { Logger } from '@poppinss/cliui'
 import { type Prettify } from '@poppinss/utils/types'
 import type StringBuilder from '@poppinss/utils/string_builder'
 
 import { type AllHooks } from './hooks.ts'
 import { type FileBuffer } from '../file_buffer.ts'
+import { type RoutesListItem } from './code_scanners.ts'
 import { type VirtualFileSystem } from '../virtual_file_system.ts'
-import { type FilterPredicate } from 'fdir'
 
 /**
  * Recursive file tree structure for representing nested directory hierarchies
@@ -342,6 +343,39 @@ export type TestRunnerOptions = {
  * }
  */
 export type BundlerOptions = AssemblerRcFile
+
+/**
+ * Options accepted by the codegen. Extends AssemblerRcFile to inherit the
+ * hooks configuration
+ *
+ * @example
+ * const codeGenOptions: CodeGenOptions = {
+ *   hooks: {
+ *     init: [() => import('./codegen_hooks')]
+ *   }
+ * }
+ */
+export type CodeGenOptions = AssemblerRcFile
+
+/**
+ * A snapshot of the state that only a booted AdonisJS application knows about.
+ *
+ * Assembler never boots the app, therefore the caller collects this state from
+ * a warmed up application and hands it over to the codegen. Every key is
+ * optional, so a caller that cannot boot the app still gets the file-system
+ * driven codegen performed.
+ *
+ * @example
+ * const snapshot: CodeGenSnapshot = {
+ *   routes: router.toJSON()
+ * }
+ */
+export type CodeGenSnapshot = {
+  /**
+   * Routes registered by the application, grouped by their domain
+   */
+  routes?: Record<string, RoutesListItem[]>
+}
 
 /**
  * Keyboard shortcut definition for development server interactions

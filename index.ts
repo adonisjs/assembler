@@ -8,6 +8,7 @@
  */
 
 export { Bundler } from './src/bundler.ts'
+export { CodeGen } from './src/codegen.ts'
 export { DevServer } from './src/dev_server.ts'
 export { TestRunner } from './src/test_runner.ts'
 export { FileBuffer } from './src/file_buffer.ts'

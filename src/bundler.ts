@@ -196,6 +196,11 @@ export class Bundler {
       await import('./bin/console.js')
     `)
 
+    /**
+     * tsc emits nothing when it rejects the config itself (say "include"
+     * matches no files), so the output directory may not exist at this point.
+     */
+    await fs.mkdir(outDir, { recursive: true })
     await fs.writeFile(aceFileLocation, aceFileContent)
     this.ui.logger.info('created ace file', { suffix: this.#getRelativeName(aceFileLocation) })
   }

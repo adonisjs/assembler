@@ -476,4 +476,27 @@ test.group('Bundler', () => {
 
     assert.isFalse(await bundler.bundle(true, 'npm'))
   })
+
+  test('return false when tsc rejects the config itself', async ({ assert, fs }) => {
+    await Promise.all([
+      /**
+       * "include" matches nothing, so tsc bails with TS18003 and emits no
+       * output at all — meaning the outDir never gets created.
+       */
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({
+          compilerOptions: { outDir: 'build', skipLibCheck: true },
+          include: ['src/**/*'],
+        })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('package.json', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, { suites: [], metaFiles: [] })
+    bundler.ui.switchMode('raw')
+
+    assert.isFalse(await bundler.bundle(true, 'npm'))
+  })
 })

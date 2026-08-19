@@ -286,16 +286,14 @@ export class FileSystem {
     }
 
     const testFilePatterns = testSuites.flatMap((suite) => suite.files)
-    const picomatcchOptions = { cwd: this.#cwd }
-
     /**
      * Initiate picomatch matchers we will need to identify metafiles
      */
-    this.#isMetaFileWithReloadsEnabled = picomatch(metaFilesWithReloads, picomatcchOptions)
-    this.#isMetaFileWithReloadsDisabled = picomatch(metaFilesWithoutReloads, picomatcchOptions)
-    this.#isTestFile = picomatch(testFilePatterns, picomatcchOptions)
-    this.#isIncluded = picomatch(this.#includes, picomatcchOptions)
-    this.#isExcluded = picomatch(this.#excludes, picomatcchOptions)
+    this.#isMetaFileWithReloadsEnabled = picomatch(metaFilesWithReloads)
+    this.#isMetaFileWithReloadsDisabled = picomatch(metaFilesWithoutReloads)
+    this.#isTestFile = picomatch(testFilePatterns)
+    this.#isIncluded = picomatch(this.#includes)
+    this.#isExcluded = picomatch(this.#excludes)
 
     debug('initiating file system %O', {
       includes: this.#includes,

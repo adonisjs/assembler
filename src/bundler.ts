@@ -50,8 +50,16 @@ export const SUPPORTED_PACKAGE_MANAGERS: {
     installCommand: 'pnpm i --prod',
   },
   'bun': {
-    packageManagerFiles: ['bun.lockb'],
+    packageManagerFiles: ['bun.lock', 'bun.lockb'],
     installCommand: 'bun install --production',
+  },
+  'nub': {
+    packageManagerFiles: ['nub.lock'],
+    installCommand: 'nub install --prod',
+  },
+  'aube': {
+    packageManagerFiles: ['aube-lock.yaml'],
+    installCommand: 'aube install --prod',
   },
 }
 
@@ -175,7 +183,12 @@ export class Bundler {
     if (pkgManager === 'deno') {
       return 'npm'
     }
-    if (pkgManager === 'pnpm@6') {
+
+    /**
+     * Rush controls pnpm from the monorepo root. The compiled application is
+     * standalone, so it should use the regular pnpm metadata and command.
+     */
+    if (pkgManager === 'pnpm@6' || pkgManager === 'pnpm-rush') {
       return 'pnpm'
     }
 

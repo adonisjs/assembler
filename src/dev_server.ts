@@ -29,8 +29,17 @@ import type {
   HotHookMessage,
 } from './types/common.ts'
 import { IndexGenerator } from './index_generator/main.ts'
-import { RoutesScanner } from './code_scanners/routes_scanner/main.ts'
-import { getPort, loadHooks, readTsConfig, runNode, throttle, watch } from './utils.ts'
+import { type RoutesScanner } from './code_scanners/routes_scanner/main.ts'
+import {
+  getPort,
+  loadHooks,
+  readTsConfig,
+  runNode,
+  throttle,
+  watch,
+  hasRoutesHooks,
+  processRoutes,
+} from './utils.ts'
 import {
   type HookParams,
   type RouterHooks,
@@ -557,14 +566,11 @@ export class DevServer {
    */
   #processRoutes = throttle(async (routesFileLocation: string) => {
     try {
-      const scanRoutes = this.#hooks.has('routesScanning') || this.#hooks.has('routesScanned')
-      const shareRoutes = this.#hooks.has('routesCommitted')
-
       /**
        * Remove the routes file and return early when there are no
        * hooks listening for routes related events
        */
-      if (!scanRoutes && !shareRoutes) {
+      if (!hasRoutesHooks(this.#hooks)) {
         unlink(routesFileLocation).catch(() => {})
         return
       }
@@ -577,25 +583,10 @@ export class DevServer {
       unlink(routesFileLocation).catch(() => {})
 
       /**
-       * Notify about the existence of routes
+       * Share the routes with the hooks and scan them. The sequence is shared
+       * with the codegen, hence it lives inside a util
        */
-      if (shareRoutes) {
-        await this.#hooks.runner('routesCommitted').run(this, routesList)
-      }
-
-      /**
-       * Scan routes and notify scanning and scanned hooks
-       */
-      if (scanRoutes) {
-        this.#routesScanner = new RoutesScanner(this.cwdPath, [])
-        await this.#hooks.runner('routesScanning').run(this, this.#routesScanner)
-
-        for (const domain of Object.keys(routesList)) {
-          await this.#routesScanner.scan(routesList[domain])
-        }
-
-        await this.#hooks.runner('routesScanned').run(this, this.#routesScanner)
-      }
+      this.#routesScanner = await processRoutes(this.#hooks, this, this.cwdPath, routesList)
     } catch (error) {
       this.ui.logger.error('Unable to process and scan routes because of the following error')
       this.ui.logger.fatal(error as Error)

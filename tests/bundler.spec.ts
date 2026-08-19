@@ -10,7 +10,7 @@
 import ts from 'typescript'
 import { test } from '@japa/runner'
 
-import { Bundler } from '../index.ts'
+import { Bundler, SUPPORTED_PACKAGE_MANAGERS } from '../index.ts'
 
 test.group('Bundler', () => {
   test('should copy metafiles to the build directory', async ({ assert, fs }) => {
@@ -144,6 +144,82 @@ test.group('Bundler', () => {
       assert.fileExists('./build/package.json'),
       assert.fileExists('./build/pnpm-lock.yaml'),
     ])
+  })
+
+  test('detect bun and copy its text lockfile', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('package.json', '{}'),
+      fs.create('bun.lock', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, { suites: [] })
+    bundler.ui.switchMode('raw')
+    await bundler.bundle(true)
+
+    await assert.fileExists('./build/bun.lock')
+  })
+
+  for (const packageManager of [
+    {
+      name: 'nub',
+      lockFile: 'nub.lock',
+      installCommand: 'nub install --prod',
+    },
+    {
+      name: 'aube',
+      lockFile: 'aube-lock.yaml',
+      installCommand: 'aube install --prod',
+    },
+  ] as const) {
+    test(`detect ${packageManager.name} and copy its lockfile`, async ({ assert, fs }) => {
+      await Promise.all([
+        fs.create(
+          'tsconfig.json',
+          JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+        ),
+        fs.create('adonisrc.ts', 'export default {}'),
+        fs.create('package.json', '{}'),
+        fs.create(packageManager.lockFile, '{}'),
+      ])
+
+      const bundler = new Bundler(fs.baseUrl, ts, { suites: [] })
+      bundler.ui.switchMode('raw')
+      await bundler.bundle(true)
+
+      await Promise.all([
+        assert.fileExists('./build/package.json'),
+        assert.fileExists(`./build/${packageManager.lockFile}`),
+      ])
+      assert.equal(
+        SUPPORTED_PACKAGE_MANAGERS[packageManager.name].installCommand,
+        packageManager.installCommand
+      )
+    })
+  }
+
+  test('treat pnpm projects managed by Rush as pnpm builds', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('package.json', '{}'),
+      fs.create('rush.json', '{}'),
+      fs.create('pnpm-lock.yaml', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, { suites: [] })
+    bundler.ui.switchMode('raw')
+    await bundler.bundle(true)
+
+    assert.equal(bundler.packageManager, 'pnpm')
+    await assert.fileExists('./build/pnpm-lock.yaml')
   })
 
   test('detect yarn@berry and move all its files if not specified', async ({ assert, fs }) => {

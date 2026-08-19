@@ -410,4 +410,70 @@ test.group('Bundler', () => {
       assert.fileExists('./build/package-lock.json'),
     ])
   })
+
+  test('build without touching the typescript module', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: 'build', skipLibCheck: true } })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('package.json', '{}'),
+      fs.create('package-lock.json', '{}'),
+    ])
+
+    /**
+     * TypeScript 7 dropped the programmatic compiler API, so reaching for any
+     * property on the module is what used to blow the build up with
+     * "ts.getParsedCommandLineOfConfigFile is not a function".
+     */
+    const unusableTs = new Proxy(
+      {},
+      {
+        get(_, property) {
+          throw new Error(`Bundler read "${String(property)}" off the typescript module`)
+        },
+      }
+    ) as unknown as typeof ts
+
+    const bundler = new Bundler(fs.baseUrl, unusableTs, { suites: [], metaFiles: [] })
+    bundler.ui.switchMode('raw')
+
+    assert.isTrue(await bundler.bundle(true, 'npm'))
+    await assert.fileExists('./build/package.json')
+  })
+
+  test('resolve a nested outDir against the project root', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create(
+        'tsconfig.json',
+        JSON.stringify({ compilerOptions: { outDir: './dist/server', skipLibCheck: true } })
+      ),
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('package.json', '{}'),
+      fs.create('package-lock.json', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, { suites: [], metaFiles: [] })
+    bundler.ui.switchMode('raw')
+    await bundler.bundle(true, 'npm')
+
+    await Promise.all([
+      assert.fileExists('./dist/server/package.json'),
+      assert.fileExists('./dist/server/adonisrc.js'),
+      assert.fileExists('./dist/server/ace.js'),
+    ])
+  })
+
+  test('fail gracefully when the tsconfig file is missing', async ({ assert, fs }) => {
+    await Promise.all([
+      fs.create('adonisrc.ts', 'export default {}'),
+      fs.create('package.json', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, { suites: [], metaFiles: [] })
+    bundler.ui.switchMode('raw')
+
+    assert.isFalse(await bundler.bundle(true, 'npm'))
+  })
 })

@@ -18,7 +18,7 @@ import { join, relative } from 'node:path/posix'
 import { detectPackageManager } from '@antfu/install-pkg'
 
 import type { BundlerOptions } from './types/common.ts'
-import { run, parseConfig, copyFiles, loadHooks } from './utils.ts'
+import { run, readTsConfig, copyFiles, loadHooks } from './utils.ts'
 import { type HookParams, type BundlerHooks, type CommonHooks } from './types/hooks.ts'
 import { type SupportedPackageManager } from './types/code_transformer.ts'
 import { IndexGenerator } from './index_generator/main.ts'
@@ -64,11 +64,6 @@ export const SUPPORTED_PACKAGE_MANAGERS: {
  */
 export class Bundler {
   /**
-   * Reference to the TypeScript module
-   */
-  #ts: typeof tsStatic
-
-  /**
    * Hooks to execute custom actions during the build process
    */
   #hooks!: Hooks<
@@ -113,14 +108,16 @@ export class Bundler {
    * Create a new bundler instance
    *
    * @param cwd - The current working directory URL
-   * @param ts - TypeScript module reference
+   * @param _ts - TypeScript module reference. No longer used: the bundler reads
+   *   the tsconfig through "get-tsconfig" and shells out to the "tsc" binary
+   *   for the actual compile. Kept so the constructor signature stays
+   *   backwards compatible.
    * @param options - Bundler configuration options
    */
-  constructor(cwd: URL, ts: typeof tsStatic, options: BundlerOptions) {
+  constructor(cwd: URL, _ts: typeof tsStatic, options: BundlerOptions) {
     this.cwd = cwd
     this.options = options
     this.cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
-    this.#ts = ts
   }
 
   /**
@@ -221,10 +218,11 @@ export class Bundler {
     this.packageManager = client ?? (await this.#detectPackageManager()) ?? 'npm'
 
     /**
-     * Step 1: Parse config file to get the build output directory
+     * Step 1: Read config file to get the build output directory
      */
-    const config = parseConfig(this.cwd, this.#ts, options.tsconfigPath)
-    if (!config) {
+    const tsConfig = readTsConfig(this.cwdPath, options.tsconfigPath)
+    if (!tsConfig) {
+      this.ui.logger.error('unable to read the tsconfig file')
       return false
     }
 
@@ -244,7 +242,15 @@ export class Bundler {
     /**
      * Step 3: Cleanup existing build directory (if any)
      */
-    const outDir = config.options.outDir || fileURLToPath(new URL('build/', this.cwd))
+    /**
+     * "get-tsconfig" hands back the outDir exactly as authored (say "./build"),
+     * whereas the compiler API used to resolve it for us. Everything below —
+     * the rm, the ace file write, the relative name for logging — expects an
+     * absolute path, so resolve it against the project root.
+     */
+    const outDir = fileURLToPath(
+      new URL(tsConfig.config.compilerOptions?.outDir ?? 'build/', this.cwd)
+    )
     this.ui.logger.info('cleaning up output directory', { suffix: this.#getRelativeName(outDir) })
     await this.#cleanupBuildDirectory(outDir)
 

@@ -93,8 +93,16 @@ export function parseConfig(
   return parsedConfig
 }
 
-export function readTsConfig(cwd: string): TsConfigResult | null {
-  const tsConfigPath = join(cwd, 'tsconfig.json')
+/**
+ * Reads and parses the tsconfig file without going through the TypeScript
+ * compiler API.
+ *
+ * @param cwd - The project root directory path
+ * @param path - Config file to read, relative to "cwd" (or an absolute path)
+ * @returns The parsed config, or null when it cannot be read
+ */
+export function readTsConfig(cwd: string, path: string = 'tsconfig.json'): TsConfigResult | null {
+  const tsConfigPath = isAbsolute(path) ? path : join(cwd, path)
   debug('reading config file from location "%s"', tsConfigPath)
 
   try {

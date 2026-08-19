@@ -81,7 +81,6 @@ export class VirtualFileSystem {
     this.#source = source
     this.#options = options ?? {}
     this.#picoMatchOptions = {
-      cwd: this.#source,
       dot: true,
     }
     this.#matcher = picomatch(this.#options.glob ?? DEFAULT_GLOB, this.#picoMatchOptions)

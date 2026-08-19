@@ -251,4 +251,5 @@ export type HookNode =
  * // Used in bundler configuration
  * const bundler = new Bundler(cwd, ts, { packageManager: 'yarn@berry' })
  */
-export type SupportedPackageManager = 'npm' | 'yarn' | 'yarn@berry' | 'pnpm' | 'bun'
+export type SupportedPackageManager =
+  'npm' | 'yarn' | 'yarn@berry' | 'pnpm' | 'bun' | 'nub' | 'aube'

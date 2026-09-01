@@ -349,16 +349,16 @@ export class TestRunner {
    * triggering appropriate test runs based on the changed files.
    */
   #registerServerRestartHooks() {
-    this.#hooks.add('fileAdded', (relativePath, absolutePath) => {
-      this.#regenerateIndex(absolutePath, 'add')
+    this.#hooks.add('fileAdded', async (relativePath, absolutePath) => {
+      await this.#regenerateIndex(absolutePath, 'add')
       this.#handleFileChange(relativePath, absolutePath, 'add')
     })
-    this.#hooks.add('fileChanged', (relativePath, absolutePath) => {
-      this.#regenerateIndex(absolutePath, 'add')
+    this.#hooks.add('fileChanged', async (relativePath, absolutePath) => {
+      await this.#regenerateIndex(absolutePath, 'add')
       this.#handleFileChange(relativePath, absolutePath, 'update')
     })
-    this.#hooks.add('fileRemoved', (relativePath, absolutePath) => {
-      this.#regenerateIndex(absolutePath, 'delete')
+    this.#hooks.add('fileRemoved', async (relativePath, absolutePath) => {
+      await this.#regenerateIndex(absolutePath, 'delete')
       this.#handleFileChange(relativePath, absolutePath, 'delete')
     })
   }

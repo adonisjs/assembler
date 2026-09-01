@@ -15,7 +15,7 @@ import string from '@poppinss/utils/string'
 import { readFile } from 'node:fs/promises'
 import { naturalSort } from '@poppinss/utils'
 import { Lang, parse, type SgNode } from '@ast-grep/napi'
-import picomatch, { type PicomatchOptions, type Matcher } from 'picomatch'
+import picomatch, { type Matcher } from 'picomatch'
 
 import debug from './debug.ts'
 import { removeExtension } from './utils.ts'
@@ -67,23 +67,30 @@ export class VirtualFileSystem {
   #matcher: Matcher
 
   /**
-   * Picomatch options used for file pattern matching
-   */
-  #picoMatchOptions: PicomatchOptions
-
-  /**
    * Create a new VirtualFileSystem instance
    *
    * @param source - Absolute path to the source directory
    * @param options - Optional configuration for file filtering and processing
    */
   constructor(source: string, options?: VirtualFileSystemOptions) {
-    this.#source = source
+    this.#source = string.toUnixSlash(source)
     this.#options = options ?? {}
-    this.#picoMatchOptions = {
-      dot: true,
+    this.#matcher = picomatch(this.#options.glob ?? DEFAULT_GLOB, { dot: true })
+  }
+
+  #isAccepted(filePath: string, isDirectory: boolean) {
+    filePath = string.toUnixSlash(filePath)
+    const relativePath = relative(this.#source, filePath)
+
+    if (relativePath === '..' || relativePath.startsWith('../')) {
+      return false
     }
-    this.#matcher = picomatch(this.#options.glob ?? DEFAULT_GLOB, this.#picoMatchOptions)
+
+    if (!isDirectory && !this.#matcher(filePath)) {
+      return false
+    }
+
+    return this.#options.filter?.(filePath, isDirectory) ?? true
   }
 
   /**
@@ -96,12 +103,8 @@ export class VirtualFileSystem {
   async scan() {
     debug('fetching entities from source "%s"', this.#source)
     const crawler = new fdir()
-      .globWithOptions(this.#options.glob ?? DEFAULT_GLOB, this.#picoMatchOptions)
       .withFullPaths()
-
-    if (this.#options.filter) {
-      crawler.filter(this.#options.filter)
-    }
+      .filter((filePath, isDirectory) => this.#isAccepted(filePath, isDirectory))
 
     const filesList = await crawler.crawl(this.#source).withPromise()
     debug('scanned files %O', filesList)
@@ -123,6 +126,8 @@ export class VirtualFileSystem {
    * @returns True if the file is tracked or matches the configured patterns
    */
   has(filePath: string): boolean {
+    filePath = string.toUnixSlash(filePath)
+
     /**
      * File is already tracked as part of the initial scan
      */
@@ -130,18 +135,7 @@ export class VirtualFileSystem {
       return true
     }
 
-    /**
-     * Return false if file is not within the source dir
-     */
-    if (!filePath.startsWith(this.#source)) {
-      return false
-    }
-
-    /**
-     * If a match exists, then check if the file matches via the
-     * matcher test
-     */
-    return this.#matcher(filePath)
+    return this.#isAccepted(filePath, false)
   }
 
   /**
@@ -201,6 +195,8 @@ export class VirtualFileSystem {
    * @returns True if the file was added, false if it doesn't match filters
    */
   add(filePath: string): boolean {
+    filePath = string.toUnixSlash(filePath)
+
     if (this.has(filePath)) {
       debug('adding new "%s" file to the virtual file system', filePath)
       const relativePath = removeExtension(relative(this.#source, filePath))

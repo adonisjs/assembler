@@ -159,6 +159,24 @@ test.group('Virtual file system', () => {
     )
   })
 
+  test('apply the filter fn when adding a file', ({ fs, assert }) => {
+    const source = string.toUnixSlash(join(fs.basePath, 'app/controllers'))
+    const vfs = new VirtualFileSystem(source, {
+      filter: (path, isDirectory) => isDirectory || !path.endsWith('posts_controller.ts'),
+    })
+
+    assert.isFalse(vfs.add(join(source, 'posts_controller.ts')))
+    assert.deepEqual(vfs.asList(), {})
+  })
+
+  test('refuse a file from a prefixed sibling directory', ({ fs, assert }) => {
+    const source = string.toUnixSlash(join(fs.basePath, 'source'))
+    const vfs = new VirtualFileSystem(source)
+
+    assert.isFalse(vfs.add(join(fs.basePath, 'source-other/file.ts')))
+    assert.deepEqual(vfs.asList(), {})
+  })
+
   test('get file contents as ast and cache it', async ({ fs, assert }) => {
     await setupFakeAdonisproject(fs)
     await createControllers()

@@ -44,6 +44,36 @@ test.group('Virtual file system', () => {
     )
   })
 
+  test('naturally sort file paths', async ({ fs, assert }) => {
+    await fs.create('controllers/item_10.ts', '')
+    await fs.create('controllers/item_2.ts', '')
+    await fs.create('controllers/item_01.ts', '')
+    await fs.create('controllers/item_1.ts', '')
+    await fs.create('controllers/café.ts', '')
+    await fs.create('controllers/cafe.ts', '')
+    await fs.create('controllers/alpha.ts', '')
+    await fs.create('controllers/Alpha.ts', '')
+    await fs.create('controllers/nested_10/item_2.ts', '')
+    await fs.create('controllers/nested_2/item_10.ts', '')
+
+    const source = string.toUnixSlash(join(fs.basePath, 'controllers'))
+    const vfs = new VirtualFileSystem(source)
+    await vfs.scan()
+
+    assert.deepEqual(Object.keys(vfs.asList()), [
+      'Alpha',
+      'alpha',
+      'cafe',
+      'café',
+      'item_01',
+      'item_1',
+      'item_2',
+      'item_10',
+      'nested_2/item_10',
+      'nested_10/item_2',
+    ])
+  })
+
   test('list files as a tree', async ({ fs, assert }) => {
     await setupFakeAdonisproject(fs)
     await createControllers()

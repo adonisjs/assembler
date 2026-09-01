@@ -13,7 +13,6 @@ import { relative } from 'node:path/posix'
 import lodash from '@poppinss/utils/lodash'
 import string from '@poppinss/utils/string'
 import { readFile } from 'node:fs/promises'
-import { naturalSort } from '@poppinss/utils'
 import { Lang, parse, type SgNode } from '@ast-grep/napi'
 import picomatch, { type PicomatchOptions, type Matcher } from 'picomatch'
 
@@ -23,6 +22,7 @@ import { type RecursiveFileTree, type VirtualFileSystemOptions } from './types/c
 
 const BYPASS_FN = <T>(input: T) => input
 const DEFAULT_GLOB = ['**/!(*.d).ts', '**/*.tsx', '**/*.js']
+const NATURAL_SORT = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 
 /**
  * Virtual file system for managing and tracking files with AST parsing capabilities.
@@ -105,7 +105,7 @@ export class VirtualFileSystem {
 
     const filesList = await crawler.crawl(this.#source).withPromise()
     debug('scanned files %O', filesList)
-    const sortedFiles = filesList.sort(naturalSort)
+    const sortedFiles = filesList.sort(NATURAL_SORT)
     this.#files.clear()
 
     for (let filePath of sortedFiles) {

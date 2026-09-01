@@ -25,6 +25,34 @@ test.group('Throttle', () => {
     assert.deepEqual(counters, [0, 9])
   }).disableTimeout()
 
+  test('continues with the queued call when the active call rejects', async ({ assert }) => {
+    const calls: number[] = []
+    let rejectActiveCall: (error: Error) => void = () => {}
+    const activeCallError = new Error('Active call failed')
+
+    const throttled = throttle((call: number) => {
+      calls.push(call)
+
+      if (call === 1) {
+        return new Promise<void>((_, reject) => {
+          rejectActiveCall = reject
+        })
+      }
+
+      return Promise.resolve()
+    })
+
+    const activeCall = throttled(1)
+    await throttled(2)
+    rejectActiveCall(activeCallError)
+
+    await assert.rejects(() => activeCall, 'Active call failed')
+    assert.deepEqual(calls, [1, 2])
+
+    await throttled(3)
+    assert.deepEqual(calls, [1, 2, 3])
+  })
+
   test('without throttle', async ({ assert }) => {
     let callsCount = 0
 

@@ -600,8 +600,8 @@ export class DevServer {
    * by regenerating indexes and handling server restarts as needed.
    */
   #registerServerRestartHooks() {
-    this.#hooks.add('fileAdded', (relativePath, absolutePath) => {
-      this.#regenerateIndex(absolutePath, 'add')
+    this.#hooks.add('fileAdded', async (relativePath, absolutePath) => {
+      await this.#regenerateIndex(absolutePath, 'add')
       this.#handleFileChange(relativePath, absolutePath, 'add')
     })
     this.#hooks.add('fileChanged', (relativePath, absolutePath, info) => {
@@ -614,8 +614,8 @@ export class DevServer {
       }
       this.#handleFileChange(relativePath, absolutePath, 'update', info)
     })
-    this.#hooks.add('fileRemoved', (relativePath, absolutePath) => {
-      this.#regenerateIndex(absolutePath, 'delete')
+    this.#hooks.add('fileRemoved', async (relativePath, absolutePath) => {
+      await this.#regenerateIndex(absolutePath, 'delete')
       this.#handleFileChange(relativePath, absolutePath, 'delete')
     })
   }

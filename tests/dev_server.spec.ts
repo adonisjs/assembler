@@ -257,6 +257,85 @@ test.group('DevServer', () => {
     ])
   }).timeout(8 * 1000)
 
+  test('wait for index regeneration before restarting the server', async ({
+    fs,
+    assert,
+    cleanup,
+  }) => {
+    const indexUpdate = Promise.withResolvers<void>()
+    const indexUpdateStarted = Promise.withResolvers<void>()
+    const serverRestarted = Promise.withResolvers<void>()
+    const watcherReady = Promise.withResolvers<void>()
+    let serverStarts = 0
+
+    await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
+    await fs.create(
+      'bin/server.ts',
+      `
+        process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })
+        setInterval(() => {}, 5000)
+      `
+    )
+    await fs.create('.env', 'PORT=3360')
+
+    const devServer = new DevServer(fs.baseUrl, {
+      nodeArgs: [],
+      scriptArgs: [],
+      hooks: {
+        init: [
+          {
+            run(_, __, indexGenerator) {
+              const addFile = indexGenerator.addFile.bind(indexGenerator)
+              indexGenerator.addFile = async (filePath) => {
+                indexUpdateStarted.resolve()
+                await indexUpdate.promise
+                await addFile(filePath)
+              }
+            },
+          },
+        ],
+        devServerStarting: [
+          {
+            run() {
+              serverStarts++
+            },
+          },
+        ],
+        devServerStarted: [
+          {
+            run() {
+              if (serverStarts === 2) {
+                serverRestarted.resolve()
+              }
+            },
+          },
+        ],
+      },
+    })
+
+    devServer.ui = cliui()
+    devServer.ui.switchMode('raw')
+    const logInfo = devServer.ui.logger.info.bind(devServer.ui.logger)
+    devServer.ui.logger.info = (...args: Parameters<typeof logInfo>) => {
+      if (args[0] === 'watching file system for changes...') {
+        watcherReady.resolve()
+      }
+      logInfo(...args)
+    }
+
+    await devServer.startAndWatch()
+    cleanup(() => devServer.close())
+    await watcherReady.promise
+
+    await fs.create('app/controllers/users_controller.ts', 'export default class {}')
+    await indexUpdateStarted.promise
+
+    assert.equal(serverStarts, 1)
+
+    indexUpdate.resolve()
+    await serverRestarted.promise
+  })
+
   test('restart server if hot-hook:full-reload message is received', async ({ assert, fs }) => {
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(

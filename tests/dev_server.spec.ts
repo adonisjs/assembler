@@ -257,6 +257,74 @@ test.group('DevServer', () => {
     ])
   }).timeout(8 * 1000)
 
+  test('restart server when the {envFile} file changes in {mode} mode')
+    .with([
+      { mode: 'watch' as const, envFile: '.env' },
+      { mode: 'hmr' as const, envFile: '.env' },
+      { mode: 'watch' as const, envFile: 'env/.env' },
+      { mode: 'hmr' as const, envFile: 'env/.env' },
+    ])
+    .run(async ({ fs, assert, cleanup }, { mode, envFile }) => {
+      let startsCount = 0
+      const originalEnvPath = process.env.ENV_PATH
+
+      cleanup(() => {
+        if (originalEnvPath === undefined) {
+          delete process.env.ENV_PATH
+        } else {
+          process.env.ENV_PATH = originalEnvPath
+        }
+      })
+
+      if (envFile !== '.env') {
+        process.env.ENV_PATH = 'env'
+      } else {
+        delete process.env.ENV_PATH
+      }
+
+      await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
+      await fs.create(
+        'bin/server.ts',
+        `
+          process.send({ isAdonisJS: true, environment: 'web', port: process.env.PORT, host: 'localhost' })
+          setInterval(() => {}, 5000)
+        `
+      )
+      await fs.create(envFile, 'PORT=3336')
+
+      const devServer = new DevServer(fs.baseUrl, {
+        hmr: mode === 'hmr',
+        nodeArgs: [],
+        scriptArgs: [],
+        hooks: {
+          devServerStarted: [
+            async () => ({
+              default: () => {
+                startsCount++
+              },
+            }),
+          ],
+        },
+      })
+
+      devServer.ui = cliui()
+      devServer.ui.switchMode('raw')
+
+      if (mode === 'hmr') {
+        await devServer.start()
+      } else {
+        await devServer.startAndWatch()
+      }
+      cleanup(() => devServer.close())
+
+      await sleep(500)
+      await fs.create(envFile, 'PORT=3337')
+      await sleep(1000)
+
+      assert.equal(startsCount, 2)
+    })
+    .timeout(8 * 1000)
+
   test('restart server if hot-hook:full-reload message is received', async ({ assert, fs }) => {
     await fs.createJson('tsconfig.json', { include: ['**/*'], exclude: [] })
     await fs.create(

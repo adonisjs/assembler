@@ -196,23 +196,6 @@ export function watch(options: ChokidarOptions) {
 }
 
 /**
- * Check if file is a .env file
- *
- * Determines if a given file path represents an environment file,
- * including .env and .env.* variants.
- *
- * @param filePath - The file path to check
- * @returns True if the file is an environment file
- */
-export function isDotEnvFile(filePath: string) {
-  if (filePath === '.env') {
-    return true
-  }
-
-  return filePath.includes('.env.')
-}
-
-/**
  * Returns the port to use after inspecting the dot-env files inside
  * a given directory.
  *

@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { type FSWatcher } from 'chokidar'
 import { type ResultPromise } from 'execa'
 import string from '@poppinss/utils/string'
+import { EnvLoader } from '@adonisjs/env'
 import { join, relative } from 'node:path/posix'
 import { readFile, unlink } from 'node:fs/promises'
 import { RuntimeException } from '@poppinss/utils/exception'
@@ -120,6 +121,11 @@ export class DevServer {
    * Reference to chokidar watcher
    */
   #watcher?: FSWatcher
+
+  /**
+   * Absolute paths of the environment files loaded by the application
+   */
+  #envFiles!: Set<string>
 
   /**
    * Reference to the child process
@@ -376,11 +382,15 @@ export class DevServer {
           return false
         }
         if (stats.isFile()) {
+          if (this.#envFiles.has(string.toUnixSlash(file))) {
+            return false
+          }
           return !this.#fileSystem.shouldWatchFile(file)
         }
         return !this.#fileSystem.shouldWatchDirectory(file)
       },
     })
+    watcher.add([...this.#envFiles])
 
     watcher.on('error', (error: any) => {
       this.ui.logger.warning('file system watcher failure')
@@ -413,6 +423,23 @@ export class DevServer {
       this.#clearScreen()
       this.ui.logger.log(`${this.ui.colors.green(options.displayLabel)} ${relativePath}`)
       this.#restartHTTPServer()
+      return
+    }
+
+    /**
+     * Environment files are outside of hot-hook's imports tree and always
+     * require a full server restart.
+     */
+    if (this.#envFiles.has(absolutePath)) {
+      if (options.action === 'add') {
+        this.#hooks.runner('fileAdded').run(relativePath, absolutePath, this)
+      } else if (options.action === 'change') {
+        this.#hooks
+          .runner('fileChanged')
+          .run(relativePath, absolutePath, DevServer.#WATCHER_INFO, this)
+      } else {
+        this.#hooks.runner('fileRemoved').run(relativePath, absolutePath, this)
+      }
       return
     }
 
@@ -468,7 +495,11 @@ export class DevServer {
      * Remember, hot-hook does not send the action as "add" or "delete" if this
      * file is being imported.
      */
-    if ((action === 'add' || action === 'delete') && this.mode === 'hmr') {
+    if (
+      (action === 'add' || action === 'delete') &&
+      this.mode === 'hmr' &&
+      !this.#envFiles.has(absolutePath)
+    ) {
       debug('ignoring add and delete actions in HMR mode %s', relativePath)
       return
     }
@@ -487,6 +518,13 @@ export class DevServer {
      */
     if (info && !info.fullReload) {
       debug('ignoring full reload', relativePath, info)
+      return
+    }
+
+    if (this.#envFiles.has(absolutePath)) {
+      this.#clearScreen()
+      this.ui.logger.log(`${this.ui.colors.green(action)} ${relativePath}`)
+      this.#restartHTTPServer()
       return
     }
 
@@ -651,6 +689,9 @@ export class DevServer {
     this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
     this.#stickyPort = String(await getPort(this.cwd))
     this.#stickyHmrPort = String(await getRandomPort({ port: 24678 }))
+    this.#envFiles = new Set(
+      new EnvLoader(this.cwd).getPaths().map((filePath) => string.toUnixSlash(filePath))
+    )
     this.#fileSystem = new FileSystem(this.cwdPath, tsConfig, this.options)
 
     this.ui.logger.info('loading hooks...')

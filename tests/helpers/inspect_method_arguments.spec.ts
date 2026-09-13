@@ -76,6 +76,36 @@ test.group('Inspect method arguments', () => {
       }`,
         output: ['createCarValidator', 'createVehicleValidator'],
       },
+      {
+        input: `class UsersController {
+        async store(ctx: HttpContext) {
+          await ctx.request.tryValidateUsing(admin.createUserValidator)
+          await this.ctx.request.validateUsing(createUserValidator)
+        }
+      }`,
+        output: ['admin.createUserValidator', 'createUserValidator'],
+      },
+      {
+        input: `class UsersController {
+        async store() {
+          await request /* request comment */ . validateUsing(
+            factory(createUserValidator)
+          )
+          await vine.tryValidate(user.createUserValidator)
+        }
+      }`,
+        output: ['factory', 'createUserValidator', 'user.createUserValidator'],
+      },
+      {
+        input: `class UsersController {
+        async store(ctx: HttpContext) {
+          await request?.validateUsing(optionalValidator)
+          await ctx?.request.validateUsing(optionalContextValidator)
+          await validator.validate(request.all())
+        }
+      }`,
+        output: [],
+      },
     ])
     .run(({ assert }, { input, output }) => {
       const root = parse(Lang.TypeScript, input).root()
@@ -87,7 +117,11 @@ test.group('Inspect method arguments', () => {
 
       const validatorArguments = inspectMethodArguments(storeMethod, [
         'request.validateUsing',
+        'request.tryValidateUsing',
+        '$CTX.request.validateUsing',
+        '$CTX.request.tryValidateUsing',
         'vine.validate',
+        'vine.tryValidate',
       ]).map((node) => {
         return nodeToPlainText(
           node.find({ rule: { any: [{ kind: 'identifier' }, { kind: 'member_expression' }] } })!

@@ -174,7 +174,9 @@ export function nodeToPlainText(node: SgNode) {
   function toText(one: SgNode) {
     const children = one.children()
     if (!children.length) {
-      out.push(one.text())
+      if (!one.is('comment')) {
+        out.push(one.text())
+      }
     } else {
       children.forEach((child) => toText(child))
     }
@@ -205,18 +207,36 @@ export function nodeToPlainText(node: SgNode) {
  * validatorArgs.forEach(arg => console.log('Validator argument:', arg.text()))
  */
 export function inspectMethodArguments(node: SgNode, methodCalls: string[]): SgNode[] {
-  const matchingExpressions = node.findAll({
-    rule: {
-      any: methodCalls.map((methodCall) => {
-        return {
-          pattern: {
-            context: `${methodCall}($$$ARGUMENTS)`,
-            selector: 'call_expression',
-          },
-        }
-      }),
-    },
+  const exactMethodCalls = new Set<string>()
+  const receiverMethodCalls: string[] = []
+
+  methodCalls.forEach((methodCall) => {
+    const separator = methodCall.indexOf('.')
+    if (methodCall.startsWith('$') && separator !== -1) {
+      receiverMethodCalls.push(methodCall.slice(separator + 1))
+    } else {
+      exactMethodCalls.add(methodCall)
+    }
   })
+
+  const matchingExpressions = node
+    .findAll({ rule: { kind: 'call_expression' } })
+    .filter((expression) => {
+      const functionNode = expression.field('function')
+      if (!functionNode) {
+        return false
+      }
+      const functionName = nodeToPlainText(functionNode)
+
+      return (
+        exactMethodCalls.has(functionName) ||
+        receiverMethodCalls.some((methodCall) => {
+          return (
+            functionName.endsWith(`.${methodCall}`) && !functionName.endsWith(`?.${methodCall}`)
+          )
+        })
+      )
+    })
 
   return matchingExpressions.flatMap((matchingExpression) => {
     return matchingExpression.findAll({ rule: { kind: 'arguments' } })

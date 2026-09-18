@@ -27,6 +27,25 @@ test.group('Helpers | Read TSConfig', () => {
     assert.deepEqual(result.config.include, ['**/*'])
   })
 
+  test('read a custom tsconfig file', async ({ assert, fs }) => {
+    await fs.createJson('config/tsconfig.build.json', {
+      compilerOptions: {
+        outDir: '../build',
+      },
+    })
+
+    const result = readTsConfig(
+      string.toUnixSlash(fileURLToPath(fs.baseUrl)),
+      'config/tsconfig.build.json'
+    )!
+
+    assert.equal(
+      result.path,
+      string.toUnixSlash(fileURLToPath(new URL('config/tsconfig.build.json', fs.baseUrl)))
+    )
+    assert.equal(result.config.compilerOptions?.outDir, '../build')
+  })
+
   test('parse tsconfig file using ${configDir} variable to point to the root dir', async ({
     assert,
     fs,

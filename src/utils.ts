@@ -13,8 +13,6 @@ import fastGlob from 'fast-glob'
 import Hooks from '@poppinss/hooks'
 import { existsSync } from 'node:fs'
 import getRandomPort from 'get-port'
-import type tsStatic from 'typescript'
-import { fileURLToPath } from 'node:url'
 import { execaNode, execa } from 'execa'
 import { importDefault } from '@poppinss/utils'
 import { copyFile, mkdir } from 'node:fs/promises'
@@ -37,68 +35,8 @@ import { type AllHooks, type HookParams, type RouterHooks } from './types/hooks.
  */
 const DEFAULT_NODE_ARGS = ['--import=@poppinss/ts-exec', '--enable-source-maps']
 
-/**
- * Parses tsconfig.json and prints errors using typescript compiler host
- *
- * This function reads and parses the tsconfig.json file from the given directory,
- * handling diagnostic errors and returning a parsed configuration that can be
- * used by other TypeScript operations.
- *
- * @deprecated While we are experimenting with the readTsConfig method
- *
- * @param cwd - The current working directory URL or string path
- * @param ts - TypeScript module reference
- * @returns Parsed TypeScript configuration or undefined if parsing failed
- */
-export function parseConfig(
-  cwd: URL | string,
-  ts: typeof tsStatic,
-  path = 'tsconfig.json'
-): tsStatic.ParsedCommandLine | undefined {
-  const cwdPath = typeof cwd === 'string' ? cwd : fileURLToPath(cwd)
-  const configFile = join(cwdPath, path)
-  debug('parsing config file "%s"', configFile)
-
-  let hardException: null | tsStatic.Diagnostic = null
-  const parsedConfig = ts.getParsedCommandLineOfConfigFile(
-    configFile,
-    {},
-    {
-      ...ts.sys,
-      useCaseSensitiveFileNames: true,
-      getCurrentDirectory: () => cwdPath,
-      onUnRecoverableConfigFileDiagnostic: (error) => (hardException = error),
-    }
-  )
-
-  if (hardException) {
-    const compilerHost = ts.createCompilerHost({})
-    console.log(ts.formatDiagnosticsWithColorAndContext([hardException], compilerHost))
-    return
-  }
-
-  if (parsedConfig!.errors.length) {
-    const compilerHost = ts.createCompilerHost({})
-    console.log(ts.formatDiagnosticsWithColorAndContext(parsedConfig!.errors, compilerHost))
-    return
-  }
-
-  if (parsedConfig!.raw.include) {
-    parsedConfig!.raw.include = parsedConfig!.raw.include.map((includePath: string) => {
-      return includePath.replace('${configDir}/', '')
-    })
-  }
-  if (parsedConfig!.raw.exclude) {
-    parsedConfig!.raw.exclude = parsedConfig!.raw.exclude.map((excludePath: string) => {
-      return excludePath.replace('${configDir}/', '')
-    })
-  }
-
-  return parsedConfig
-}
-
-export function readTsConfig(cwd: string): TsConfigResult | null {
-  const tsConfigPath = join(cwd, 'tsconfig.json')
+export function readTsConfig(cwd: string, path: string = 'tsconfig.json'): TsConfigResult | null {
+  const tsConfigPath = join(cwd, path)
   debug('reading config file from location "%s"', tsConfigPath)
 
   try {

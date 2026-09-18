@@ -8,6 +8,7 @@
  */
 
 import ts from 'typescript'
+import { join } from 'node:path'
 import { test } from '@japa/runner'
 
 import { Bundler, SUPPORTED_PACKAGE_MANAGERS } from '../index.ts'
@@ -456,15 +457,17 @@ test.group('Bundler', () => {
   test('use custom tsconfig for build', async ({ assert, fs }) => {
     await Promise.all([
       fs.create(
-        'tsconfig.build.json',
+        'config/tsconfig.build.json',
         JSON.stringify({
           compilerOptions: {
-            outDir: 'build',
+            outDir: '../build',
+            rootDir: '../',
             skipLibCheck: true,
             target: 'ESNext',
             module: 'NodeNext',
             lib: ['ESNext'],
           },
+          include: ['../*.ts'],
         })
       ),
       fs.create('adonisrc.ts', 'export default {}'),
@@ -476,7 +479,7 @@ test.group('Bundler', () => {
     const bundler = new Bundler(fs.baseUrl, ts, {})
     bundler.ui.switchMode('raw')
     await bundler.bundle(true, 'npm', {
-      tsconfigPath: './tsconfig.build.json',
+      tsconfigPath: './config/tsconfig.build.json',
     })
 
     await Promise.all([
@@ -485,5 +488,27 @@ test.group('Bundler', () => {
       assert.fileExists('./build/package.json'),
       assert.fileExists('./build/package-lock.json'),
     ])
+  })
+
+  test('build to an absolute output directory', async ({ assert, fs }) => {
+    const outDir = join(fs.basePath, 'absolute-build')
+    await Promise.all([
+      fs.createJson('tsconfig.json', {
+        compilerOptions: {
+          outDir,
+          target: 'ESNext',
+          module: 'NodeNext',
+        },
+      }),
+      fs.create('index.ts', 'export const value = 42'),
+      fs.createJson('package.json', { type: 'module' }),
+      fs.create('package-lock.json', '{}'),
+    ])
+
+    const bundler = new Bundler(fs.baseUrl, ts, {})
+    bundler.ui.switchMode('raw')
+    await bundler.bundle(true, 'npm')
+
+    await assert.fileExists('absolute-build/index.js')
   })
 })

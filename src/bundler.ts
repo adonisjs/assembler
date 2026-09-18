@@ -14,11 +14,12 @@ import { cliui } from '@poppinss/cliui'
 import { fileURLToPath } from 'node:url'
 import type Hooks from '@poppinss/hooks'
 import string from '@poppinss/utils/string'
+import { dirname, resolve } from 'node:path'
 import { join, relative } from 'node:path/posix'
 import { detectPackageManager } from '@antfu/install-pkg'
 
 import type { BundlerOptions } from './types/common.ts'
-import { run, parseConfig, copyFiles, loadHooks } from './utils.ts'
+import { run, copyFiles, loadHooks, readTsConfig } from './utils.ts'
 import { type HookParams, type BundlerHooks, type CommonHooks } from './types/hooks.ts'
 import { type SupportedPackageManager } from './types/code_transformer.ts'
 import { IndexGenerator } from './index_generator/main.ts'
@@ -72,11 +73,6 @@ export const SUPPORTED_PACKAGE_MANAGERS: {
  */
 export class Bundler {
   /**
-   * Reference to the TypeScript module
-   */
-  #ts: typeof tsStatic
-
-  /**
    * Hooks to execute custom actions during the build process
    */
   #hooks!: Hooks<
@@ -121,14 +117,13 @@ export class Bundler {
    * Create a new bundler instance
    *
    * @param cwd - The current working directory URL
-   * @param ts - TypeScript module reference
+   * @param _ts - TypeScript module reference retained for backward compatibility
    * @param options - Bundler configuration options
    */
-  constructor(cwd: URL, ts: typeof tsStatic, options: BundlerOptions) {
+  constructor(cwd: URL, _ts: typeof tsStatic, options: BundlerOptions) {
     this.cwd = cwd
     this.options = options
     this.cwdPath = string.toUnixSlash(fileURLToPath(this.cwd))
-    this.#ts = ts
   }
 
   /**
@@ -236,8 +231,8 @@ export class Bundler {
     /**
      * Step 1: Parse config file to get the build output directory
      */
-    const config = parseConfig(this.cwd, this.#ts, options.tsconfigPath)
-    if (!config) {
+    const tsConfig = readTsConfig(this.cwdPath, options.tsconfigPath)
+    if (!tsConfig) {
       return false
     }
 
@@ -257,7 +252,13 @@ export class Bundler {
     /**
      * Step 3: Cleanup existing build directory (if any)
      */
-    const outDir = config.options.outDir || fileURLToPath(new URL('build/', this.cwd))
+    const configuredOutDir = tsConfig.config.compilerOptions?.outDir
+    const normalizedOutDir = configuredOutDir?.startsWith('./')
+      ? configuredOutDir.slice(2)
+      : configuredOutDir
+    const outDir = normalizedOutDir
+      ? string.toUnixSlash(resolve(dirname(tsConfig.path), normalizedOutDir))
+      : fileURLToPath(new URL('build/', this.cwd))
     this.ui.logger.info('cleaning up output directory', { suffix: this.#getRelativeName(outDir) })
     await this.#cleanupBuildDirectory(outDir)
 

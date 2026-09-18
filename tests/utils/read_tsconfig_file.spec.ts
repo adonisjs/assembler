@@ -39,10 +39,7 @@ test.group('Helpers | Read TSConfig', () => {
       'config/tsconfig.build.json'
     )!
 
-    assert.equal(
-      result.path,
-      string.toUnixSlash(fileURLToPath(new URL('config/tsconfig.build.json', fs.baseUrl)))
-    )
+    assert.equal(result.path, fileURLToPath(new URL('config/tsconfig.build.json', fs.baseUrl)))
     assert.equal(result.config.compilerOptions?.outDir, '../build')
   })
 

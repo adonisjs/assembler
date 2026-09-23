@@ -8,11 +8,42 @@
  */
 
 import ts from 'typescript'
+import { join } from 'node:path'
 import { test } from '@japa/runner'
+import string from '@poppinss/utils/string'
 
 import { Bundler, SUPPORTED_PACKAGE_MANAGERS } from '../index.ts'
+import { readTsConfig } from '../src/utils.ts'
 
 test.group('Bundler', () => {
+  test('reject unsafe output directories before running hooks or deleting files', async ({
+    assert,
+    fs,
+  }) => {
+    await fs.createJson('tsconfig.json', { compilerOptions: { outDir: '.' } })
+    await fs.create('index.ts', 'export const value = 42')
+
+    const bundler = new Bundler(fs.baseUrl, ts, {
+      hooks: {
+        init: [
+          async () => ({
+            default: () => {
+              throw new Error('Init hooks must not run with an unsafe output directory')
+            },
+          }),
+        ],
+      },
+    })
+    bundler.ui.switchMode('raw')
+
+    await assert.rejects(
+      () => bundler.bundle(true, 'npm'),
+      /It must not be the application root or one of its parent directories/
+    )
+    await assert.fileExists('index.ts')
+    await assert.fileExists('tsconfig.json')
+  })
+
   test('should copy metafiles to the build directory', async ({ assert, fs }) => {
     await Promise.all([
       fs.create(
@@ -456,15 +487,17 @@ test.group('Bundler', () => {
   test('use custom tsconfig for build', async ({ assert, fs }) => {
     await Promise.all([
       fs.create(
-        'tsconfig.build.json',
+        'config/tsconfig.build.json',
         JSON.stringify({
           compilerOptions: {
-            outDir: 'build',
+            outDir: '../build',
+            rootDir: '../',
             skipLibCheck: true,
             target: 'ESNext',
             module: 'NodeNext',
             lib: ['ESNext'],
           },
+          include: ['../*.ts'],
         })
       ),
       fs.create('adonisrc.ts', 'export default {}'),
@@ -476,7 +509,7 @@ test.group('Bundler', () => {
     const bundler = new Bundler(fs.baseUrl, ts, {})
     bundler.ui.switchMode('raw')
     await bundler.bundle(true, 'npm', {
-      tsconfigPath: './tsconfig.build.json',
+      tsconfigPath: './config/tsconfig.build.json',
     })
 
     await Promise.all([
@@ -486,4 +519,33 @@ test.group('Bundler', () => {
       assert.fileExists('./build/package-lock.json'),
     ])
   })
+
+  test('build to a relative output directory containing repeated slashes')
+    .with(['.//build', './//build'])
+    .run(async ({ assert, fs }, outDir) => {
+      await fs.createJson('tsconfig.json', {
+        compilerOptions: { outDir, target: 'ESNext', module: 'NodeNext' },
+      })
+      await fs.create('index.ts', 'export const value = 42')
+      await fs.createJson('package.json', { type: 'module' })
+      await fs.create('build/stale.txt', 'previous build')
+
+      /**
+       * Assert the cleanup target before building so a regression cannot
+       * remove an unrelated directory outside this fixture.
+       */
+      assert.equal(
+        readTsConfig(fs.basePath)!.getNormalizedOutDir(),
+        string.toUnixSlash(join(fs.basePath, 'build'))
+      )
+
+      const bundler = new Bundler(fs.baseUrl, ts, {})
+      bundler.ui.switchMode('raw')
+      assert.isTrue(await bundler.bundle(true, 'npm'))
+
+      await assert.fileExists('build/index.js')
+      await assert.fileExists('build/package.json')
+      await assert.fileNotExists('build/stale.txt')
+      await assert.fileExists('index.ts')
+    })
 })

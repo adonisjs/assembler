@@ -15,11 +15,12 @@ import { existsSync } from 'node:fs'
 import getRandomPort from 'get-port'
 import { execaNode, execa } from 'execa'
 import { importDefault } from '@poppinss/utils'
+import string from '@poppinss/utils/string'
 import { copyFile, mkdir } from 'node:fs/promises'
 import { EnvLoader, EnvParser } from '@adonisjs/env'
 import chokidar, { type ChokidarOptions } from 'chokidar'
 import { parseTsconfig, type TsConfigResult } from 'get-tsconfig'
-import { basename, dirname, isAbsolute, join, relative } from 'node:path'
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 
 import debug from './debug.ts'
 import { type CodeGen } from './codegen.ts'
@@ -35,7 +36,10 @@ import { type AllHooks, type HookParams, type RouterHooks } from './types/hooks.
  */
 const DEFAULT_NODE_ARGS = ['--import=@poppinss/ts-exec', '--enable-source-maps']
 
-export function readTsConfig(cwd: string, path: string = 'tsconfig.json'): TsConfigResult | null {
+export function readTsConfig(
+  cwd: string,
+  path: string = 'tsconfig.json'
+): (TsConfigResult & { getNormalizedOutDir(): string }) | null {
   const tsConfigPath = join(cwd, path)
   debug('reading config file from location "%s"', tsConfigPath)
 
@@ -57,6 +61,30 @@ export function readTsConfig(cwd: string, path: string = 'tsconfig.json'): TsCon
     return {
       path: tsConfigPath,
       config: tsConfig,
+      /**
+       * Resolve the build output directory and reject the application root
+       * or any parent directory before it can be cleaned up.
+       */
+      getNormalizedOutDir() {
+        const configuredOutDir = tsConfig.compilerOptions?.outDir ?? null
+        const outDir =
+          configuredOutDir === null
+            ? resolve(cwd, 'build')
+            : resolve(dirname(tsConfigPath), configuredOutDir)
+
+        const relativeAppRoot = relative(outDir, cwd)
+        if (
+          !isAbsolute(relativeAppRoot) &&
+          relativeAppRoot !== '..' &&
+          !relativeAppRoot.startsWith(`..${sep}`)
+        ) {
+          throw new Error(
+            `Cannot use "${outDir}" as the build output directory. It must not be the application root or one of its parent directories.`
+          )
+        }
+
+        return string.toUnixSlash(outDir)
+      },
     }
   } catch {
     return null

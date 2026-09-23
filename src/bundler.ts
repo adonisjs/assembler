@@ -14,7 +14,6 @@ import { cliui } from '@poppinss/cliui'
 import { fileURLToPath } from 'node:url'
 import type Hooks from '@poppinss/hooks'
 import string from '@poppinss/utils/string'
-import { dirname, resolve } from 'node:path'
 import { join, relative } from 'node:path/posix'
 import { detectPackageManager } from '@antfu/install-pkg'
 
@@ -235,6 +234,7 @@ export class Bundler {
     if (!tsConfig) {
       return false
     }
+    const outDir = tsConfig.getNormalizedOutDir()
 
     this.ui.logger.info('loading hooks...')
     this.#hooks = await loadHooks(this.options.hooks, ['init', 'buildStarting', 'buildFinished'])
@@ -252,13 +252,6 @@ export class Bundler {
     /**
      * Step 3: Cleanup existing build directory (if any)
      */
-    const configuredOutDir = tsConfig.config.compilerOptions?.outDir
-    const normalizedOutDir = configuredOutDir?.startsWith('./')
-      ? configuredOutDir.slice(2)
-      : configuredOutDir
-    const outDir = normalizedOutDir
-      ? string.toUnixSlash(resolve(dirname(tsConfig.path), normalizedOutDir))
-      : fileURLToPath(new URL('build/', this.cwd))
     this.ui.logger.info('cleaning up output directory', { suffix: this.#getRelativeName(outDir) })
     await this.#cleanupBuildDirectory(outDir)
 

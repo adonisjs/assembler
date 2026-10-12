@@ -514,11 +514,11 @@ export class RoutesScanner {
       return false
     }
 
+    const vfs = new VirtualFileSystem(this.#appRoot)
     for (let scannedRoute of controllerRoutes) {
       if (scannedRoute.controller) {
         debug('invalidating route %O', scannedRoute)
 
-        const vfs = new VirtualFileSystem(this.#appRoot)
         await this.#setResponse(scannedRoute, scannedRoute.controller)
         await this.#setRequest(scannedRoute, scannedRoute.controller, vfs)
       }

@@ -19,6 +19,7 @@ import {
   SyntaxKind,
   type CodeBlockWriter,
   type FormatCodeSettings,
+  type ObjectLiteralExpression,
 } from 'ts-morph'
 
 import { RcFileTransformer } from './rc_file_transformer.ts'
@@ -332,6 +333,23 @@ export class CodeTransformer {
   }
 
   /**
+   * Remove the trailing comma of the last property when only comments
+   * follow it. Otherwise, ts-morph keeps that comma and writes a second
+   * one before the property it appends (`PORT: Env.schema.number(),,`).
+   */
+  #removeCommaBeforeTrailingComments(object: ObjectLiteralExpression) {
+    const lastMember = object.getPropertiesWithComments().at(-1)
+    if (!lastMember || !Node.isCommentNode(lastMember)) {
+      return
+    }
+
+    const trailingComma = object.getProperties().at(-1)?.getNextSibling()
+    if (trailingComma?.isKind(SyntaxKind.CommaToken)) {
+      trailingComma.replaceWithText('')
+    }
+  }
+
+  /**
    * Add new env variable validation in the `env.ts` file
    *
    * @param definition - Environment validation definition containing variables and comment
@@ -389,6 +407,7 @@ export class CodeTransformer {
        * Add property only when the property does not exist
        */
       if (!existingProperty) {
+        this.#removeCommaBeforeTrailingComments(objectLiteralExpression)
         objectLiteralExpression.addPropertyAssignment({
           name: variable,
           initializer: validation,

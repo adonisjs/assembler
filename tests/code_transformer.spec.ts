@@ -369,6 +369,54 @@ test.group('Code transformer | defineEnvValidations', (group) => {
     `)
   })
 
+  test('add variable after a trailing comment block', async ({ assert, fs }) => {
+    await fs.create(
+      'start/env.ts',
+      dedent`
+      import { Env } from '@adonisjs/core/env'
+
+      export default await Env.create(new URL('../', import.meta.url), {
+        PORT: Env.schema.number(),
+        /*
+        | Variables for configuring session package
+        */
+      })
+      `
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+
+    /**
+     * Nothing to insert: the trailing comma must be left untouched
+     */
+    await transformer.defineEnvValidations({
+      variables: {
+        PORT: 'Env.schema.number()',
+      },
+    })
+    await assert.fileContains('start/env.ts', 'PORT: Env.schema.number(),')
+
+    await transformer.defineEnvValidations({
+      variables: {
+        SESSION_DRIVER: `Env.schema.enum(['redis'] as const)`,
+      },
+    })
+
+    assert.snapshot(await fs.contents('start/env.ts')).matchInline(`
+      "import { Env } from '@adonisjs/core/env'
+
+      export default await Env.create(new URL('../', import.meta.url), {
+        PORT: Env.schema.number(),
+        /*
+        | Variables for configuring session package
+        */
+
+        SESSION_DRIVER: Env.schema.enum(['redis'] as const)
+      })
+      "
+    `)
+  })
+
   test('throw CodemodException with instructions when env.ts file is missing', async ({
     assert,
     fs,

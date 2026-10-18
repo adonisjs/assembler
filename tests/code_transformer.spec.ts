@@ -344,19 +344,20 @@ test.group('Code transformer | defineEnvValidations', (group) => {
     await transformer.defineEnvValidations({
       variables: {
         REDIS_HOST: 'Env.schema.string.optional()',
-        REDIS_PORT: 'Env.schema.number()',
+        REDIS_PORT: `Env.schema.number.optional({port:6379})`,
       },
     })
 
     const keptVariables = await transformer.defineEnvValidations({
       variables: {
         REDIS_HOST: 'Env.schema.string()',
-        REDIS_PORT: 'Env.schema.number()',
+        REDIS_PORT: `Env.schema.number.optional({port:6379})`,
       },
     })
 
     /**
-     * REDIS_PORT is not reported, since its validation is the same
+     * REDIS_PORT is not reported: its validation is the same, even though
+     * formatText has added spaces to the version written in the file
      */
     assert.deepEqual(keptVariables, ['REDIS_HOST'])
 
@@ -368,7 +369,7 @@ test.group('Code transformer | defineEnvValidations', (group) => {
         PORT: Env.schema.number(),
 
         REDIS_HOST: Env.schema.string.optional(),
-        REDIS_PORT: Env.schema.number()
+        REDIS_PORT: Env.schema.number.optional({ port: 6379 })
       })
       "
     `)

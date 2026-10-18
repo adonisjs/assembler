@@ -417,9 +417,14 @@ export class CodeTransformer {
           existingProperty.replaceWithText(`${variable}: ${validation}`)
         }
       } else if (existingProperty) {
+        /**
+         * Whitespace is ignored, since formatText reformats the validations
+         * written by this codemod (`{format:'host'}` becomes `{ format: 'host' }`)
+         */
         const isSame =
           Node.isPropertyAssignment(existingProperty) &&
-          existingProperty.getInitializer()?.getText() === validation
+          existingProperty.getInitializer()?.getText().replace(/\s+/g, '') ===
+            validation.replace(/\s+/g, '')
 
         if (!isSame) {
           keptVariables.push(variable)

@@ -353,8 +353,10 @@ export class CodeTransformer {
    * Add new env variable validation in the `env.ts` file
    *
    * @param definition - Environment validation definition containing variables and comment
+   * @returns Variables already defined with a different validation and kept
+   * as they are, because `overwrite` is not enabled
    */
-  async defineEnvValidations(definition: EnvValidationNode) {
+  async defineEnvValidations(definition: EnvValidationNode): Promise<string[]> {
     const directories = this.getDirectories()
     const filePath = `${directories.start}/env.ts`
 
@@ -385,6 +387,7 @@ export class CodeTransformer {
     }
 
     let shouldAddComment = true
+    const keptVariables: string[] = []
 
     /**
      * Add each variable validation
@@ -413,6 +416,14 @@ export class CodeTransformer {
         } else {
           existingProperty.replaceWithText(`${variable}: ${validation}`)
         }
+      } else if (existingProperty) {
+        const isSame =
+          Node.isPropertyAssignment(existingProperty) &&
+          existingProperty.getInitializer()?.getText() === validation
+
+        if (!isSame) {
+          keptVariables.push(variable)
+        }
       }
 
       /**
@@ -437,6 +448,7 @@ export class CodeTransformer {
 
     file.formatText(this.#editorSettings)
     await file.save()
+    return keptVariables
   }
 
   /**

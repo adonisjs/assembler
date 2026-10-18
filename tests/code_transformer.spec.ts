@@ -348,12 +348,17 @@ test.group('Code transformer | defineEnvValidations', (group) => {
       },
     })
 
-    await transformer.defineEnvValidations({
+    const keptVariables = await transformer.defineEnvValidations({
       variables: {
         REDIS_HOST: 'Env.schema.string()',
         REDIS_PORT: 'Env.schema.number()',
       },
     })
+
+    /**
+     * REDIS_PORT is not reported, since its validation is the same
+     */
+    assert.deepEqual(keptVariables, ['REDIS_HOST'])
 
     assert.snapshot(await fs.contents('start/env.ts')).matchInline(`
       "import { Env } from '@adonisjs/core/env'
@@ -384,7 +389,7 @@ test.group('Code transformer | defineEnvValidations', (group) => {
     )
 
     const transformer = new CodeTransformer(fs.baseUrl)
-    await transformer.defineEnvValidations({
+    const keptVariables = await transformer.defineEnvValidations({
       leadingComment: 'Variables for configuring session package',
       overwrite: true,
       variables: {
@@ -403,6 +408,7 @@ test.group('Code transformer | defineEnvValidations', (group) => {
       })
       "
     `)
+    assert.deepEqual(keptVariables, [])
   })
 
   test('add variable after a trailing comment block', async ({ assert, fs }) => {

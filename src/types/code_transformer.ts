@@ -106,6 +106,13 @@ export type EnvValidationNode = {
    * }
    */
   variables: Record<string, string>
+
+  /**
+   * Replace the validation of variables already defined in the file.
+   * Defaults to false, so validations edited by the user are preserved.
+   * Configure hooks typically pass the value of their `--force` flag.
+   */
+  overwrite?: boolean
 }
 
 /**

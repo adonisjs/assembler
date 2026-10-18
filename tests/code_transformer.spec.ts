@@ -369,6 +369,42 @@ test.group('Code transformer | defineEnvValidations', (group) => {
     `)
   })
 
+  test('overwrite validation for existing variable when asked', async ({ assert, fs }) => {
+    await fs.create(
+      'start/env.ts',
+      dedent`
+      import { Env } from '@adonisjs/core/env'
+
+      export default await Env.create(new URL('../', import.meta.url), {
+        PORT: Env.schema.number(),
+        SESSION_DRIVER: /* keep */ Env.schema.enum(['cookie', 'memory', 'database'] as const),
+        REDIS_HOST /* keep */: Env.schema.string({ format: 'host' }),
+      })
+      `
+    )
+
+    const transformer = new CodeTransformer(fs.baseUrl)
+    await transformer.defineEnvValidations({
+      leadingComment: 'Variables for configuring session package',
+      overwrite: true,
+      variables: {
+        SESSION_DRIVER: `Env.schema.enum(['redis'] as const)`,
+        REDIS_HOST: `Env.schema.string()`,
+      },
+    })
+
+    assert.snapshot(await fs.contents('start/env.ts')).matchInline(`
+      "import { Env } from '@adonisjs/core/env'
+
+      export default await Env.create(new URL('../', import.meta.url), {
+        PORT: Env.schema.number(),
+        SESSION_DRIVER: /* keep */ Env.schema.enum(['redis'] as const),
+        REDIS_HOST /* keep */: Env.schema.string(),
+      })
+      "
+    `)
+  })
+
   test('add variable after a trailing comment block', async ({ assert, fs }) => {
     await fs.create(
       'start/env.ts',

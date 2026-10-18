@@ -391,7 +391,7 @@ export class CodeTransformer {
      */
     for (const [variable, validation] of Object.entries(definition.variables)) {
       /**
-       * Check if the variable is already defined. If so, remove it
+       * Check if the variable is already defined
        */
       const existingProperty = objectLiteralExpression.getProperty(variable)
 
@@ -401,6 +401,18 @@ export class CodeTransformer {
        */
       if (existingProperty) {
         shouldAddComment = false
+      }
+
+      /**
+       * Replace the existing validation only when asked to. Otherwise,
+       * the validation (possibly edited by the user) is kept as it is
+       */
+      if (existingProperty && definition.overwrite) {
+        if (Node.isPropertyAssignment(existingProperty)) {
+          existingProperty.setInitializer(validation)
+        } else {
+          existingProperty.replaceWithText(`${variable}: ${validation}`)
+        }
       }
 
       /**

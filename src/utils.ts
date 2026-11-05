@@ -182,7 +182,7 @@ export async function getPort(cwd: URL): Promise<number> {
    * Use existing port if exists
    */
   if (process.env.PORT) {
-    return getRandomPort({ port: Number(process.env.PORT) })
+    return getRandomPort({ port: Number(process.env.PORT), host: process.env.HOST })
   }
 
   /**
@@ -193,7 +193,7 @@ export async function getPort(cwd: URL): Promise<number> {
   for (let file of files) {
     const envVariables = await new EnvParser(file.contents, cwd).parse()
     if (envVariables.PORT) {
-      return getRandomPort({ port: Number(envVariables.PORT) })
+      return getRandomPort({ port: Number(envVariables.PORT), host: envVariables.HOST })
     }
   }
 

@@ -165,42 +165,41 @@ export function watch(options: ChokidarOptions) {
  * Returns the port to use after inspecting the dot-env files inside
  * a given directory.
  *
- * A random port is used when the specified port is in use. Following
- * is the logic for finding a specified port:
+ * A random port is used when the specified port is in use on the
+ * host where the app will listen. The "PORT" and the "HOST" values are
+ * read the way the app reads them:
  *
- * - The "process.env.PORT" value is used if exists.
- * - The dot-env files are loaded using the "EnvLoader" and the PORT
- *   value is used by iterating over all the loaded files. The
- *   iteration stops after first find.
- * - Falls back to port 3333 if no PORT is found in environment files.
+ * - The "process.env" value is used if exists.
+ * - Otherwise, the dot-env files are loaded using the "EnvLoader" and
+ *   the value of the first file (in the order of priority) that
+ *   defines it is used.
+ * - Falls back to port 3333 if no PORT is found.
+ * - The port is checked on all the local hosts if no HOST is found.
  *
  * @param cwd - The current working directory URL
  * @returns Promise resolving to an available port number
  */
 export async function getPort(cwd: URL): Promise<number> {
-  /**
-   * Use existing port if exists
-   */
-  if (process.env.PORT) {
-    return getRandomPort({ port: Number(process.env.PORT) })
-  }
-
-  /**
-   * Loop over files and use the port from their contents. Stops
-   * after first match
-   */
   const files = await new EnvLoader(cwd).load()
-  for (let file of files) {
-    const envVariables = await new EnvParser(file.contents, cwd).parse()
-    if (envVariables.PORT) {
-      return getRandomPort({ port: Number(envVariables.PORT) })
-    }
-  }
+  const filesValues = await Promise.all(
+    files.map((file) => new EnvParser(file.contents, cwd).parse())
+  )
 
   /**
-   * Use 3333 as the port
+   * Returns the value of an environment variable from "process.env",
+   * or from the first dot-env file that defines it
    */
-  return getRandomPort({ port: 3333 })
+  const readEnvVariable = (key: string): string | undefined => {
+    return process.env[key] || filesValues.find((values) => values[key])?.[key]
+  }
+
+  const port = readEnvVariable('PORT')
+  const host = readEnvVariable('HOST')
+
+  return getRandomPort({
+    port: port ? Number(port) : 3333,
+    ...(host ? { host } : {}),
+  })
 }
 
 /**

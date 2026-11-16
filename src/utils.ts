@@ -251,19 +251,31 @@ export async function copyFiles(files: string[], cwd: string, outDir: string) {
   })
 
   /**
-   * Finally copy files to the destination by keeping the same
-   * directory structure and ignoring junk files
+   * Computing the source and the destination of each file by keeping
+   * the same directory structure
    */
-  debug('copying files %O to destination "%s"', filePaths, outDir)
-  const copyPromises = filePaths.map(async (file) => {
+  const copies = filePaths.map((file) => {
     const src = isAbsolute(file) ? file : join(cwd, file)
-    const dest = join(outDir, relative(cwd, src))
-
-    await mkdir(dirname(dest), { recursive: true })
-    return copyFile(src, dest)
+    return { src, dest: join(outDir, relative(cwd, src)) }
   })
 
-  return await Promise.all(copyPromises)
+  /**
+   * Creating each unique destination directory one after the other,
+   * before copying any file. Concurrent "mkdir" calls for the same
+   * nested path fail with "ENOTDIR" on virtualized filesystems, like
+   * the mounts of Docker Desktop.
+   */
+  const directories = new Set(copies.map(({ dest }) => dirname(dest)))
+  debug('creating directories %O', directories)
+  for (const directory of directories) {
+    await mkdir(directory, { recursive: true })
+  }
+
+  /**
+   * Finally copy files to the destination in parallel
+   */
+  debug('copying files %O to destination "%s"', filePaths, outDir)
+  return await Promise.all(copies.map(({ src, dest }) => copyFile(src, dest)))
 }
 
 /**

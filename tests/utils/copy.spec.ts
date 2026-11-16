@@ -75,6 +75,22 @@ test.group('Copy files', () => {
     await assert.fileNotExists('build/resources/views/.DS_STORE')
   })
 
+  test('copy several files that share a nested destination directory', async ({ fs, assert }) => {
+    await fs.create('resources/views/emails/a.edge', 'a')
+    await fs.create('resources/views/emails/b.edge', 'b')
+    await fs.create('resources/views/emails/c.edge', 'c')
+    await fs.create('resources/views/emails/layouts/main.edge', 'main')
+    await fs.create('resources/views/welcome.edge', 'welcome')
+
+    await copyFiles(['resources/views/**/*.edge'], fs.basePath, join(fs.basePath, 'build'))
+
+    await assert.fileEquals('build/resources/views/emails/a.edge', 'a')
+    await assert.fileEquals('build/resources/views/emails/b.edge', 'b')
+    await assert.fileEquals('build/resources/views/emails/c.edge', 'c')
+    await assert.fileEquals('build/resources/views/emails/layouts/main.edge', 'main')
+    await assert.fileEquals('build/resources/views/welcome.edge', 'welcome')
+  })
+
   test('glob pattern should pick dot-files and dot-folders', async ({ fs, assert }) => {
     await fs.create('public/.vite/manifest.json', '')
     await fs.create('public/.redirects', '')

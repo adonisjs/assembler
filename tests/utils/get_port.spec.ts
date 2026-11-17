@@ -10,7 +10,7 @@
 import net from 'node:net'
 import { test } from '@japa/runner'
 import { clearLockedPorts } from 'get-port'
-import { getPort } from '../../src/utils.ts'
+import { getHmrPort, getPort } from '../../src/utils.ts'
 
 /**
  * Replaces "net.createServer" with a fake server that accepts each
@@ -207,5 +207,65 @@ test.group('Helpers | getPort', (group) => {
      */
     assert.equal(await getPort(fs.baseUrl), 4506)
     assert.deepEqual(capturedHosts.slice(0, 2), [undefined, '0.0.0.0'])
+  })
+})
+
+test.group('Helpers | getHmrPort', (group) => {
+  group.each.setup(() => {
+    const originalHmrPort = process.env.VITE_HMR_PORT
+    delete process.env.VITE_HMR_PORT
+    clearLockedPorts()
+
+    return () => {
+      delete process.env.VITE_HMR_PORT
+      if (originalHmrPort !== undefined) {
+        process.env.VITE_HMR_PORT = originalHmrPort
+      }
+    }
+  })
+
+  test('use port set via process.env.VITE_HMR_PORT', async ({ fs, assert }) => {
+    process.env.VITE_HMR_PORT = '4600'
+    assert.equal(await getHmrPort(fs.baseUrl), 4600)
+  })
+
+  test('use port from the .env file', async ({ fs, assert }) => {
+    await fs.create('.env', 'VITE_HMR_PORT=4601')
+    assert.equal(await getHmrPort(fs.baseUrl), 4601)
+  })
+
+  test('give preference to .env.local file', async ({ fs, assert }) => {
+    await fs.create('.env', 'VITE_HMR_PORT=4601')
+    await fs.create('.env.local', 'VITE_HMR_PORT=4602')
+    assert.equal(await getHmrPort(fs.baseUrl), 4602)
+  })
+
+  test('give preference to process.env.VITE_HMR_PORT over the .env file', async ({
+    fs,
+    assert,
+  }) => {
+    process.env.VITE_HMR_PORT = '4603'
+    await fs.create('.env', 'VITE_HMR_PORT=4601')
+    assert.equal(await getHmrPort(fs.baseUrl), 4603)
+  })
+
+  test('use port 24678 when VITE_HMR_PORT is not defined', async ({ fs, assert, cleanup }) => {
+    cleanup(mockCreateServer([]))
+    assert.equal(await getHmrPort(fs.baseUrl), 24678)
+  })
+
+  test('use another free port when the VITE_HMR_PORT port is in use', async ({
+    fs,
+    assert,
+    cleanup,
+  }) => {
+    const busyServer = net.createServer()
+    await new Promise<void>((resolve) => busyServer.listen(0, resolve))
+    cleanup(() => new Promise<void>((resolve) => busyServer.close(() => resolve())))
+
+    const busyPort = (busyServer.address() as net.AddressInfo).port
+    process.env.VITE_HMR_PORT = String(busyPort)
+
+    assert.notEqual(await getHmrPort(fs.baseUrl), busyPort)
   })
 })

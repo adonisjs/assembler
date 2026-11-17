@@ -180,19 +180,7 @@ export function watch(options: ChokidarOptions) {
  * @returns Promise resolving to an available port number
  */
 export async function getPort(cwd: URL): Promise<number> {
-  const files = await new EnvLoader(cwd).load()
-  const filesValues = await Promise.all(
-    files.map((file) => new EnvParser(file.contents, cwd).parse())
-  )
-
-  /**
-   * Returns the value of an environment variable from "process.env",
-   * or from the first dot-env file that defines it
-   */
-  const readEnvVariable = (key: string): string | undefined => {
-    return process.env[key] || filesValues.find((values) => values[key])?.[key]
-  }
-
+  const readEnvVariable = await createEnvReader(cwd)
   const port = readEnvVariable('PORT')
   const host = readEnvVariable('HOST')
 
@@ -200,6 +188,42 @@ export async function getPort(cwd: URL): Promise<number> {
     port: port ? Number(port) : 3333,
     ...(host ? { host } : {}),
   })
+}
+
+/**
+ * Returns the port to use for the Vite HMR websocket server.
+ *
+ * A random port is used when the specified port is in use. The
+ * "VITE_HMR_PORT" value is read the way the app reads it:
+ *
+ * - The "process.env" value is used if exists.
+ * - Otherwise, the dot-env files are loaded using the "EnvLoader" and
+ *   the value of the first file (in the order of priority) that
+ *   defines it is used.
+ * - Falls back to port 24678 if no VITE_HMR_PORT is found.
+ *
+ * @param cwd - The current working directory URL
+ * @returns Promise resolving to an available port number
+ */
+export async function getHmrPort(cwd: URL): Promise<number> {
+  const readEnvVariable = await createEnvReader(cwd)
+  const port = readEnvVariable('VITE_HMR_PORT')
+
+  return getRandomPort({ port: port ? Number(port) : 24678 })
+}
+
+/**
+ * Loads the dot-env files and returns a function to read an environment
+ * variable from "process.env", or from the first dot-env file (in the
+ * order of priority) that defines it
+ */
+async function createEnvReader(cwd: URL): Promise<(key: string) => string | undefined> {
+  const files = await new EnvLoader(cwd).load()
+  const filesValues = await Promise.all(
+    files.map((file) => new EnvParser(file.contents, cwd).parse())
+  )
+
+  return (key) => process.env[key] || filesValues.find((values) => values[key])?.[key]
 }
 
 /**

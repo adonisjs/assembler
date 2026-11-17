@@ -7,7 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import getRandomPort from 'get-port'
 import { join } from 'node:path/posix'
 import { cliui } from '@poppinss/cliui'
 import type Hooks from '@poppinss/hooks'
@@ -21,7 +20,7 @@ import debug from './debug.ts'
 import { FileSystem } from './file_system.ts'
 import type { TestRunnerOptions } from './types/common.ts'
 import { IndexGenerator } from './index_generator/main.ts'
-import { getPort, loadHooks, readTsConfig, runNode, throttle, watch } from './utils.ts'
+import { getHmrPort, getPort, loadHooks, readTsConfig, runNode, throttle, watch } from './utils.ts'
 import {
   type HookParams,
   type CommonHooks,
@@ -407,7 +406,7 @@ export class TestRunner {
    */
   async run() {
     this.#stickyPort = String(await getPort(this.cwd))
-    this.#stickyHmrPort = String(await getRandomPort({ port: 24678 }))
+    this.#stickyHmrPort = String(await getHmrPort(this.cwd))
     this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
 
     this.#clearScreen()
@@ -448,7 +447,7 @@ export class TestRunner {
     }
 
     this.#stickyPort = String(await getPort(this.cwd))
-    this.#stickyHmrPort = String(getRandomPort({ port: 24678 }))
+    this.#stickyHmrPort = String(await getHmrPort(this.cwd))
     this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
 
     this.#fileSystem = new FileSystem(this.cwdPath, tsConfig, {

@@ -7,7 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import getRandomPort from 'get-port'
 import { cliui } from '@poppinss/cliui'
 import type Hooks from '@poppinss/hooks'
 import prettyHrtime from 'pretty-hrtime'
@@ -33,6 +32,7 @@ import { IndexGenerator } from './index_generator/main.ts'
 import { type RoutesScanner } from './code_scanners/routes_scanner/main.ts'
 import {
   getPort,
+  getHmrPort,
   loadHooks,
   readTsConfig,
   runNode,
@@ -687,7 +687,7 @@ export class DevServer {
 
     this.#indexGenerator = new IndexGenerator(this.cwdPath, this.ui.logger)
     this.#stickyPort = String(await getPort(this.cwd))
-    this.#stickyHmrPort = String(await getRandomPort({ port: 24678 }))
+    this.#stickyHmrPort = String(await getHmrPort(this.cwd))
     this.#envFiles = new Set(
       new EnvLoader(this.cwd).getPaths().map((filePath) => string.toUnixSlash(filePath))
     )

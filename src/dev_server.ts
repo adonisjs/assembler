@@ -185,7 +185,7 @@ export class DevServer {
    */
   #restartHTTPServer = throttle(async () => {
     if (this.#httpServer) {
-      this.#httpServer.removeAllListeners()
+      this.#httpServer.nodeChildProcess.removeAllListeners()
       this.#httpServer.kill('SIGKILL')
     }
     await this.#startHTTPServer(this.#stickyPort, this.#stickyHmrPort)
@@ -459,7 +459,7 @@ export class DevServer {
      * - Handle HMR for change events on imported files
      * - Then we wait for hot-hook to notify us back via IPC message
      */
-    this.#httpServer?.send({
+    this.#httpServer?.nodeChildProcess.send({
       type: 'hot-hook:file-changed',
       path: absolutePath,
       action: options.action,
@@ -755,7 +755,7 @@ export class DevServer {
       })
       this.#isHttpServerAlive = true
 
-      this.#httpServer.on('message', async (message) => {
+      this.#httpServer.nodeChildProcess.on('message', async (message) => {
         if (this.#isAdonisJSReadyMessage(message)) {
           debug('received http server ready message %O', message)
 
@@ -860,7 +860,7 @@ export class DevServer {
     this.#cleanupKeyboardShortcuts()
     await this.#watcher?.close()
     if (this.#httpServer) {
-      this.#httpServer.removeAllListeners()
+      this.#httpServer.nodeChildProcess.removeAllListeners()
       this.#httpServer.kill('SIGKILL')
     }
   }

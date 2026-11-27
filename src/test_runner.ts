@@ -116,7 +116,7 @@ export class TestRunner {
    */
   #reRunTests = throttle(async (filters?: TestRunnerOptions['filters']) => {
     if (this.#testsProcess) {
-      this.#testsProcess.removeAllListeners()
+      this.#testsProcess.nodeChildProcess.removeAllListeners()
       this.#testsProcess.kill('SIGKILL')
     }
     await this.#runTests(this.#stickyPort, this.#stickyHmrPort, filters)
@@ -393,7 +393,7 @@ export class TestRunner {
   async close() {
     await this.#watcher?.close()
     if (this.#testsProcess) {
-      this.#testsProcess.removeAllListeners()
+      this.#testsProcess.nodeChildProcess.removeAllListeners()
       this.#testsProcess.kill('SIGKILL')
     }
   }

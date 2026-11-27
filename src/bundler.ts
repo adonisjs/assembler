@@ -179,6 +179,14 @@ export class Bundler {
     }
 
     /**
+     * "upm" is detected by "@antfu/install-pkg", but is not a package
+     * manager we support. Treat it as not detected.
+     */
+    if (pkgManager === 'upm') {
+      return null
+    }
+
+    /**
      * Rush controls pnpm from the monorepo root. The compiled application is
      * standalone, so it should use the regular pnpm metadata and command.
      */

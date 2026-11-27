@@ -21,11 +21,13 @@ test.group('Child process', () => {
     )
 
     const childProcess = runNode(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
-    const payload = await pEvent(childProcess, 'message', { rejectionEvents: ['error'] })
+    const payload = await pEvent(childProcess.nodeChildProcess, 'message', {
+      rejectionEvents: ['error'],
+    })
 
-    await pEvent(childProcess, 'close', { rejectionEvents: ['error'] })
+    await pEvent(childProcess.nodeChildProcess, 'close', { rejectionEvents: ['error'] })
 
-    assert.equal(childProcess.exitCode, 0)
+    assert.equal(childProcess.nodeChildProcess.exitCode, 0)
     assert.equal(payload, 'ready')
   })
 
@@ -42,10 +44,12 @@ test.group('Child process', () => {
       scriptArgs: ['--watch', '--foo=bar'],
       nodeArgs: [],
     })
-    const payload = await pEvent(childProcess, 'message', { rejectionEvents: ['error'] })
-    await pEvent(childProcess, 'close', { rejectionEvents: ['error'] })
+    const payload = await pEvent(childProcess.nodeChildProcess, 'message', {
+      rejectionEvents: ['error'],
+    })
+    await pEvent(childProcess.nodeChildProcess, 'close', { rejectionEvents: ['error'] })
 
-    assert.equal(childProcess.exitCode, 0)
+    assert.equal(childProcess.nodeChildProcess.exitCode, 0)
     assert.deepEqual(payload, { args: ['--watch', '--foo=bar'] })
   })
 
@@ -63,10 +67,12 @@ test.group('Child process', () => {
       nodeArgs: ['--conditions=dev'],
     })
 
-    const payload = await pEvent(childProcess, 'message', { rejectionEvents: ['error'] })
-    await pEvent(childProcess, 'close', { rejectionEvents: ['error'] })
+    const payload = await pEvent(childProcess.nodeChildProcess, 'message', {
+      rejectionEvents: ['error'],
+    })
+    await pEvent(childProcess.nodeChildProcess, 'close', { rejectionEvents: ['error'] })
 
-    assert.equal(childProcess.exitCode, 0)
+    assert.equal(childProcess.nodeChildProcess.exitCode, 0)
     assert.deepEqual(payload, {
       args: ['--import=@poppinss/ts-exec', '--enable-source-maps', '--conditions=dev'],
     })
@@ -81,8 +87,8 @@ test.group('Child process', () => {
     )
 
     const childProcess = runNode(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
-    await pEvent(childProcess, 'close', { rejectionEvents: ['error'] })
-    assert.equal(childProcess.exitCode, 0)
+    await pEvent(childProcess.nodeChildProcess, 'close', { rejectionEvents: ['error'] })
+    assert.equal(childProcess.nodeChildProcess.exitCode, 0)
   })
 
   test('get child process exit code', async ({ fs, assert }) => {
@@ -95,8 +101,8 @@ test.group('Child process', () => {
 
     const childProcess = runNode(fs.basePath, { script: 'foo.ts', scriptArgs: [], nodeArgs: [] })
 
-    await pEvent(childProcess, 'close', { rejectionEvents: ['error'] })
-    assert.equal(childProcess.exitCode, 1)
+    await pEvent(childProcess.nodeChildProcess, 'close', { rejectionEvents: ['error'] })
+    assert.equal(childProcess.nodeChildProcess.exitCode, 1)
   })
 
   test('await and get child process exit code', async ({ fs, assert }) => {
@@ -118,7 +124,7 @@ test.group('Child process', () => {
     try {
       await childProcess
     } catch {
-      assert.equal(childProcess.exitCode, 1)
+      assert.equal(childProcess.nodeChildProcess.exitCode, 1)
     }
   })
 })
